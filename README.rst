@@ -21,6 +21,16 @@ as well as the extensive use of in-place operations,
 it is suitable for the smallest class of devices that are capable of IP traffic
 and of performing cryptographic operations at all.
 
+.. _OSCORE: https://tools.ietf.org/html/draft-ietf-core-object-security-16#section-8.1
+.. _CoAP: https://coap.technology/
+
+State of the project
+--------------------
+
+The library is currently in a planning phase
+and will proceed into first implementation steps soon;
+a usable version is aimed for around September 2019.
+
 Use and documentation
 ---------------------
 
@@ -44,5 +54,23 @@ Documentation entry points are split into different use cases:
 
   TBD (link into documentation -- "how to wrap")
 
-.. _OSCORE: https://tools.ietf.org/html/draft-ietf-core-object-security-16#section-8.1
-.. _CoAP: https://coap.technology/
+Library integrations
+--------------------
+
+CoAP libraries with planned integration:
+
+* RIOT-OS_ (tracked at 11761_)
+
+Potential future candidates:
+(No implementation is being planned right now,
+but they are being looked into for portability)
+
+* libcoap_
+* wakaama_
+* bindings into the Rust_ programming language
+
+.. _RIOT-OS: http://riot-os.org/
+.. _11761: https://github.com/RIOT-OS/RIOT/issues/11761
+.. _libcoap: https://libcoap.net/
+.. _wakaama: https://github.com/eclipse/wakaama
+.. _Rust: https://www.rust-lang.org/
