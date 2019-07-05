@@ -15,6 +15,8 @@
 
 #ifndef OSCORE_MSG_NATIVE_STATIC
 
+#include <stdint.h>
+
 /* This needs to define oscore_msg_native_t */
 #include <oscore_native/msg_type.h>
 

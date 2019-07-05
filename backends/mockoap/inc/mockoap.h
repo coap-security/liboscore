@@ -25,7 +25,7 @@ struct mock_message {
     uint8_t code;
     uint8_t *payload;
     struct mock_opt *option;
-}
+};
 
 /** A part of a CoAP message representing a single option
  *
@@ -36,6 +36,6 @@ struct mock_opt {
     struct mock_opt *next;
     uint16_t number;
     uint8_t *data;
-}
+};
 
 #endif

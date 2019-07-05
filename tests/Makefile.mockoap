@@ -1,0 +1,6 @@
+CPPFLAGS += -I../backends/mockoap/inc/
+CPPFLAGS += -I../backends/mockoap/oscore_native/
+
+vpath %.c ../backends/mockoap/src/
+
+BACKEND_OBJS += oscore_msg.o oscore_test.o

@@ -33,7 +33,7 @@ oscore_msg_native_t *oscore_test_msg_create(void);
  *
  * The test fixtures will call this on every created message.
  */
-void oscore_test_msg_destroy(msg *oscore_msg_native_t);
+void oscore_test_msg_destroy(oscore_msg_native_t *msg);
 
 
 #endif

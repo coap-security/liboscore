@@ -1,12 +1,16 @@
+#include <oscore/message.h>
+
+#include <stdlib.h>
+
 oscore_msg_native_t *oscore_test_msg_create(void)
 {
-    uint8_t payload = malloc(1024);
-    if payload == NULL {
+    uint8_t *payload = malloc(1024);
+    if (payload == NULL) {
         return NULL;
     }
 
     struct mock_message *ret = malloc(sizeof(struct mock_message));
-    if ret != NULL {
+    if (ret != NULL) {
         ret->code = 0;
         ret->payload = payload;
         ret->option = NULL;
@@ -14,7 +18,7 @@ oscore_msg_native_t *oscore_test_msg_create(void)
     return ret;
 }
 
-void oscore_test_msg_destroy(msg *oscore_msg_native_t)
+void oscore_test_msg_destroy(oscore_msg_native_t *message)
 {
     if (message == NULL) {
         return;

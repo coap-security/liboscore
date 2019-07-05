@@ -3,6 +3,6 @@
 
 #include <mockoap.h>
 
-typedef oscore_msg_native_t = struct mock_message;
+typedef struct mock_message oscore_msg_native_t;
 
 #endif
