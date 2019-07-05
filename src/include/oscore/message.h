@@ -17,11 +17,15 @@
 
 #include <stdint.h>
 
-/* This needs to define oscore_msg_native_t */
+/* This needs to define oscore_msg_native_t and oscore_msg_native_err_t */
 #include <oscore_native/msg_type.h>
 
-uint8_t oscore_msg_native_get_code(oscore_msg_native_t *msg);
-void oscore_msg_native_set_code(oscore_msg_native_t *msg, uint8_t code);
+/** Retrieve the CoAP code (request method or response code) from a message */
+uint8_t oscore_msg_native_get_code(oscore_msg_native_t msg);
+void oscore_msg_native_set_code(oscore_msg_native_t msg, uint8_t code);
+
+/*** Return true if an error type indicates an unsuccessful operation */
+bool oscore_msgerr_native_is_error(oscore_msgerr_native_t);
 
 #else
 

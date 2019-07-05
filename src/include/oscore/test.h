@@ -27,13 +27,13 @@
  * Systems without heap memory may have a small pool of messages available for
  * testing; even a size of 1 should allow running most tests.
  */
-oscore_msg_native_t *oscore_test_msg_create(void);
+oscore_msg_native_t oscore_test_msg_create(void);
 
 /** Free a message previously allocated with ``oscore_test_msg_create``
  *
  * The test fixtures will call this on every created message.
  */
-void oscore_test_msg_destroy(oscore_msg_native_t *msg);
+void oscore_test_msg_destroy(oscore_msg_native_t msg);
 
 
 #endif

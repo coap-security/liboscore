@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-oscore_msg_native_t *oscore_test_msg_create(void)
+oscore_msg_native_t oscore_test_msg_create(void)
 {
     uint8_t *payload = malloc(1024);
     if (payload == NULL) {
@@ -18,7 +18,7 @@ oscore_msg_native_t *oscore_test_msg_create(void)
     return ret;
 }
 
-void oscore_test_msg_destroy(oscore_msg_native_t *message)
+void oscore_test_msg_destroy(oscore_msg_native_t message)
 {
     if (message == NULL) {
         return;
