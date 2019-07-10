@@ -1,4 +1,4 @@
-#include <oscore/message.h>
+#include <oscore_native/message.h>
 
 #include <stdlib.h>
 

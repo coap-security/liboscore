@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include <oscore/message.h>
-#include <oscore/test.h>
+#include <oscore_native/message.h>
+#include <oscore_native/test.h>
 
 int main()
 {

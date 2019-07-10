@@ -1,5 +1,5 @@
-#ifndef OSCORE_TEST_H
-#define OSCORE_TEST_H
+#ifndef OSCORE_NATIVE_TEST_H
+#define OSCORE_NATIVE_TEST_H
 
 /** @file */
 
@@ -17,7 +17,7 @@
  * @{
  */
 
-#include <oscore/message.h>
+#include <oscore_native/message.h>
 
 /** @brief Allocate an empty ``oscore_msg_native_t``
  *

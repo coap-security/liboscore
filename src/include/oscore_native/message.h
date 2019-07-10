@@ -1,5 +1,5 @@
-#ifndef OSCORE_MESSAGE_H
-#define OSCORE_MESSAGE_H
+#ifndef OSCORE_NATIVE_MESSAGE_H
+#define OSCORE_NATIVE_MESSAGE_H
 
 /** @file */
 

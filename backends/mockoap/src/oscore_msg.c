@@ -1,4 +1,4 @@
-#include <oscore/message.h>
+#include <oscore_native/message.h>
 
 uint8_t oscore_msg_native_get_code(oscore_msg_native_t msg)
 {
