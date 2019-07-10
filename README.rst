@@ -2,7 +2,7 @@ An OSCORE implementation
 ========================
 
 This repository contains code developed to be
-a portable implementation of OSCORE_
+a portable implementation of OSCORE_ (RFC8613)
 usable for embedded devices.
 
 OSCORE is a method of protecting (ie. encrypting and verifying)
@@ -21,7 +21,7 @@ as well as the extensive use of in-place operations,
 it is suitable for the smallest class of devices that are capable of IP traffic
 and of performing cryptographic operations at all.
 
-.. _OSCORE: https://tools.ietf.org/html/draft-ietf-core-object-security-16#section-8.1
+.. _OSCORE: https://tools.ietf.org/html/rfc8613
 .. _CoAP: https://coap.technology/
 
 State of the project
