@@ -29,6 +29,6 @@ typedef struct { uint16_t option_number; size_t offset; } oscore_msg_native_opti
  *
  * It must be defined in the backend's own ``oscore_native/msg_type.h`` file.
  */
-typedef i32 oscore_msgerr_native_t;
+typedef int32_ oscore_msgerr_native_t;
 
 /** @} */
