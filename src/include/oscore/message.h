@@ -106,7 +106,7 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
 /** @brief Set up an iterator over a protected CoAP message
  *
  * Set up the previously uninitialized @p iter on which
- * ``oscore_msg_protected_optiter_next`` can be called.
+ * @ref oscore_msg_protected_optiter_next can be called.
  *
  * @param[in] msg Message to iterate over
  * @param[out] iter Caller-allocated (previously unininitialized) iterator
