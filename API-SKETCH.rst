@@ -89,8 +89,11 @@ Some of them may have sensible default implementations inside the library (CoAP 
 for others that'd be risky (AES etc) but an external library can be used as fallback.
 
 * security primitives
-  * AES
-  * SHA
+  * AEAD encryption and decryption by COSE number, checking whether a particular number is supported and getting the algorithm's parameters (k, M, nonce length).
+    No per-algorithm functions because that'll require changes to the OSCORE library if algorithms are added.
+    Native backends that "think in COSE terms" can just pass things through,
+    and others just need to implement the switch that needs to be in there somewhere anyway.
+  * HKDF execution, likewise (but probably by an enum rather than COSE number, given they are not specified the same way).
 * CBOR (?; may not be enough to not warrant hard-coding)
 * ``osc_helper_encode_option(target_buf, target_len, last_optno, option_buf, option_len)`` and a suitable decoder
 
