@@ -4,10 +4,10 @@ Messages
 Structs and methods for CoAP messages.
 Those will need to be present twice,
 once operating on the underlying CoAP library's messages (``osc_msg_native_``)
-and once operating on an OSCORE message (``osc_msg_encrypted_``)
+and once operating on an OSCORE message (``osc_msg_protected_``)
 
 * ``osc_msg_native_t``: A type provided by the native library.
-* ``osc_msg_encrypted_t``: A type provided by the OSCORE library.
+* ``osc_msg_protected_t``: A type provided by the OSCORE library.
 
   It contains an ``osc_msg_native_t`` as well as pointers inside there ("how many U options have we written (esp. for tracking whether the OSCORE option has been written), how many E options have we written (esp. for tracking whether the inner Observe option has been written))") as well as some other state (eg. the hash state of the external AAD that'll be updated when I options are added).
 
@@ -21,12 +21,12 @@ and once operating on an OSCORE message (``osc_msg_encrypted_``)
 
   * ``_{get,set}_code``
   * ``_append_option`` (asserting that no later options have been written, and possiblty that payload has not been written / see "in-place buildability")
-      * When options are appended to an encrypted_t, then happens the decision to write it into the underlying native (U) message, the inner message (E), the AAD state (I) or whehter maybe now it's time to add another option (eg. jsut before the first option after the OSCORE number is written to U, then the OSCORE option gets written in there)
+      * When options are appended to an protected_t, then happens the decision to write it into the underlying native (U) message, the inner message (E), the AAD state (I) or whehter maybe now it's time to add another option (eg. jsut before the first option after the OSCORE number is written to U, then the OSCORE option gets written in there)
   * ``_update_option`` (asserting that the option has previously been added with that very length. Useful to provide, we probably won't need the native version as we should know all that goes into the OSCORE option by the time we'll need to inject it into the message)
   * ``_iter_options`` (a pair of "set up an iterator" / "get the next pointers" functions or possibly macros)
   * ``_map_payload`` ("give me pointers to the area into which I can put my payload, or read payload from", possibly with a dedicated method for read-only messages)
   * ``_trim_payload`` (truncate the message to the given length)
-  * possibly some rewind savepointing (useful in existing libraries to just set 5.03 in error cases when building the payload failed; unencrypted that's rather trivial truncation, here it'd mean having slightly bigger savepoints that contain copies of some ``osc_msg_encrypted_t`` data like the Class-I snapshot)
+  * possibly some rewind savepointing (useful in existing libraries to just set 5.03 in error cases when building the payload failed; unencrypted that's rather trivial truncation, here it'd mean having slightly bigger savepoints that contain copies of some ``osc_msg_protected_t`` data like the Class-I snapshot)
   * possibly a function to estimate the remaining payload size if payload were added now
 
 Encrypt / decrypt
@@ -38,14 +38,14 @@ Moving between native and encrypted messages runs through encryption and decrypt
   * ``osc_requestid_clone`` that copies over a requestid but clears the copy's "can re-use" flag because it's a copy -- for use with storing the requestid of an observation, or if an underlying retransmitting CoAP library prefers to re-compute the response for any retransmissions rather than storing the full response.
   * possibly distinguish between incoming and outgoing messages on type level
 
-* ``osc_msg_unprotect_request`` takes a native message and, if successfully decrypted, returns (C: populates a caller-allocated pointer to) an ``osc_msg_encrypted_t`` (from which the application can read) and a requestid
+* ``osc_msg_unprotect_request`` takes a native message and, if successfully decrypted, returns (C: populates a caller-allocated pointer to) an ``osc_msg_protected_t`` (from which the application can read) and a requestid
     * cater for any synthetic observe number to be extracted, either by a dedicated access function or by synthesizing an Observe option when an iterater over the unprotected message gets to it. Preferably it'll be the former, given that different transports have different rules for re-ordering anyway (eg. TCP has no numbers in there either).
     * possibly a ``_finish`` function that allows clean re-claiming of the consumed native message
-* ``osc_msg_protect_response`` takes a native empty pre-allocated message and a requestid and returns an ``osc_msg_encrypted_t`` into which the response can be written.
+* ``osc_msg_protect_response`` takes a native empty pre-allocated message and a requestid and returns an ``osc_msg_protected_t`` into which the response can be written.
     * a ``_finish`` function that does encryption and returns the original native message for sending
-* ``osc_msg_protect_request`` (name to be enhanced) that takes a native empty message and returns an ``osc_msg_encrypted_t`` to be populated and a requestid to be kept around.
+* ``osc_msg_protect_request`` (name to be enhanced) that takes a native empty message and returns an ``osc_msg_protected_t`` to be populated and a requestid to be kept around.
     * a ``_finish`` function actually does the encryption and produces a native message to be sent (possibly, that and not protect_request produces the requestid)
-* ``osc_msg_unprotect_response`` takes a native message and a requestid and, if successfully decrypted, returns an ``osc_msg_encrypted_t`` that can be read.
+* ``osc_msg_unprotect_response`` takes a native message and a requestid and, if successfully decrypted, returns an ``osc_msg_protected_t`` that can be read.
     * Like with ``osc_msg_unprotect_request``, a finish function should probably go with it
 
 (better names may be ``decrypt`` (with ``cleanup``?) / ``prepare_encrypt`` / ``finish_encrypt``)

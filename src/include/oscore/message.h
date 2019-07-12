@@ -31,7 +31,7 @@ typedef struct {
     uint8_t code; // Probably only for writing messages
     bool is_request; // May move into type state (as this'll need splitting up by read/write anyway)
     bool is_observation; // not sure yet when applicable
-} oscore_msg_encrypted_t;
+} oscore_msg_protected_t;
 
 /** @brief Iterator (cursor) over a protected CoAP message
  */
@@ -43,23 +43,23 @@ typedef struct {
     uint16_t backend_peeked_optionnumber
     uint8_t *backend_peeked_value;
     size_t backend_peeked_value_len;
-} oscore_msg_encrypted_optiter_t;
+} oscore_msg_protected_optiter_t;
 
 /** @brief OSCORE message operation error type
  *
- * These errors are returned by functions manipulating a @ref oscore_msg_encrypted_t.
+ * These errors are returned by functions manipulating a @ref oscore_msg_protected_t.
  */
 typedef enum {
     /** Successful (no error) result */
     OK = 0,
     /** An underlying native CoAP function returned an error */
     NATIVE_ERROR,
-} oscore_msgerr_encrypted_t;
+} oscore_msgerr_protected_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
-uint8_t oscore_msg_encrypted_get_code(oscore_msg_encrypted_t *msg);
+uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg);
 /** Set the inner CoAP code (request method or response code) of a protected message */
-void oscore_msg_encrypted_set_code(oscore_msg_encrypted_t *msg, uint8_t code);
+void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code);
 
 /** @brief Append an option to a protected CoAP message
  *
@@ -75,8 +75,8 @@ void oscore_msg_encrypted_set_code(oscore_msg_encrypted_t *msg, uint8_t code);
  * inside the message, options being written in the wrong order or payload
  * having been written to the message.
  */
-oscore_msgerr_encrypted_t oscore_msg_encrypted_append_option(
-        oscore_msg_encrypted_t *msg,
+oscore_msgerr_protected_t oscore_msg_protected_append_option(
+        oscore_msg_protected_t *msg,
         uint16_t option_number,
         const uint8_t *value,
         size_t value_len
@@ -95,8 +95,8 @@ oscore_msgerr_encrypted_t oscore_msg_encrypted_append_option(
  * require special handling by OSCORE (eg. the observation option) and can not
  * be updated this way.
  */
-oscore_msgerr_encrypted_t oscore_msg_encrypted_update_option(
-        oscore_msg_encrypted_t *msg,
+oscore_msgerr_protected_t oscore_msg_protected_update_option(
+        oscore_msg_protected_t *msg,
         uint16_t option_number,
         size_t option_occurrence,
         const uint8_t *value,
@@ -106,18 +106,18 @@ oscore_msgerr_encrypted_t oscore_msg_encrypted_update_option(
 /** @brief Set up an iterator over a protected CoAP message
  *
  * Set up the previously uninitialized @p iter on which
- * ``oscore_msg_encrypted_optiter_next`` can be called.
+ * ``oscore_msg_protected_optiter_next`` can be called.
  *
  * @param[in] msg Message to iterate over
  * @param[out] iter Caller-allocated (previously unininitialized) iterator
  *     (cursor) to initialize
  *
- * Callers of this function must call @ref oscore_msg_encrypted_optiter_finish
+ * Callers of this function must call @ref oscore_msg_protected_optiter_finish
  * when done and before attempting to alter the message.
  */
-void oscore_msg_encrypted_optiter_init(
-        oscore_msg_encrypted_t *msg,
-        oscore_msg_encrypted_optiter_t *iter
+void oscore_msg_protected_optiter_init(
+        oscore_msg_protected_t *msg,
+        oscore_msg_protected_optiter_t *iter
         );
 
 /** @brief Iterate through options of a CoAP protected message
@@ -133,9 +133,9 @@ void oscore_msg_encrypted_optiter_init(
  *
  * If the iterator has been exhausted, return false.
  */
-bool oscore_msg_encrypted_optiter_next(
-        oscore_msg_encrypted_t msg,
-        oscore_msg_encrypted_optiter_t *iter,
+bool oscore_msg_protected_optiter_next(
+        oscore_msg_protected_t msg,
+        oscore_msg_protected_optiter_t *iter,
         uint16_t *option_number,
         uint8_t *const *value,
         size_t *value_len
@@ -143,15 +143,15 @@ bool oscore_msg_encrypted_optiter_next(
 
 /** @brief Clean up an option iterator
  *
- * Close the iterator previously created by @ref oscore_msg_encrypted_optiter_init.
+ * Close the iterator previously created by @ref oscore_msg_protected_optiter_init.
  *
  * @param[in] msg Message that was being iterated over
  * @param[inout] iter Iterator (cursor) that will not be used any more after
  *     this invocation
  */
-void oscore_msg_encrypted_optiter_finish(
-        oscore_msg_encrypted_t msg,
-        oscore_msg_encrypted_optiter_t *iter
+void oscore_msg_protected_optiter_finish(
+        oscore_msg_protected_t msg,
+        oscore_msg_protected_optiter_t *iter
         );
 
 /** @brief Provide address and size information to writable payload
@@ -166,8 +166,8 @@ void oscore_msg_encrypted_optiter_finish(
  * indicating that there is insufficient remaining space in the allocated
  * message to send any non-zero payload.
  */
-void oscore_msg_encrypted_map_payload(
-        oscore_msg_encrypted_t *msg,
+void oscore_msg_protected_map_payload(
+        oscore_msg_protected_t *msg,
         uint8_t **payload,
         size_t *payload_len
         );
@@ -178,15 +178,15 @@ void oscore_msg_encrypted_map_payload(
  * @param[in] payload_len Size of writable payload
  *
  * Reduce the payload length of the message to the given size. This must only
- * be called after @ref oscore_msg_encrypted_map_payload invocations, and the
+ * be called after @ref oscore_msg_protected_map_payload invocations, and the
  * given size must be at most the @p payload_len obtained in that call.
  */
-oscore_msgerr_encrypted_t oscore_msg_encrypted_trim_payload(
-        oscore_msg_encrypted_t *msg,
+oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
+        oscore_msg_protected_t *msg,
         size_t payload_len
         );
 
 /** Return true if an error type indicates an unsuccessful operation */
-bool oscore_msgerr_encrypted_is_error(oscore_msgerr_encrypted_t);
+bool oscore_msgerr_protected_is_error(oscore_msgerr_protected_t);
 
 /** @} */
