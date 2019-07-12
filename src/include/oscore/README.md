@@ -1,0 +1,3 @@
+@defgroup oscore_api OSCORE APIs
+
+@brief Functions provided by the OSCORE library
