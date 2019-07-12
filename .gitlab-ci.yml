@@ -1,0 +1,13 @@
+image: debian
+
+pages:
+  script:
+    - apt update && apt install doxygen
+    - cd doc && doxygen Doxyfile
+    - mv doc/html/ public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
+
