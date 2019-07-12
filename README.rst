@@ -74,3 +74,10 @@ but they are being looked into for portability)
 .. _libcoap: https://libcoap.net/
 .. _wakaama: https://github.com/eclipse/wakaama
 .. _Rust: https://www.rust-lang.org/
+
+License
+-------
+
+Copyright 2019 Christian Amsüss and Ericsson AB
+
+Licensed under the terms of the 3-clause BSD license as described in the LICENSE file.
