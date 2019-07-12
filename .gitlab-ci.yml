@@ -2,8 +2,8 @@ image: debian
 
 pages:
   script:
-    - apt update && apt install doxygen
-    - cd doc && doxygen Doxyfile
+    - apt-get update && apt-get install doxygen
+    - cd doc && doxygen Doxyfile && cd ..
     - mv doc/html/ public/
   artifacts:
     paths:
