@@ -4,14 +4,29 @@
  *  @addtogroup oscore_native_crypto_types Native cryptography types
  *  @{ */
 
-/** @brief Type of COSE algorithms
+/** @brief Type of COSE AEAD algorithms
  *
  * This can be an enum, an unsigned integer (typically used when
- * string-labelled algorithms are not supported anyway) or even a pointer type.
+ * string-labelled algorithms are not supported anyway) or even a pointer to a
+ * static key description.
  *
  * It must be defined in the backend's own ``oscore_native/crypto_type.h``.
  */
-typedef int32_t oscore_crypto_cosealg_t;
+typedef int32_t oscore_crypto_aeadalg_t;
+
+/** @brief Type of COSE HKDF algorithms
+ *
+ * This describes a KDF that can be used as HKDF algorithm in an OSCORE
+ * Security Context. It corresponds to a COSE "Direct Key with KDF" algorithm,
+ * and is constructed from those.
+ *
+ * This can be an enum, an unsigned integer (typically used when
+ * string-labelled algorithms are not supported anyway) or even a pointer to a
+ * static key description.
+ *
+ * It must be defined in the backend's own ``oscore_native/crypto_type.h``.
+ */
+typedef int32_t oscore_crypto_hkdfalg_t;
 
 /** @brief Error type for cryptography operaitons
  *
