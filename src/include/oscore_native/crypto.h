@@ -48,8 +48,70 @@ oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, 
  */
 oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len);
 
-oscore_cryptoerr_t oscore_crypto_aead_encrypt(oscore_crypto_aeadalg_t alg, ...);
-oscore_cryptoerr_t oscore_crypto_aead_decrypt(oscore_crypto_aeadalg_t alg, ...);
+/** @brief Get the tag length that is used for a particular algorithm
+ *
+ * @param[in] alg An AEAD algorithm
+ * @return the length of the algorithm's tag, in bytes
+ *
+ * Implementers note: This function is easy enough to be infallible. As the
+ * only way to obtain the backend's @ref oscore_crypto_aeadalg_t is through
+ * @ref oscore_crypto_aead_from_number and @ref oscore_crypto_aead_from_string,
+ * it can be sure that only values that were produced by that are around. If a
+ * backend can still wind up in a situation where it doesn't know the tag
+ * length, returning SIZE_MAX is a safe way to ensure that rather than
+ * out-of-buffer writes, deterministic failure occurs.
+ */
+size_t oscore_crypto_aead_get_taglength(oscore_crypto_aeadalg_t alg);
+
+
+/** @brief Encrypt a buffer in-place with an AEAD algorithm
+ *
+ * @param[in] alg The AEAD algorithm to use
+ * @param[inout] buffer Memory location that contains the to-be-encrypted message and room for the tag
+ * @param[in] buffer_len Length of the complete buffer (ie. length of the message plus tag length of the algorithm)
+ * @param[in] aad Memory location that contains the AAD
+ * @param[in] aad_len Length of the AAD
+ * @param[in] iv Memory location of the (fully composed, full length for this algorithm) initialization vector (nonce)
+ * @param[in] key Memory location of the encryption key (of the appropriate size for this algorithm)
+ *
+ * Note that while passing the message length might result in improvements to
+ * the final machine code (especially when no link-time optimization is
+ * performed), giving the whole buffer length should make memory access easier
+ * to verify.
+ */
+oscore_cryptoerr_t oscore_crypto_aead_encrypt(
+        oscore_crypto_aeadalg_t alg,
+	uint8_t *buffer,
+	size_t buffer_len,
+	const uint8_t *aad,
+	size_t aad_len,
+	const uint8_t *iv,
+	const uint8_t *key
+	);
+
+/** @brief Decrypt a buffer in-place with an AEAD algorithm
+ *
+ * @param[in] alg The AEAD algorithm to use
+ * @param[inout] buffer Memory location that contains the ciphertext followed by the tag
+ * @param[in] buffer_len Length of the complete buffer
+ * @param[in] aad Memory location that contains the AAD
+ * @param[in] aad_len Length of the AAD
+ * @param[in] iv Memory location of the (fully composed, full length for this algorithm) initialization vector (nonce)
+ * @param[in] key Memory location of the encryption key (of the appropriate size for this algorithm)
+ *
+ * When successful, the application can read find buffer_len minus @ref
+ * oscore_crypto_aead_get_taglength(alg) bytes of plain text in the buffer, and
+ * must disregard the trailing bytes.
+ */
+oscore_cryptoerr_t oscore_crypto_aead_decrypt(
+        oscore_crypto_aeadalg_t alg,
+	uint8_t *buffer,
+	size_t buffer_len,
+	const uint8_t *aad,
+	size_t aad_len,
+	const uint8_t *iv,
+	const uint8_t *key
+	);
 
 /** @brief Set up an algorithm descriptor from a numerically identified COSE
  * Direct Key with KDF
@@ -93,6 +155,9 @@ oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 		uint8_t *out,
 		size_t out_length
 		);
+
+/** Return true if an error type indicates an unsuccessful operation */
+bool oscore_cryptoerr_is_error(oscore_cryptoerr_t);
 
 /** @} */
 
