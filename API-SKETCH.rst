@@ -9,7 +9,7 @@ and once operating on an OSCORE message (``osc_msg_protected_``)
 * ``osc_msg_native_t``: A type provided by the native library.
 * ``osc_msg_protected_t``: A type provided by the OSCORE library.
 
-  It contains an ``osc_msg_native_t`` as well as pointers inside there ("how many U options have we written (esp. for tracking whether the OSCORE option has been written), how many E options have we written (esp. for tracking whether the inner Observe option has been written))") as well as some other state (eg. the hash state of the external AAD that'll be updated when I options are added).
+  It contains an ``osc_msg_native_t`` as well as pointers inside there ("how many U options have we written (esp. for tracking whether the OSCORE option has been written), how many E options have we written (esp. for tracking whether the inner Observe option has been written))") as well as some other state (eg. to track the total length of the Class-I options).
 
   The expectation is that the message is built in-place, with the to-be-encrypted data in the very place where its ciphertext will be.
   For this to work we'll need to demand that either
@@ -21,7 +21,7 @@ and once operating on an OSCORE message (``osc_msg_protected_``)
 
   * ``_{get,set}_code``
   * ``_append_option`` (asserting that no later options have been written, and possiblty that payload has not been written / see "in-place buildability")
-    * When options are appended to an protected_t, then happens the decision to write it into the underlying native (U) message, the inner message (E), the AAD state (I) or whehter maybe now it's time to add another option (eg. jsut before the first option after the OSCORE number is written to U, then the OSCORE option gets written in there)
+    * When options are appended to an protected_t, then happens the decision to write it into the underlying native (U) message, the inner message (E) or whehter maybe now it's time to add another option (eg. just before the first option after the OSCORE number is written to U, then the OSCORE option gets written in there)
   * ``_update_option`` (asserting that the option has previously been added with that very length. Useful to provide, we probably won't need the native version as we should know all that goes into the OSCORE option by the time we'll need to inject it into the message)
   * ``_iter_options`` (a pair of "set up an iterator" / "get the next pointers" functions or possibly macros)
   * ``_map_payload`` ("give me pointers to the area into which I can put my payload, or read payload from", possibly with a dedicated method for read-only messages)
