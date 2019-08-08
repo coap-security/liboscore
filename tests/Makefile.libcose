@@ -1,0 +1,15 @@
+# FIXME: the sodium.o name is hardcoded as this makefile uses vpath while libcose works from source names
+include ../backends/libcose/libcose/makefiles/sodium.mk
+
+CPPFLAGS += -I../backends/libcose/inc/
+CPPFLAGS += -I../backends/libcose/libcose/include/
+CPPFLAGS += -I../backends/libcose/nanocbor/include/
+
+vpath %.c ../backends/libcose/src/
+vpath %.c ../backends/libcose/libcose/src/
+vpath %.c ../backends/libcose/libcose/src/crypt/
+
+CFLAGS += ${CFLAGS_CRYPTO}
+LDFLAGS += ${LDFLAGS_CRYPTO}
+
+BACKEND_OBJS += libcose.o cose_crypto.o sodium.o
