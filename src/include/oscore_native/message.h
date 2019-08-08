@@ -114,7 +114,7 @@ bool oscore_msg_native_optiter_next(
         oscore_msg_native_t msg,
         oscore_msg_native_optiter_t *iter,
         uint16_t *option_number,
-        uint8_t *const *value,
+        const uint8_t **value,
         size_t *value_len
         );
 
