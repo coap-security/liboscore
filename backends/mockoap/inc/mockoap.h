@@ -24,6 +24,7 @@
 struct mock_message {
     uint8_t code;
     uint8_t *payload;
+    size_t payload_len;
     struct mock_opt *option;
 };
 

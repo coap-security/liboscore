@@ -2,9 +2,11 @@
 
 #include <stdlib.h>
 
+#define MOCKOAP_DEFAULT_SIZE 1024
+
 oscore_msg_native_t oscore_test_msg_create(void)
 {
-    uint8_t *payload = malloc(1024);
+    uint8_t *payload = malloc(MOCKOAP_DEFAULT_SIZE);
     if (payload == NULL) {
         return NULL;
     }
@@ -13,6 +15,7 @@ oscore_msg_native_t oscore_test_msg_create(void)
     if (ret != NULL) {
         ret->code = 0;
         ret->payload = payload;
+        ret->payload_len = MOCKOAP_DEFAULT_SIZE;
         ret->option = NULL;
     }
     return ret;

@@ -1,5 +1,6 @@
 CPPFLAGS += -I../src/include/
 CFLAGS += -Wall -Werror -Wpedantic -std=c11
+CFLAGS += -g3 -O0
 CFLAGS += -MD
 
 CFLAGS += -fsanitize=undefined -fsanitize=address
