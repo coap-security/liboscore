@@ -22,6 +22,7 @@ cryptobackend-aead: cryptobackend-aead.o ${BACKEND_OBJS}
 
 clean:
 	rm -f standalone-demo
+	rm -f cryptobackend-aead
 	rm -f *.o
 	rm -f *.d
 
