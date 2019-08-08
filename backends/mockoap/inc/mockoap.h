@@ -36,6 +36,7 @@ struct mock_opt {
     struct mock_opt *next;
     uint16_t number;
     uint8_t *data;
+    size_t data_len;
 };
 
 #endif

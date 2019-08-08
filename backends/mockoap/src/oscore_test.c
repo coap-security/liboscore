@@ -29,6 +29,7 @@ void oscore_test_msg_destroy(oscore_msg_native_t message)
     while (next != NULL) {
         struct mock_opt *current = next;
         next = current->next;
+        free(current->data);
         free(current);
     }
 
