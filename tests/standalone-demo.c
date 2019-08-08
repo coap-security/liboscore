@@ -10,5 +10,7 @@ int main()
     uint8_t returned = oscore_msg_native_get_code(msg);
     printf("Code fetched back as %d\n", returned);
 
+    oscore_test_msg_destroy(msg);
+
     return returned == 1 ? 0 : 1;
 }
