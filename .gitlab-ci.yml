@@ -1,5 +1,10 @@
 image: debian
 
+test:
+  script:
+    - cd tests
+    - make test
+
 pages:
   script:
     - apt-get update && apt-get -y install doxygen
