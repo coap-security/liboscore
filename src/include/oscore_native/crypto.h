@@ -64,30 +64,91 @@ oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, 
 size_t oscore_crypto_aead_get_taglength(oscore_crypto_aeadalg_t alg);
 
 
-/** @brief Encrypt a buffer in-place with an AEAD algorithm
+/** @brief Start an AEAD encryption operation
  *
- * @param[in] alg The AEAD algorithm to use
- * @param[inout] buffer Memory location that contains the to-be-encrypted message and room for the tag
- * @param[in] buffer_len Length of the complete buffer (ie. length of the message plus tag length of the algorithm)
- * @param[in] aad Memory location that contains the AAD
- * @param[in] aad_len Length of the AAD
- * @param[in] iv Memory location of the (fully composed, full length for this algorithm) initialization vector (nonce)
- * @param[in] key Memory location of the encryption key (of the appropriate size for this algorithm)
+ * @param[out] state Encryption state to set up
+ * @param[in] alg OSCORE AEAD algorithm that will be used
+ * @param[in] aad_len Bytes of Additional Authenticated Data that will later fed into this encryption
+ * @param[in] plaintext_len Bytes of plaintext that will later fed into this encryption
+ * @param[in] iv Nonce used for this encryption (length depends on the algorithm)
+ * @param[in] key Shared key used for this encryption (length depends on the algorithm)
  *
- * Note that while passing the message length might result in improvements to
- * the final machine code (especially when no link-time optimization is
- * performed), giving the whole buffer length should make memory access easier
- * to verify.
+ * The construction of this encryption state must be followed up with exactly
+ * as many bytes in @ref oscore_crypto_aead_encrypt_feed_aad calls, and an @ref
+ * oscore_crypto_aead_encrypt_inplace call with a buffer of the given size.
+ * 
+ * There is no dedicated function to clean up the @ref state, that happens in
+ * any function that ends an encryption operation (which is currently only @ref
+ * oscore_crypto_aead_encrypt_inplace).
+ *
+ * Backends that implement streaming algorithms that do not need to know the
+ * lengths in advance are free to ignore the provided lengths.
+ *
+ * @todo Document possible causes of unsuccessful operation in this and the
+ * following methods, describe interaction with the state (the erring function
+ * must do any cleanup, the caller can't keep using it), and think over whether
+ * those may be doable in an infallible way if the oscore_crypto_aeadalg_t
+ * construction has succeeded. (There needs to be an out-of-memory or
+ * AAD-too-long condition for non-stream-AAD backends, but maybe the rest can
+ * be documented to be infallible? What if the caller messes up lengths?)
  */
-oscore_cryptoerr_t oscore_crypto_aead_encrypt(
+oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
+        oscore_crypto_aead_encryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
-	uint8_t *buffer,
-	size_t buffer_len,
-	const uint8_t *aad,
-	size_t aad_len,
-	const uint8_t *iv,
-	const uint8_t *key
-	);
+        size_t aad_len,
+        uint8_t plaintext_len,
+        const uint8_t *iv,
+        const uint8_t *key
+        );
+
+/** @brief Provide Additional Authenticated Data (AAD) for an ongoing AEAD encryption operation
+ *
+ * @param[inout] state Encryption state to update
+ * @param[in] aad_chunk Data to be processed as AAD
+ * @param[in] aad_chunk_len Length of @param aad
+ *
+ * This advances the internal @ref state of the encryption by processing the
+ * AAD. It may be called as many times with various non-zero lengths as the
+ * caller wants, as long as the total number of bytes fed in is the aad_len
+ * given in the initial @ref oscore_crypto_aead_encrypt_start call.
+ *
+ * Implementations of algorithms that do not process AAD byte-by-byte may need
+ * to aggregate the AAD data in blocks and keep room for that with the @param
+ * state. That case is common.
+ *
+ * Some backend libraries require the full AAD to be in contiguous memory.
+ * Those can dynamically allocate memory at encryption start, or set aside a
+ * limited buffer and refuse to operate on overly large AADs. That case is
+ * common outside the embedded area where those allocations are affordable;
+ * high-quality embedded libraries will make do with a block-sized buffer.
+ */
+oscore_cryptoerr_t oscore_crypto_aead_encrypt_feed_aad(
+        oscore_crypto_aead_encryptstate_t *state,
+        uint8_t *aad_chunk,
+        size_t aad_chunk_len
+        );
+
+/** @brief Finish an AEAD encryption operation by encrypting a buffer in place and appending the tag
+ *
+ * @param[inout] state Encryption state use and finalize
+ * @param[inout] buffer Memory location in which the plaintext is encrypted and the tag appended
+ * @param[in] buffer_len Writable size of the buffer
+ *
+ * The @param buffer_len must be exactly the sum of the ``plaintext_len`` given
+ * at setup, and the algorithm's tag length; the backends may rely on that. The
+ * length is given explicitly to ensure that no writes happen outside the
+ * provided buffer in case the involved parties disagree on any of the input
+ * values, and to ease static analysis.
+ *
+ * The function reads the plaintext from @param buffer, writes the resulting
+ * ciphertext to the same location, and writes the AEAD tag right after it to
+ * the end of the buffer.
+ */
+oscore_cryptoerr_t oscore_crypto_aead_encrypt_inplace(
+        oscore_crypto_aead_encryptstate_t *state,
+        uint8_t *buffer,
+        size_t buffer_len
+        );
 
 /** @brief Decrypt a buffer in-place with an AEAD algorithm
  *

@@ -36,17 +36,27 @@ int main()
         return 2;
     }
 
+    // This will need much more extensive testing with differently aligned AAD lengths
     uint8_t aad[] = {1, 2, 3, 4};
-    err = oscore_crypto_aead_encrypt(
+
+    oscore_crypto_aead_encryptstate_t encstate;
+    err = oscore_crypto_aead_encrypt_start(
+            &encstate,
             chacha,
-            arena, sizeof(message) + tag_length,
-            aad, sizeof(aad),
+            sizeof(aad),
+            sizeof(message),
             nonce,
             key
             );
     if (oscore_cryptoerr_is_error(err)) {
-        return 3;
+        return 30;
     }
+    err = oscore_crypto_aead_encrypt_feed_aad(&encstate, aad, 2);
+    if (oscore_cryptoerr_is_error(err)) return 31;
+    err = oscore_crypto_aead_encrypt_feed_aad(&encstate, &aad[2], 2);
+    if (oscore_cryptoerr_is_error(err)) return 32;
+    err = oscore_crypto_aead_encrypt_inplace(&encstate, arena, sizeof(message) + tag_length);
+    if (oscore_cryptoerr_is_error(err)) return 33;
 
     assert(memcmp(message, arena, sizeof(message)) != 0);
 

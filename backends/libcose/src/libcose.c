@@ -30,17 +30,44 @@ size_t oscore_crypto_aead_get_taglength(oscore_crypto_aeadalg_t alg)
     }
 }
 
-oscore_cryptoerr_t oscore_crypto_aead_encrypt(
+oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
+        oscore_crypto_aead_encryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
-        uint8_t *buffer,
-        size_t buffer_len,
-        const uint8_t *aad,
         size_t aad_len,
+        uint8_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
         )
 {
-    size_t message_len = buffer_len - oscore_crypto_aead_get_taglength(alg);
+    state->alg = alg;
+    state->iv = iv;
+    state->key = key;
+    state->aad = malloc(aad_len);
+    assert(state->aad != NULL);
+    state->aad_cursor = state->aad;
+
+    return COSE_OK;
+}
+
+oscore_cryptoerr_t oscore_crypto_aead_encrypt_feed_aad(
+        oscore_crypto_aead_encryptstate_t *state,
+        uint8_t *aad_chunk,
+        size_t aad_chunk_len
+        )
+{
+    memcpy(state->aad_cursor, aad_chunk, aad_chunk_len);
+    state->aad_cursor += aad_chunk_len;
+
+    return COSE_OK;
+}
+
+oscore_cryptoerr_t oscore_crypto_aead_encrypt_inplace(
+        oscore_crypto_aead_encryptstate_t *state,
+        uint8_t *buffer,
+        size_t buffer_len
+        )
+{
+    size_t message_len = buffer_len - oscore_crypto_aead_get_taglength(state->alg);
     size_t modified_buffer_len = buffer_len;
 
     oscore_cryptoerr_t err = cose_crypto_aead_encrypt(
@@ -49,18 +76,20 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt(
             // message
             buffer, message_len,
             // aad
-            aad, aad_len,
+            state->aad, state->aad_cursor - state->aad,
             // nsec: No secret nonce used with OSCORE
             NULL,
             // npub: public nonce
-            iv,
-            key,
-            alg
+            state->iv,
+            state->key,
+            state->alg
             );
 
+    free(state->aad);
+
     if (err == COSE_OK) {
-        // With NDEBUG, the verbose setup above required for this should not have
-        // any impact on final code.
+        // With NDEBUG, the verbose setup at the top required for this should
+        // not have any impact on final code.
         assert(buffer_len == modified_buffer_len);
     }
 
