@@ -47,3 +47,41 @@ bool oscore_msgerr_native_is_error(oscore_msgerr_native_t err)
 {
     return err;
 }
+
+void oscore_msg_native_optiter_init(oscore_msg_native_t msg,
+        oscore_msg_native_optiter_t *iter
+        )
+{
+    *iter = msg->option;
+}
+
+bool oscore_msg_native_optiter_next(
+        oscore_msg_native_t msg,
+        oscore_msg_native_optiter_t *iter,
+        uint16_t *option_number,
+        const uint8_t **value,
+        size_t *value_len
+        )
+{
+    if (*iter == NULL) {
+        return false;
+    }
+
+    struct mock_opt *o = *iter;
+
+    *option_number = o->number;
+    *value = o->data;
+    *value_len = o->data_len;
+
+    *iter = o->next;
+
+    return true;
+}
+
+void oscore_msg_native_optiter_finish(
+        oscore_msg_native_t msg,
+        oscore_msg_native_optiter_t *iter
+        )
+{
+    // no-op: we didn't allocate anything for iteration
+}
