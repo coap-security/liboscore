@@ -2,11 +2,11 @@ An OSCORE implementation
 ========================
 
 This repository contains code developed to be
-a portable implementation of OSCORE_ (RFC8613)
+a portable implementation of [OSCORE (RFC8613)]
 usable for embedded devices.
 
 OSCORE is a method of protecting (ie. encrypting and verifying)
-exchanges of CoAP_ messages (network traffic between typical IoT devices)
+exchanges of [CoAP] messages (network traffic between typical IoT devices)
 against eavesdropping or manipulation
 in an end-to-end fashion
 without sacrificing the compactness of the messages and protocol implementations.
@@ -21,8 +21,8 @@ as well as the extensive use of in-place operations,
 it is suitable for the smallest class of devices that are capable of IP traffic
 and of performing cryptographic operations at all.
 
-.. _OSCORE: https://tools.ietf.org/html/rfc8613
-.. _CoAP: https://coap.technology/
+[OSCORE (RFC8613)]: https://tools.ietf.org/html/rfc8613
+[CoAP]: https://coap.technology/
 
 State of the project
 --------------------
@@ -59,21 +59,21 @@ Library integrations
 
 CoAP libraries with planned integration:
 
-* RIOT-OS_ (tracked at 11761_)
+* [RIOT-OS] - tracked at [11761]
 
 Potential future candidates:
 (No implementation is being planned right now,
 but they are being looked into for portability)
 
-* libcoap_
-* wakaama_
-* bindings into the Rust_ programming language
+* [libcoap]
+* [wakaama]
+* bindings into the [Rust] programming language
 
-.. _RIOT-OS: http://riot-os.org/
-.. _11761: https://github.com/RIOT-OS/RIOT/issues/11761
-.. _libcoap: https://libcoap.net/
-.. _wakaama: https://github.com/eclipse/wakaama
-.. _Rust: https://www.rust-lang.org/
+[RIOT-OS]: http://riot-os.org/
+[11761]: https://github.com/RIOT-OS/RIOT/issues/11761
+[libcoap]: https://libcoap.net/
+[wakaama]: https://github.com/eclipse/wakaama
+[Rust]: https://www.rust-lang.org/
 
 License
 -------
