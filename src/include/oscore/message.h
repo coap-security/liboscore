@@ -13,6 +13,19 @@
  *  preparation for encryption in place, or plaintext after in-place
  *  decryption) messages.
  *
+ *  @note While in the backend interface there is a @ref oscore_msg_native_t
+ *  type that is typically some kind of pointer and supplied directly to the
+ *  @ref oscore_msg_native_set_code and similar functions, OSCORE's message
+ *  type is a large struct and passed into the equivalent @ref
+ *  oscore_msg_protected_set_code as a reference. This is because library parts
+ *  other than the message API (for example the setup of an encrypted message),
+ *  type needs to be allocated on the stack. The message API itself always uses
+ *  it via pointers, so if you are looking for a precise equivalent to @ref
+ *  oscore_msg_native_t, it's not `oscore_msg_protected_t` but
+ *  `&oscore_msg_protected_t`.
+ *
+ *  @todo Link to "setup of an encrypted message" API
+ *
  *  @{
  */
 
