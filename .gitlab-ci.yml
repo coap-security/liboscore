@@ -13,7 +13,7 @@ test:
 
 pages:
   script:
-    - apt-get update && apt-get -y install doxygen
+    - apt-get update && apt-get -y install doxygen graphviz
     - cd doc && doxygen Doxyfile && cd ..
     - mv doc/html/ public/
   artifacts:
