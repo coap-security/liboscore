@@ -60,6 +60,8 @@ Library integrations
 CoAP libraries with planned integration:
 
 * [RIOT-OS] - tracked at [11761]
+* MoCkoAP – an internal minimal CoAP library used as a mock-up in tests
+* [libcose] – providing the required crypto primitives
 
 Potential future candidates:
 (No implementation is being planned right now,
@@ -67,12 +69,15 @@ but they are being looked into for portability)
 
 * [libcoap]
 * [wakaama]
+* [OpenSSL]
 * bindings into the [Rust] programming language
 
 [RIOT-OS]: http://riot-os.org/
+[libcose]: https://github.com/bergzand/libcose
 [11761]: https://github.com/RIOT-OS/RIOT/issues/11761
 [libcoap]: https://libcoap.net/
 [wakaama]: https://github.com/eclipse/wakaama
+[OpenSSL]: https://www.openssl.org/
 [Rust]: https://www.rust-lang.org/
 
 License
