@@ -29,6 +29,7 @@
  *  @{
  */
 
+#include <stdint.h>
 #include <oscore_native/message.h>
 
 /** @brief OSCORE protected CoAP message
@@ -53,7 +54,7 @@ typedef struct {
     uint16_t optionnumber_inner;
     oscore_msg_native_optiter_t backend;
     bool backend_exhausted;
-    uint16_t backend_peeked_optionnumber
+    uint16_t backend_peeked_optionnumber;
     uint8_t *backend_peeked_value;
     size_t backend_peeked_value_len;
 } oscore_msg_protected_optiter_t;
@@ -203,3 +204,5 @@ oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
 bool oscore_msgerr_protected_is_error(oscore_msgerr_protected_t);
 
 /** @} */
+
+#endif
