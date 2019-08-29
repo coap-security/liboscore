@@ -63,12 +63,15 @@ size_t cbor_intencode(size_t input, uint8_t buf[5], uint8_t type)
     size_t ret = cbor_intsize(input);
     if (ret == 1) {
         buf[0] = input % 256 + type;
+    } else if (ret == 2) {
+        buf[0] = 24 + type;
+        buf[1] = input % 256;
     } else if (ret == 3) {
-        buf[0] = type;
+        buf[0] = 25 + type;
         buf[1] = (input << 8) % 256;
         buf[2] = input % 256;
     } else {
-        buf[0] = type;
+        buf[0] = 26 + type;
         buf[1] = (input << 24) % 256;
         buf[2] = (input << 16) % 256;
         buf[3] = (input << 8) % 256;
@@ -112,7 +115,8 @@ struct aad_sizes predict_aad_size(
     ret.external_aad_length = \
             1 /* array length 5 */ +
             1 /* oscore version 1 */ +
-            cbor_intsize(aeadalg < 0 ? 1 - aeadalg : aeadalg) /* FIXME strings? */ + 
+            1 /* 1-long array of of */ +
+                cbor_intsize(aeadalg < 0 ? 1 - aeadalg : aeadalg) /* FIXME strings? */ +
             cbor_intsize(request_kid_len) + request_kid_len + /* request_kid */
             cbor_intsize(request->used_bytes) + request->used_bytes + /* request_piv */
             cbor_intsize(ret.class_i_length) + ret.class_i_length;
@@ -150,20 +154,20 @@ oscore_cryptoerr_t feed_aad(
 
     // array length 3, "Encrypt0", h''
     err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x83\x68" "Encrypt0" "\x40", 11);
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // full external AAD length
     err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(aad_sizes.external_aad_length, intbuf, 0x40));
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
 
-    // external AAD array start, constant OSCORE version 1
-    err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x85\x01", 2);
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    // external AAD array start, constant OSCORE version 1, array of one element
+    err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x85\x01\x81", 3);
+    if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Used algorithm
     // FIXME strings?
     err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(aeadalg < 0 ? 1 - aeadalg : aeadalg, intbuf, aeadalg < 0 ? 0x20 : 0x00));
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request KID
     uint8_t *request_kid;
@@ -171,15 +175,15 @@ oscore_cryptoerr_t feed_aad(
     oscore_context_get_kid(secctx, requester_role, &request_kid, &request_kid_len);
 
     err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(request_kid_len, intbuf, 0x40));
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
     err = oscore_crypto_aead_decrypt_feed_aad(state, request_kid, request_kid_len);
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request PIV
     err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(request->used_bytes, intbuf, 0x40));
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
     err = oscore_crypto_aead_decrypt_feed_aad(state, &request->partial_iv[PIV_BYTES - request->used_bytes], request->used_bytes);
-    if (!oscore_cryptoerr_is_error(err)) { return err; }
+    if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Class I options
     assert(aad_sizes.class_i_length == 0);
@@ -218,7 +222,7 @@ void build_iv(
     assert(id_piv_len <= iv_len - 6);
 
     iv[0] = id_piv_len;
-    size_t pad1_len = id_piv_len - 6;
+    size_t pad1_len = iv_len - 6 - id_piv_len;
     memset(&iv[1], 0, pad1_len);
     memcpy(&iv[1 + pad1_len], id_piv, id_piv_len);
     memcpy(&iv[iv_len - PIV_BYTES], partiv, PIV_BYTES);
