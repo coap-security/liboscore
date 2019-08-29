@@ -2,7 +2,7 @@
 
 oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secctx)
 {
-    return 10;
+    return 24;
 }
 
 void oscore_context_get_kid(
@@ -19,7 +19,8 @@ void oscore_context_get_kid(
 
 const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx)
 {
-    static uint8_t *c = (uint8_t*) "\x46\x22\xd4\xdd\x6d\x94\x41\x68\xee\xfb\x54\x98\x7c";
+    // 12 bytes ChaCha
+    static uint8_t *c = (uint8_t*) "d\xf0\xbd" "1MK\xe0<'\x0c+\x1c";
     return c;
 }
 const uint8_t *oscore_context_get_key(
@@ -27,6 +28,7 @@ const uint8_t *oscore_context_get_key(
         enum oscore_context_role role
         )
 {
-    static uint8_t *k = (uint8_t*) "\xf0\x91\x0e\xd7\x29\x5e\x6a\xd4\xb5\x4f\xc7\x93\x15\x43\x02\xff";
+    // ChaCha key
+    static uint8_t *k = (uint8_t*) "\xd5" "0\x1e\xb1\x8d\x06xI\x95\x08\x93\xba*\xc8\x91" "A|\x89\xae\t\xdfJ8U\xaa\x00\n\xc9\xff\xf3\x87Q";
     return k;
 }

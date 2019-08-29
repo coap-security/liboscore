@@ -11,21 +11,21 @@ int main()
 {
     oscore_msgerr_native_t msgerr;
 
-    // The message in C.4
+    // A message from plugtest example 1 with ChaCha algorithm
     oscore_msg_native_t msg = oscore_test_msg_create();
     msgerr = oscore_msg_native_append_option(
             msg,
             9,
-            (uint8_t*)"\x09\x14",
+            (uint8_t*)"\x09\x00",
             2);
     assert(!oscore_msgerr_native_is_error(msgerr));
 
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg, &payload, &payload_len);
-    assert(payload_len >= 13);
-    memcpy(payload, "\x61\x2f\x10\x92\xf1\x77\x6f\x1c\x16\x68\xb3\x82\x5e", 13);
-    msgerr = oscore_msg_native_trim_payload(msg, 13);
+    assert(payload_len >= 32);
+    memcpy(payload, "\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb", 32);
+    msgerr = oscore_msg_native_trim_payload(msg, 32);
     assert(!oscore_msgerr_native_is_error(msgerr));
 
     enum oscore_unprotect_request_result oscerr;
