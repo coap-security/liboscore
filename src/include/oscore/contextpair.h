@@ -2,6 +2,7 @@
 #define OSCORE_CONTEXTPAIR_H
 
 #include <oscore_native/crypto.h>
+#include <oscore/helpers.h>
 
 /** @file */
 

@@ -5,6 +5,7 @@
 
 #include <oscore_native/message.h>
 #include <oscore/message.h>
+#include <oscore/helpers.h>
 #include <oscore/contextpair.h>
 
 /** @file */
@@ -25,40 +26,6 @@
  *
  * @{
  */
-
-/** @brief The Partial IV length defined for OSCORE */
-#define PIV_BYTES 5
-
-/** @brief Message correlation data
- *
- * This type contains all the information that needs to be kept around to match
- * a request and a response. On the server side, it contains information on
- * whether the request's partial IV can be reused.
- *
- * @warning The Request ID does not keep a reference to the full security
- * context (but to parts of it). It is crucial that all calls in which an @ref
- * oscore_requestid_t is used are always done with the same security context.
- *
- * @warning A @ref oscore_requestid_t must never be copied around by the
- * application. If a copy is needed (eg. to build observation notifications
- * from), use the @ref oscore_requestid_clone function.
- *
- * @todo Decide whether it may be moved (as it may be part of the
- * invalidation-at-context-mutation game).
- */
-typedef struct {
-    /* it may be a good idea to instead reference the security context, and
-     * optionally handle all context locking here and not in the message */
-
-    /** @private The number of bytes in partial_iv */
-    uint8_t used_bytes;
-    /** @private The Partial IV, left-padded with zeros. */
-    uint8_t partial_iv[PIV_BYTES];
-
-    /** @private Whether a number was removed from the receive sequence window
-     * for this particular IV */
-    bool is_first_use;
-} oscore_requestid_t;
 
 /** @brief Pre-parsed OSCORE header information
  *
