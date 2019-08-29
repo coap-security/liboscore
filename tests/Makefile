@@ -8,10 +8,12 @@ LDFLAGS += -fsanitize=undefined -fsanitize=address
 
 all: test
 
+vpath %.c ../src/
+
 include Makefile.mockoap
 include Makefile.libcose
 
-test: cryptobackend-aead standalone-demo
+test: cryptobackend-aead standalone-demo unprotect-demo
 	set -ex; for x in $^; do ./$$x; done
 
 include $(wildcard *.d)
@@ -19,6 +21,8 @@ include $(wildcard *.d)
 standalone-demo: standalone-demo.o ${BACKEND_OBJS}
 
 cryptobackend-aead: cryptobackend-aead.o ${BACKEND_OBJS}
+
+unprotect-demo: unprotect-demo.o contextpair.o protection.o ${BACKEND_OBJS}
 
 libs:
 	mkdir libs
@@ -30,6 +34,7 @@ libs:
 clean:
 	rm -f standalone-demo
 	rm -f cryptobackend-aead
+	rm -f unprotect-demo
 	rm -f *.o
 	rm -f *.d
 

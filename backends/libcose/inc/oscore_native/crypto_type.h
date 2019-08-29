@@ -15,4 +15,6 @@ typedef struct {
 
 typedef oscore_crypto_aead_encryptstate_t oscore_crypto_aead_decryptstate_t;
 
+#define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)12)
+
 typedef int oscore_cryptoerr_t;

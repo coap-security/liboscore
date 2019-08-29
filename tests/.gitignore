@@ -2,3 +2,4 @@
 *.d
 standalone-demo
 cryptobackend-aead
+unprotect-demo
