@@ -13,4 +13,6 @@ typedef struct {
     const uint8_t *key;
 } oscore_crypto_aead_encryptstate_t;
 
+typedef oscore_crypto_aead_encryptstate_t oscore_crypto_aead_decryptstate_t;
+
 typedef int oscore_cryptoerr_t;

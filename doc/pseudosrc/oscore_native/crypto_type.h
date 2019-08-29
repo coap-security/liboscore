@@ -26,6 +26,14 @@ typedef int32_t oscore_crypto_aeadalg_t;
  */
 typedef struct {} oscore_crypto_aead_encryptstate_t;
 
+/** @brief State of an ongoing AEAD operation
+ *
+ * This contains all state that is held in an ongoing AEAD decrypt operation,
+ * and is fully anologous to @ref oscore_crypto_aead_encryptstate_t, and is
+ * expected to often be a type alias of it.
+ */
+typedef struct {} oscore_crypto_aead_decryptstate_t;
+
 /** @brief Type of COSE HKDF algorithms
  *
  * This describes a KDF that can be used as HKDF algorithm in an OSCORE

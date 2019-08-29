@@ -150,29 +150,54 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_inplace(
         size_t buffer_len
         );
 
-/** @brief Decrypt a buffer in-place with an AEAD algorithm
+/** @brief Start an AEAD decryption operation
  *
- * @param[in] alg The AEAD algorithm to use
- * @param[inout] buffer Memory location that contains the ciphertext followed by the tag
- * @param[in] buffer_len Length of the complete buffer
- * @param[in] aad Memory location that contains the AAD
- * @param[in] aad_len Length of the AAD
- * @param[in] iv Memory location of the (fully composed, full length for this algorithm) initialization vector (nonce)
- * @param[in] key Memory location of the encryption key (of the appropriate size for this algorithm)
+ * This is fully analogous to @ref oscore_crypto_aead_encrypt_start; see there.
  *
- * When successful, the application can read find buffer_len minus @ref
- * oscore_crypto_aead_get_taglength(alg) bytes of plain text in the buffer, and
- * must disregard the trailing bytes.
  */
-oscore_cryptoerr_t oscore_crypto_aead_decrypt(
+oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
+        oscore_crypto_aead_decryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
-	uint8_t *buffer,
-	size_t buffer_len,
-	const uint8_t *aad,
-	size_t aad_len,
-	const uint8_t *iv,
-	const uint8_t *key
-	);
+        size_t aad_len,
+        uint8_t plaintext_len,
+        const uint8_t *iv,
+        const uint8_t *key
+        );
+
+/** @brief Provide Additional Authenticated Data (AAD) for an ongoing AEAD decryption operation
+ *
+ * This is fully analogous to @ref oscore_crypto_aead_decrypt_feed_aad; see there.
+ */
+oscore_cryptoerr_t oscore_crypto_aead_decrypt_feed_aad(
+        oscore_crypto_aead_decryptstate_t *state,
+        uint8_t *aad_chunk,
+        size_t aad_chunk_len
+        );
+
+/** @brief Finish an AEAD decryption operation by decrypting a buffer that holds ciphertext followed by tag in place
+ *
+ * This is largely analogous to @ref oscore_crypto_aead_encrypt_inplace.
+ *
+ * @param[inout] state Decryption state use and finalize
+ * @param[inout] buffer Memory location in which the concatenation of ciphertext and tag is stored, and where the plaintext will be written to
+ * @param[in] buffer_len Readable size of the buffer (writes will happen to all places but usually not to the last tag bytes)
+ *
+ * The @param buffer_len must be exactly the sum of the ``plaintext_len`` given
+ * at setup, and the algorithm's tag length; the backends may rely on that. The
+ * length is given explicitly to ensure that no reads or writes happen outside
+ * the provided buffer in case the involved parties disagree on any of the
+ * input values, and to ease static analysis.
+ *
+ * The function reads the ciphertext and the tag from @param buffer, and writes
+ * the resulting plaintext to the same location. Implementations usually leave
+ * the tag bytes in place, but may leave them in any state.
+ */
+oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
+        oscore_crypto_aead_encryptstate_t *state,
+        uint8_t *buffer,
+        size_t buffer_len
+        );
+
 
 /** @brief Set up an algorithm descriptor from a numerically identified COSE
  * Direct Key with KDF
