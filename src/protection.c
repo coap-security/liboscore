@@ -350,6 +350,11 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
         return OSCORE_UNPROTECT_REQUEST_INVALID;
     }
 
+    // FIXME: for testing only!
+    //  oscore_msg_native_t should not be accessed like that!
+    protected->payload_len = plaintext_length;
+    unprotected->backend = protected;
+
     // FIXME continue here: check for partial IV, possibly promoting the request_id to have a is_first_use bit set
     return OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }
