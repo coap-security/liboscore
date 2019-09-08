@@ -1,6 +1,6 @@
 #include <assert.h>
-#include "oscore/message.h"
-#include "oscore_native/message.h"
+#include <oscore/message.h>
+#include <oscore_native/message.h>
 
 typedef enum {
     /** Place this in Class E unconditionally, and refuse to decrypt messages

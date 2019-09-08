@@ -6,6 +6,7 @@
 #include <oscore_native/test.h>
 #include <oscore/protection.h>
 #include <oscore/contextpair.h>
+#include <oscore/message.h>
 
 int main()
 {
