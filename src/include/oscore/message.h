@@ -55,7 +55,7 @@ typedef struct {
     oscore_msg_native_optiter_t backend;
     bool backend_exhausted;
     uint16_t backend_peeked_optionnumber;
-    uint8_t *backend_peeked_value;
+    const uint8_t *backend_peeked_value;
     size_t backend_peeked_value_len;
 } oscore_msg_protected_optiter_t;
 
@@ -151,7 +151,7 @@ bool oscore_msg_protected_optiter_next(
         oscore_msg_protected_t msg,
         oscore_msg_protected_optiter_t *iter,
         uint16_t *option_number,
-        uint8_t *const *value,
+        const uint8_t **value,
         size_t *value_len
         );
 

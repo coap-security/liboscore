@@ -352,5 +352,10 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
 
     oscore_context_strikeout_requestid(secctx, request_id);
 
+    // FIXME: for testing only!
+    //  oscore_msg_native_t should not be accessed like that!
+    protected->payload_len = plaintext_length;
+    unprotected->backend = protected;
+
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }

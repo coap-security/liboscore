@@ -22,7 +22,7 @@ standalone-demo: standalone-demo.o ${BACKEND_OBJS}
 
 cryptobackend-aead: cryptobackend-aead.o ${BACKEND_OBJS}
 
-unprotect-demo: unprotect-demo.o contextpair.o protection.o ${BACKEND_OBJS}
+unprotect-demo: unprotect-demo.o contextpair.o protection.o oscore_message.o ${BACKEND_OBJS}
 
 libs:
 	mkdir libs
