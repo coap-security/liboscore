@@ -267,17 +267,26 @@ void oscore_msg_protected_map_payload(
     size_t value_len;
     while (parse_option(p, &delta, (const uint8_t**)&p, &value_len)) {
         p += value_len;
-        if (p == native_payload_end) {
-            // No Payload
-            *payload = NULL;
+        if (p >= native_payload_end) {
+            // No Payload (but possibly over-long option)
+            // FIXME: for the over-long option part, see below about error cases
+            *payload = native_payload_end;
             *payload_len = 0;
             return;
         }
-        assert(p < native_payload_end);
     }
     if (*p == 0xFF) {
         p++; // Skip Payload marker
         *payload = p;
         *payload_len = native_payload_end - p;
+    } else {
+        // FIXME: This is an error case, but the API does not allow passing
+        // errors back here -- primarily because an application can not
+        // reliably make sense of the payload before having gone through all
+        // (possibly critical) options, in which case the error would have
+        // popped up earlier. (Possible mitigations: API change, documentation
+        // pointing to previous option iteration)
+        *payload = p;
+        *payload_len = 0;
     }
 }

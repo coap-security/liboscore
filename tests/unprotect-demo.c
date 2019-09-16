@@ -99,7 +99,6 @@ int main()
     uint8_t *p_payload;
     size_t p_payload_len;
     oscore_msg_protected_map_payload(&unprotected, &p_payload, &p_payload_len);
-    assert(p_payload == NULL);
     assert(p_payload_len == 0);
     
     oscore_test_msg_destroy(msg);
