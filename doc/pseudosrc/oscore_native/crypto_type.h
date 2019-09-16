@@ -48,6 +48,15 @@ typedef struct {} oscore_crypto_aead_decryptstate_t;
  */
 #define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)13)
 
+/** @brief Maximum length of an AEAD key
+ *
+ * This defines the maximum length of AEAD key any supported algorithm has. It
+ * is used in allocations of security contexts.
+ *
+ * It must be defined in the backend's own ``oscore_native/crypto_type.h``.
+ */
+#define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)16)
+
 /** @brief Type of COSE HKDF algorithms
  *
  * This describes a KDF that can be used as HKDF algorithm in an OSCORE

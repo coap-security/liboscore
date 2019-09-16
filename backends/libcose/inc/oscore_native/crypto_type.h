@@ -17,4 +17,6 @@ typedef oscore_crypto_aead_encryptstate_t oscore_crypto_aead_decryptstate_t;
 
 #define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)12)
 
+#define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)32)
+
 typedef int oscore_cryptoerr_t;

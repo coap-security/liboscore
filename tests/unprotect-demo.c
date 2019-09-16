@@ -6,10 +6,19 @@
 #include <oscore_native/test.h>
 #include <oscore/protection.h>
 #include <oscore/contextpair.h>
+#include <oscore/context_impl/primitive.h>
 
 int main()
 {
     oscore_msgerr_native_t msgerr;
+
+    struct oscore_context_primitive primitive = {
+        .aeadalg = 24,
+        .common_iv = "d\xf0\xbd" "1MK\xe0<'\x0c+\x1c",
+
+        .recipient_id_len = 0,
+        .recipient_key = "\xd5" "0\x1e\xb1\x8d\x06xI\x95\x08\x93\xba*\xc8\x91" "A|\x89\xae\t\xdfJ8U\xaa\x00\n\xc9\xff\xf3\x87Q",
+    };
 
     // A message from plugtest example 1 with ChaCha algorithm
     oscore_msg_native_t msg = oscore_test_msg_create();

@@ -19,6 +19,9 @@
 /** @brief The Partial IV length defined for OSCORE */
 #define PIV_BYTES 5
 
+/** @brief Number of bytes in the IV that are not usable for key IDs */
+#define IV_KEYID_UNUSABLE (1 + PIV_BYTES)
+
 /** @brief Message correlation data
  *
  * This type contains all the information that needs to be kept around to match
