@@ -41,7 +41,7 @@ typedef enum {
  * @param[out] value_len The length of the option value
  * @return true, if the option was parsed, false if either a payload marker or an invalid byte was encountered
  */
-bool parse_option(
+static bool parse_option(
         const uint8_t *option,
         uint16_t *delta,
         const uint8_t **value,
@@ -92,7 +92,7 @@ bool parse_option(
  * @param[out] value Data inside the read CoAP option
  * @param[out] value_len Number of bytes inside the read CoAP option
  */
-void optiter_inner_next(
+static void optiter_inner_next(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter,
         const uint8_t **value,
@@ -127,7 +127,7 @@ void optiter_inner_next(
  * Reads the next inner option number into the iterator without advancing the
  * cursor. If there is none, the number is set to 0.
  */
-void optiter_peek_inner_number(
+static void optiter_peek_inner_number(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
 )
