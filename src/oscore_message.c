@@ -64,7 +64,7 @@ bool parse_option(
         d += *option;
         option += 1;
     } else if (d == 14) {
-        d += (option[0] << 8u) + option[1];
+        d += (option[0] << 8u) + option[1] + 255;
         option += 2;
     }
 
@@ -72,7 +72,7 @@ bool parse_option(
         l += *option;
         option += 1;
     } else if (l == 14) {
-        l += (option[0] << 8u) + option[1];
+        l += (option[0] << 8u) + option[1] + 255;
         option += 2;
     }
 
