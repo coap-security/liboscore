@@ -116,7 +116,7 @@ struct aad_sizes predict_aad_size(
             1 /* array length 5 */ +
             1 /* oscore version 1 */ +
             1 /* 1-long array of of */ +
-                cbor_intsize(aeadalg < 0 ? 1 - aeadalg : aeadalg) /* FIXME strings? */ +
+                cbor_intsize(aeadalg < 0 ? -1 - aeadalg : aeadalg) /* FIXME strings? */ +
             cbor_intsize(request_kid_len) + request_kid_len + /* request_kid */
             cbor_intsize(request->used_bytes) + request->used_bytes + /* request_piv */
             cbor_intsize(ret.class_i_length) + ret.class_i_length;
@@ -166,7 +166,7 @@ oscore_cryptoerr_t feed_aad(
 
     // Used algorithm
     // FIXME strings?
-    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(aeadalg < 0 ? 1 - aeadalg : aeadalg, intbuf, aeadalg < 0 ? 0x20 : 0x00));
+    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(aeadalg < 0 ? -1 - aeadalg : aeadalg, intbuf, aeadalg < 0 ? 0x20 : 0x00));
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request KID
