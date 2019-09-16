@@ -81,22 +81,24 @@ int main()
     size_t opt_len;
 
     // Test all options one after the other
-    oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(opt_num == 9 && opt_len == 2 && memcmp(opt_val, "\x09\x00", 2) == 0);
-    oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(opt_num == 11 && opt_len == 6 && memcmp(opt_val, "oscore", 6) == 0);
-    oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(opt_num == 11 && opt_len == 5 && memcmp(opt_val, "hello", 5) == 0);
-    oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(opt_num == 11 && opt_len == 1 && *opt_val == '1');
-    assert(!oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len));
+
+    bool next_ok;
+    next_ok = oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
+    assert(next_ok && opt_num == 9 && opt_len == 2 && memcmp(opt_val, "\x09\x00", 2) == 0);
+    next_ok = oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
+    assert(next_ok && opt_num == 11 && opt_len == 6 && memcmp(opt_val, "oscore", 6) == 0);
+    next_ok = oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
+    assert(next_ok && opt_num == 11 && opt_len == 5 && memcmp(opt_val, "hello", 5) == 0);
+    next_ok = oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
+    assert(next_ok && opt_num == 11 && opt_len == 1 && *opt_val == '1');
+    next_ok = oscore_msg_protected_optiter_next(unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
+    assert(!next_ok);
 
     oscore_msg_protected_optiter_finish(unprotected, &i_iter);
 
     uint8_t *p_payload;
     size_t p_payload_len;
     oscore_msg_protected_map_payload(&unprotected, &p_payload, &p_payload_len);
-    assert(p_payload == NULL);
     assert(p_payload_len == 0);
     
     oscore_test_msg_destroy(msg);

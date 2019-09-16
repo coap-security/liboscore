@@ -41,7 +41,7 @@ typedef enum {
  * @param[out] value_len The length of the option value
  * @return true, if the option was parsed, false if either a payload marker or an invalid byte was encountered
  */
-bool parse_option(
+static bool parse_option(
         const uint8_t *option,
         uint16_t *delta,
         const uint8_t **value,
@@ -62,15 +62,17 @@ bool parse_option(
 
     if (d == 13) {
         d += *option;
+        option += 1;
     } else if (d == 14) {
-        d += (option[0] << 8u) + option[1];
+        d += (option[0] << 8u) + option[1] + 255;
         option += 2;
     }
 
     if (l == 13) {
         l += *option;
+        option += 1;
     } else if (l == 14) {
-        l += (option[0] << 8u) + option[1];
+        l += (option[0] << 8u) + option[1] + 255;
         option += 2;
     }
 
@@ -90,7 +92,7 @@ bool parse_option(
  * @param[out] value Data inside the read CoAP option
  * @param[out] value_len Number of bytes inside the read CoAP option
  */
-void optiter_inner_next(
+static void optiter_inner_next(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter,
         const uint8_t **value,
@@ -100,6 +102,7 @@ void optiter_inner_next(
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
+    payload_len -= msg->tag_length;
 
     if (payload_len <= iter->cursor_inner) {
         // End of payload reached
@@ -124,7 +127,7 @@ void optiter_inner_next(
  * Reads the next inner option number into the iterator without advancing the
  * cursor. If there is none, the number is set to 0.
  */
-void optiter_peek_inner_number(
+static void optiter_peek_inner_number(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
 )
@@ -132,6 +135,7 @@ void optiter_peek_inner_number(
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
+    payload_len -= msg->tag_length;
 
     if (payload_len <= iter->cursor_inner) {
         // End of payload reached
@@ -187,9 +191,7 @@ bool oscore_msg_protected_optiter_next(
         size_t *value_len
         )
 {
-    if (iter == NULL) {
-        return false;
-    }
+    assert(iter != NULL);
 
     if (iter->optionnumber_inner == 0 && iter->backend_exhausted) {
         return false;
@@ -255,7 +257,7 @@ void oscore_msg_protected_map_payload(
     uint8_t *p;
     size_t native_payload_len;
     oscore_msg_native_map_payload(msg->backend, &p, &native_payload_len);
-    uint8_t *native_payload_end = p + native_payload_len;
+    uint8_t *native_payload_end = p + (native_payload_len - msg->tag_length);
 
     p++; // Skip Code
 
@@ -263,17 +265,26 @@ void oscore_msg_protected_map_payload(
     size_t value_len;
     while (parse_option(p, &delta, (const uint8_t**)&p, &value_len)) {
         p += value_len;
-        if (p == native_payload_end) {
-            // No Payload
-            *payload = NULL;
+        if (p >= native_payload_end) {
+            // No Payload (but possibly over-long option)
+            // FIXME: for the over-long option part, see below about error cases
+            *payload = native_payload_end;
             *payload_len = 0;
             return;
         }
-        assert(p < native_payload_end);
     }
     if (*p == 0xFF) {
         p++; // Skip Payload marker
         *payload = p;
         *payload_len = native_payload_end - p;
+    } else {
+        // FIXME: This is an error case, but the API does not allow passing
+        // errors back here -- primarily because an application can not
+        // reliably make sense of the payload before having gone through all
+        // (possibly critical) options, in which case the error would have
+        // popped up earlier. (Possible mitigations: API change, documentation
+        // pointing to previous option iteration)
+        *payload = p;
+        *payload_len = 0;
     }
 }
