@@ -38,6 +38,16 @@
  */
 typedef struct {
     oscore_msg_native_t backend;
+    /** @brief Number of bytes at the end of backend's plaintext reserved for the tag
+     *
+     * This information is not available from the message alone as the message
+     * stores no pointer to the context, and thus needs to be replicated here
+     * for the message to be usable on its own. While the need to store this
+     * information could be circumvented in received messages by truncating
+     * them, messages being written require a place to store that datum.
+     * */
+    size_t tag_length;
+
     void *aad_state; // Only for writing
     uint16_t last_e_option; // Only for writing messages (otherwise it's in the iterator)
     uint16_t last_i_option; // like last_e_option

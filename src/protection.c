@@ -354,8 +354,10 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
 
     // FIXME: for testing only!
     //  oscore_msg_native_t should not be accessed like that!
-    protected->payload_len = plaintext_length;
+
+    // FIXME all of that needs to be initialized
     unprotected->backend = protected;
+    unprotected->tag_length = tag_length;
 
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }

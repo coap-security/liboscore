@@ -102,6 +102,7 @@ void optiter_inner_next(
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
+    payload_len -= msg->tag_length;
 
     if (payload_len <= iter->cursor_inner) {
         // End of payload reached
@@ -134,6 +135,7 @@ void optiter_peek_inner_number(
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
+    payload_len -= msg->tag_length;
 
     if (payload_len <= iter->cursor_inner) {
         // End of payload reached
@@ -257,7 +259,7 @@ void oscore_msg_protected_map_payload(
     uint8_t *p;
     size_t native_payload_len;
     oscore_msg_native_map_payload(msg->backend, &p, &native_payload_len);
-    uint8_t *native_payload_end = p + native_payload_len;
+    uint8_t *native_payload_end = p + (native_payload_len - msg->tag_length);
 
     p++; // Skip Code
 
