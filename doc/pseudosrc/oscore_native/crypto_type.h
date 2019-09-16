@@ -14,6 +14,8 @@
  */
 typedef int32_t oscore_crypto_aeadalg_t;
 
+// We might want to merge this with decryptstate to avoid duplication in AAD feeding
+//
 /** @brief State of an ongoing AEAD operation
  *
  * This contains all state that is held in an ongoing AEAD encrypt operation.

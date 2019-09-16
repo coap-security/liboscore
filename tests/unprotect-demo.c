@@ -19,6 +19,10 @@ int main()
         .recipient_id_len = 0,
         .recipient_key = "\xd5" "0\x1e\xb1\x8d\x06xI\x95\x08\x93\xba*\xc8\x91" "A|\x89\xae\t\xdfJ8U\xaa\x00\n\xc9\xff\xf3\x87Q",
     };
+    oscore_context_t secctx = {
+        .type = OSCORE_CONTEXT_PRIMITIVE,
+        .data = (void*)(&primitive),
+    };
 
     // A message from plugtest example 1 with ChaCha algorithm
     oscore_msg_native_t msg = oscore_test_msg_create();
@@ -63,10 +67,9 @@ int main()
     }
     assert(found_oscoreoption);
 
-    oscore_context_t *secctx = NULL;
-    oscerr = oscore_unprotect_request(msg, &unprotected, header, secctx, &request_id);
+    oscerr = oscore_unprotect_request(msg, &unprotected, header, &secctx, &request_id);
 
-    assert(oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE);
+    assert(oscerr == OSCORE_UNPROTECT_REQUEST_OK);
 
     oscore_test_msg_destroy(msg);
     return 0;

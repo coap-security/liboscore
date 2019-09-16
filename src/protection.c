@@ -334,7 +334,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
             aad_sizes.aad_length,
             plaintext_length,
             iv,
-            oscore_context_get_key(secctx, OSCORE_ROLE_SENDER)
+            oscore_context_get_key(secctx, OSCORE_ROLE_RECIPIENT)
             );
     if (!oscore_cryptoerr_is_error(err)) {
         err = feed_aad(&dec, aad_sizes, secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
@@ -350,6 +350,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
         return OSCORE_UNPROTECT_REQUEST_INVALID;
     }
 
-    // FIXME continue here: check for partial IV, possibly promoting the request_id to have a is_first_use bit set
-    return OSCORE_UNPROTECT_REQUEST_DUPLICATE;
+    oscore_context_strikeout_requestid(secctx, request_id);
+
+    return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }

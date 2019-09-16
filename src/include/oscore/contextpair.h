@@ -39,10 +39,31 @@ enum oscore_context_role {
     OSCORE_ROLE_RECIPIENT,
 };
 
+enum oscore_context_type {
+    /** A simple, RAM-only, fully pre-derived security context */
+    OSCORE_CONTEXT_PRIMITIVE,
+};
+
 // FIXME
 typedef struct {
-    void *dummy;
+    enum oscore_context_type type;
+    void *data;
 } oscore_context_t;
+
+/** @brief Determine whether a request is a replay, and strike it out of the replay window
+ *
+ * @param[inout] secctx Security context pair in which @p request_id is used
+ * @param[input] request_id Request ID whose partial IV (and thus sequence number) to verify
+ *
+ * This function looks up whether the sequence number represented by @p
+ * request_id was used before. If it was, or if it could not be determined
+ * whether it was, its is_first_use bit is set to false. If this is a confirmed
+ * first use of the sequence number, it is struck out of the replay window, and
+ * the bit is set to true.
+ */
+void oscore_context_strikeout_requestid(
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id);
 
 oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secctx);
 
