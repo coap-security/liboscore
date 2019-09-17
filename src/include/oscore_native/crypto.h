@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <oscore/helpers.h>
 #include <oscore_native/crypto_type.h>
 
 /** @brief Set up an algorithm descriptor from a numerically identified COSE
@@ -32,7 +33,7 @@
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, int32_t number);
+oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, int32_t number) OSCORE_NONNULL;
 /** @brief Set up an algorithm descriptor from a string-identified COSE
  * Algorithm
  *
@@ -46,7 +47,7 @@ oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, 
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len);
+oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len) OSCORE_NONNULL;
 
 /** @brief Get the tag length that is used for a particular algorithm
  *
@@ -106,7 +107,7 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
         uint8_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Provide Additional Authenticated Data (AAD) for an ongoing AEAD encryption operation
  *
@@ -155,7 +156,7 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_inplace(
         oscore_crypto_aead_encryptstate_t *state,
         uint8_t *buffer,
         size_t buffer_len
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Start an AEAD decryption operation
  *
@@ -169,7 +170,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
         uint8_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Provide Additional Authenticated Data (AAD) for an ongoing AEAD decryption operation
  *
@@ -203,7 +204,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
         oscore_crypto_aead_encryptstate_t *state,
         uint8_t *buffer,
         size_t buffer_len
-        );
+        ) OSCORE_NONNULL;
 
 
 /** @brief Set up an algorithm descriptor from a numerically identified COSE
@@ -217,7 +218,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, int32_t number);
+oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, int32_t number) OSCORE_NONNULL;
 /** @brief Set up an algorithm descriptor from a string-identified COSE
  * Direct Key with KDF
  *
@@ -231,7 +232,7 @@ oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, 
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_hkdf_from_string(oscore_crypto_hkdfalg_t *alg, uint8_t *string, size_t string_len);
+oscore_cryptoerr_t oscore_crypto_hkdf_from_string(oscore_crypto_hkdfalg_t *alg, uint8_t *string, size_t string_len) OSCORE_NONNULL;
 
 // Having info as a buffer is really inconvenient as I'd rather feed that slice
 // by slice given it contains potentially long id / id_context. 
@@ -247,7 +248,7 @@ oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 		size_t info_length,
 		uint8_t *out,
 		size_t out_length
-		);
+		) OSCORE_NONNULL;
 
 /** Return true if an error type indicates an unsuccessful operation */
 bool oscore_cryptoerr_is_error(oscore_cryptoerr_t);

@@ -30,6 +30,7 @@
  */
 
 #include <stdint.h>
+#include <oscore/helpers.h>
 #include <oscore_native/message.h>
 
 /** @brief OSCORE protected CoAP message
@@ -81,9 +82,9 @@ typedef enum {
 } oscore_msgerr_protected_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
-uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg);
+uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg) OSCORE_NONNULL;
 /** Set the inner CoAP code (request method or response code) of a protected message */
-void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code);
+void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code) OSCORE_NONNULL;
 
 /** @brief Append an option to a protected CoAP message
  *
@@ -142,7 +143,7 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
 void oscore_msg_protected_optiter_init(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Iterate through options of a CoAP protected message
  *
@@ -163,7 +164,7 @@ bool oscore_msg_protected_optiter_next(
         uint16_t *option_number,
         const uint8_t **value,
         size_t *value_len
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Clean up an option iterator
  *
@@ -176,7 +177,7 @@ bool oscore_msg_protected_optiter_next(
 void oscore_msg_protected_optiter_finish(
         oscore_msg_protected_t msg,
         oscore_msg_protected_optiter_t *iter
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Provide address and size information to writable payload
  *
@@ -194,7 +195,7 @@ void oscore_msg_protected_map_payload(
         oscore_msg_protected_t *msg,
         uint8_t **payload,
         size_t *payload_len
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Shorten the payload to a given length
  *
@@ -208,7 +209,7 @@ void oscore_msg_protected_map_payload(
 oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
         oscore_msg_protected_t *msg,
         size_t payload_len
-        );
+        ) OSCORE_NONNULL;
 
 /** Return true if an error type indicates an unsuccessful operation */
 bool oscore_msgerr_protected_is_error(oscore_msgerr_protected_t);

@@ -58,7 +58,7 @@ typedef struct {
  * @param[in] input_len Length of the encoded OSCORE option
  * @return true if the option could be parsed entirely.
  */
-bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input, size_t input_len);
+bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input, size_t input_len) OSCORE_NONNULL;
 
 /** @brief Clone a request @ref oscore_requestid_t
  *
@@ -69,7 +69,7 @@ bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input,
  * partial IV" flag to false, thus ensuring that at most one response is sent
  * using the client-provided nonce.
  */
-void oscore_requestid_clone(oscore_requestid_t *dest, oscore_requestid_t *src);
+void oscore_requestid_clone(oscore_requestid_t *dest, oscore_requestid_t *src) OSCORE_NONNULL;
 
 /** @brief Results of unprotect request operations
  *
@@ -123,7 +123,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
         oscore_oscoreoption_t header,
         oscore_context_t *secctx,
         oscore_requestid_t *request_id
-        );
+        ) OSCORE_NONNULL;
 
 /** @brief Results of unprotect response operations
  *

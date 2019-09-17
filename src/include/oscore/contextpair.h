@@ -63,7 +63,7 @@ typedef struct {
  */
 void oscore_context_strikeout_requestid(
         oscore_context_t *secctx,
-        oscore_requestid_t *request_id);
+        oscore_requestid_t *request_id) OSCORE_NONNULL;
 
 oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secctx);
 
@@ -72,13 +72,13 @@ void oscore_context_get_kid(
         enum oscore_context_role role,
         uint8_t **kid,
         size_t *kid_len
-        );
+        ) OSCORE_NONNULL;
 
-const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx);
+const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx) OSCORE_NONNULL;
 const uint8_t *oscore_context_get_key(
         const oscore_context_t *secctx,
         enum oscore_context_role role
-        );
+        ) OSCORE_NONNULL;
 
 /** @} */
 

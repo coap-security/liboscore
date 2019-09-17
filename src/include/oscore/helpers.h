@@ -1,6 +1,9 @@
 #ifndef OSCORE_HELPERS_H
 #define OSCORE_HELPERS_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 /** @file */
 
 /** @ingroup oscore_api
@@ -52,6 +55,17 @@ typedef struct {
      * for this particular IV */
     bool is_first_use;
 } oscore_requestid_t;
+
+/** @brief Portability helper for declaring pointers non-null
+ *
+ * Postfix this to a function signature to declare that none of its pointers
+ * may ever be NULL pointers.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#define OSCORE_NONNULL __attribute__((nonnull))
+#else
+#define OSCORE_NONNULL
+#endif
 
 /** @} */
 
