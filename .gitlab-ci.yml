@@ -10,6 +10,8 @@ test:
     # different steps works around that.
     - make libs
     - make test
+    - apt-get -y install clang
+    - make clean test
 
 pages:
   script:
