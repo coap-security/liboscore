@@ -11,7 +11,7 @@ test:
     - make libs
     - make test
     - apt-get -y install clang
-    - make clean test
+    - make clean test CC=clang
 
 pages:
   script:
