@@ -61,24 +61,29 @@ typedef struct {
  * first use of the sequence number, it is struck out of the replay window, and
  * the bit is set to true.
  */
+OSCORE_NONNULL
 void oscore_context_strikeout_requestid(
         oscore_context_t *secctx,
-        oscore_requestid_t *request_id) OSCORE_NONNULL;
+        oscore_requestid_t *request_id);
 
 oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secctx);
 
+OSCORE_NONNULL
 void oscore_context_get_kid(
         const oscore_context_t *secctx,
         enum oscore_context_role role,
         uint8_t **kid,
         size_t *kid_len
-        ) OSCORE_NONNULL;
+        );
 
-const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx) OSCORE_NONNULL;
+OSCORE_NONNULL
+const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx);
+
+OSCORE_NONNULL
 const uint8_t *oscore_context_get_key(
         const oscore_context_t *secctx,
         enum oscore_context_role role
-        ) OSCORE_NONNULL;
+        );
 
 /** @} */
 

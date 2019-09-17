@@ -58,7 +58,7 @@ typedef struct {
 
 /** @brief Portability helper for declaring pointers non-null
  *
- * Postfix this to a function signature to declare that none of its pointers
+ * Prefix this to a function signature to declare that none of its pointers
  * may ever be NULL pointers.
  */
 #if defined(__GNUC__) || defined(__clang__)

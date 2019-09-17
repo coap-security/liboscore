@@ -82,9 +82,11 @@ typedef enum {
 } oscore_msgerr_protected_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
-uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg) OSCORE_NONNULL;
+OSCORE_NONNULL
+uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg);
 /** Set the inner CoAP code (request method or response code) of a protected message */
-void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code) OSCORE_NONNULL;
+OSCORE_NONNULL
+void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code);
 
 /** @brief Append an option to a protected CoAP message
  *
@@ -140,10 +142,11 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
  * Callers of this function must call @ref oscore_msg_protected_optiter_finish
  * when done and before attempting to alter the message.
  */
+OSCORE_NONNULL
 void oscore_msg_protected_optiter_init(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Iterate through options of a CoAP protected message
  *
@@ -158,13 +161,14 @@ void oscore_msg_protected_optiter_init(
  *
  * If the iterator has been exhausted, return false.
  */
+OSCORE_NONNULL
 bool oscore_msg_protected_optiter_next(
         oscore_msg_protected_t msg,
         oscore_msg_protected_optiter_t *iter,
         uint16_t *option_number,
         const uint8_t **value,
         size_t *value_len
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Clean up an option iterator
  *
@@ -174,10 +178,11 @@ bool oscore_msg_protected_optiter_next(
  * @param[inout] iter Iterator (cursor) that will not be used any more after
  *     this invocation
  */
+OSCORE_NONNULL
 void oscore_msg_protected_optiter_finish(
         oscore_msg_protected_t msg,
         oscore_msg_protected_optiter_t *iter
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Provide address and size information to writable payload
  *
@@ -191,11 +196,12 @@ void oscore_msg_protected_optiter_finish(
  * indicating that there is insufficient remaining space in the allocated
  * message to send any non-zero payload.
  */
+OSCORE_NONNULL
 void oscore_msg_protected_map_payload(
         oscore_msg_protected_t *msg,
         uint8_t **payload,
         size_t *payload_len
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Shorten the payload to a given length
  *
@@ -206,10 +212,11 @@ void oscore_msg_protected_map_payload(
  * be called after @ref oscore_msg_protected_map_payload invocations, and the
  * given size must be at most the @p payload_len obtained in that call.
  */
+OSCORE_NONNULL
 oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
         oscore_msg_protected_t *msg,
         size_t payload_len
-        ) OSCORE_NONNULL;
+        );
 
 /** Return true if an error type indicates an unsuccessful operation */
 bool oscore_msgerr_protected_is_error(oscore_msgerr_protected_t);

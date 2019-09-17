@@ -33,7 +33,8 @@
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, int32_t number) OSCORE_NONNULL;
+OSCORE_NONNULL
+oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, int32_t number);
 /** @brief Set up an algorithm descriptor from a string-identified COSE
  * Algorithm
  *
@@ -47,7 +48,8 @@ oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, 
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len) OSCORE_NONNULL;
+OSCORE_NONNULL
+oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len);
 
 /** @brief Get the tag length that is used for a particular algorithm
  *
@@ -100,6 +102,7 @@ size_t oscore_crypto_aead_get_ivlength(oscore_crypto_aeadalg_t alg);
  * AAD-too-long condition for non-stream-AAD backends, but maybe the rest can
  * be documented to be infallible? What if the caller messes up lengths?)
  */
+OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
         oscore_crypto_aead_encryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
@@ -107,7 +110,7 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
         uint8_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Provide Additional Authenticated Data (AAD) for an ongoing AEAD encryption operation
  *
@@ -152,17 +155,19 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_feed_aad(
  * ciphertext to the same location, and writes the AEAD tag right after it to
  * the end of the buffer.
  */
+OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_aead_encrypt_inplace(
         oscore_crypto_aead_encryptstate_t *state,
         uint8_t *buffer,
         size_t buffer_len
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Start an AEAD decryption operation
  *
  * This is fully analogous to @ref oscore_crypto_aead_encrypt_start; see there.
  *
  */
+OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
         oscore_crypto_aead_decryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
@@ -170,7 +175,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
         uint8_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
-        ) OSCORE_NONNULL;
+        );
 
 /** @brief Provide Additional Authenticated Data (AAD) for an ongoing AEAD decryption operation
  *
@@ -200,11 +205,12 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_feed_aad(
  * the resulting plaintext to the same location. Implementations usually leave
  * the tag bytes in place, but may leave them in any state.
  */
+OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
         oscore_crypto_aead_encryptstate_t *state,
         uint8_t *buffer,
         size_t buffer_len
-        ) OSCORE_NONNULL;
+        );
 
 
 /** @brief Set up an algorithm descriptor from a numerically identified COSE
@@ -218,7 +224,8 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, int32_t number) OSCORE_NONNULL;
+OSCORE_NONNULL
+oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, int32_t number);
 /** @brief Set up an algorithm descriptor from a string-identified COSE
  * Direct Key with KDF
  *
@@ -232,12 +239,14 @@ oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, 
  * arbitrarily in that case.
  *
  */
-oscore_cryptoerr_t oscore_crypto_hkdf_from_string(oscore_crypto_hkdfalg_t *alg, uint8_t *string, size_t string_len) OSCORE_NONNULL;
+OSCORE_NONNULL
+oscore_cryptoerr_t oscore_crypto_hkdf_from_string(oscore_crypto_hkdfalg_t *alg, uint8_t *string, size_t string_len);
 
 // Having info as a buffer is really inconvenient as I'd rather feed that slice
 // by slice given it contains potentially long id / id_context. 
 //
 // running expand and extract independently would be nice as well, given it'd save a hashing step.
+OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 		oscore_crypto_hkdfalg_t alg,
 		const uint8_t *salt,
@@ -248,7 +257,7 @@ oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 		size_t info_length,
 		uint8_t *out,
 		size_t out_length
-		) OSCORE_NONNULL;
+		);
 
 /** Return true if an error type indicates an unsuccessful operation */
 bool oscore_cryptoerr_is_error(oscore_cryptoerr_t);
