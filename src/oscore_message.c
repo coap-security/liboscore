@@ -83,51 +83,10 @@ static bool parse_option(
 }
 
 /**
- * Reads the current inner option and advances the iterator cursor. If there is
- * no more current option, the current inner option number is set to 0 and
- * nothing else is modified.
- *
- * @param[in] msg Message to iterate over
- * @param[in,out] iter Iterator (cursor) that is read and incremented
- * @param[out] value Data inside the read CoAP option
- * @param[out] value_len Number of bytes inside the read CoAP option
+ * Reads the next inner option into the iterator. If there is none, the value is
+ * set to NULL.
  */
-static void optiter_inner_next(
-        oscore_msg_protected_t *msg,
-        oscore_msg_protected_optiter_t *iter,
-        const uint8_t **value,
-        size_t *value_len
-)
-{
-    uint8_t *payload;
-    size_t payload_len;
-    oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
-    payload_len -= msg->tag_length;
-
-    if (payload_len <= iter->cursor_inner) {
-        // End of payload reached
-        // should not be reached if optiter_peek_inner_number was used before
-        iter->optionnumber_inner = 0;
-        return;
-    }
-
-    uint16_t delta; // Ignored, treated in optiter_peek_inner_number
-    if (parse_option(&payload[iter->cursor_inner], &delta, value, value_len)) {
-        iter->cursor_inner = *value - payload + *value_len;
-        // Assert that option value does not overrun payload
-        assert(payload_len >= iter->cursor_inner);
-    } else {
-        // Current option is invalid
-        // should not be reached if optiter_peek_inner_number was used before
-        iter->optionnumber_inner = 0;
-    }
-}
-
-/**
- * Reads the next inner option number into the iterator without advancing the
- * cursor. If there is none, the number is set to 0.
- */
-static void optiter_peek_inner_number(
+static void optiter_peek_inner_option(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
 )
@@ -137,20 +96,29 @@ static void optiter_peek_inner_number(
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
     payload_len -= msg->tag_length;
 
-    if (payload_len <= iter->cursor_inner) {
+    // If no option was read yet, start at the beginning (2nd byte).
+    const uint8_t *cursor_inner = payload + 1;
+    if (iter->inner_peeked_value != NULL) {
+        cursor_inner = iter->inner_peeked_value + iter->inner_peeked_value_len;
+    }
+
+    if (cursor_inner >= payload + payload_len) {
         // End of payload reached
-        iter->optionnumber_inner = 0;
+        iter->inner_peeked_value = NULL;
         return;
     }
 
     uint16_t delta;
-    const uint8_t *value; // Ignored, only the delta value is needed
-    size_t value_len; // Ignored again
-    if (parse_option(&payload[iter->cursor_inner], &delta, &value, &value_len)) {
-        iter->optionnumber_inner += delta;
+    if (parse_option(
+            cursor_inner,
+            &delta,
+            &iter->inner_peeked_value,
+            &iter->inner_peeked_value_len
+        )) {
+        iter->inner_peeked_optionnumber += delta;
     } else {
         // Current option is invalid
-        iter->optionnumber_inner = 0;
+        iter->inner_peeked_value = NULL;
     }
 }
 
@@ -177,10 +145,19 @@ void oscore_msg_protected_optiter_init(
         oscore_msg_protected_optiter_t *iter
         )
 {
-    iter->cursor_inner = 1;
-    iter->optionnumber_inner = 0;
+    iter->inner_peeked_optionnumber = 0;
+    iter->inner_peeked_value = NULL;
     iter->backend_exhausted = false;
     oscore_msg_native_optiter_init(msg->backend, &iter->backend);
+
+    // Have a first peek at the options
+    optiter_peek_inner_option(msg, iter);
+    iter->backend_exhausted = !oscore_msg_native_optiter_next(
+            msg->backend,
+            &iter->backend,
+            &iter->backend_peeked_optionnumber,
+            &iter->backend_peeked_value,
+            &iter->backend_peeked_value_len);
 }
 
 bool oscore_msg_protected_optiter_next(
@@ -193,38 +170,29 @@ bool oscore_msg_protected_optiter_next(
 {
     assert(iter != NULL);
 
-    if (iter->optionnumber_inner == 0 && iter->backend_exhausted) {
+    if (iter->inner_peeked_value == NULL && iter->backend_exhausted) {
         return false;
-    }
-
-    // First time the iterator is used, peek at both inner and outer options
-    if (iter->optionnumber_inner == 0 && iter->backend_peeked_optionnumber == 0) {
-        optiter_peek_inner_number(&msg, iter);
-        iter->backend_exhausted =
-                !oscore_msg_native_optiter_next(msg.backend,
-                        &iter->backend,
-                        &iter->backend_peeked_optionnumber,
-                        &iter->backend_peeked_value,
-                        &iter->backend_peeked_value_len);
     }
 
     // Determine next option
     bool next_is_inner = false;
     if (iter->backend_exhausted) {
-        if (iter->optionnumber_inner == 0) {
+        if (iter->inner_peeked_value == NULL) {
             return false;
         }
         next_is_inner = true;
-    } else if (iter->optionnumber_inner > 0) {
+    } else if (iter->inner_peeked_value != NULL) {
         // Return options ordered by option number
-        next_is_inner = iter->optionnumber_inner < iter->backend_peeked_optionnumber;
+        next_is_inner = iter->inner_peeked_optionnumber <
+                iter->backend_peeked_optionnumber;
     }
 
     // Return current inner/outer option and peek at next one.
     if (next_is_inner) {
-        *option_number = iter->optionnumber_inner;
-        optiter_inner_next(&msg, iter, value, value_len);
-        optiter_peek_inner_number(&msg, iter);
+        *option_number = iter->inner_peeked_optionnumber;
+        *value = iter->inner_peeked_value;
+        *value_len = iter->inner_peeked_value_len;
+        optiter_peek_inner_option(&msg, iter);
     } else {
         *option_number = iter->backend_peeked_optionnumber;
         *value = iter->backend_peeked_value;
