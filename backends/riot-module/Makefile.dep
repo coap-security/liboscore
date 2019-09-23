@@ -1,1 +1,4 @@
 USEMODULE += nanocoap
+USEPKG += libcose
+# Pick a backend; without, no algorithms are available
+USEMODULE += libcose_crypt_hacl

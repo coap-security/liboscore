@@ -8,3 +8,4 @@ INCLUDES += -I${OSCOREBASE}/src/include
 
 # Backends we choose for RIOT
 INCLUDES += -I${OSCOREBASE}/backends/nanocoap/inc
+INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
