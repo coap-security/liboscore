@@ -14,17 +14,6 @@ int main(void)
 
     err = oscore_msg_native_append_option(
             msg,
-            12,
-            (uint8_t*)"",
-            0);
-    assert(!oscore_msgerr_native_is_error(err));
-
-    // Don't be confused if things start to break here: This test is violating
-    // the options-in-sequence requirement, and any directly serializing
-    // library will fail here
-
-    err = oscore_msg_native_append_option(
-            msg,
             11,
             (uint8_t*)".well-known",
             11);
@@ -43,6 +32,13 @@ int main(void)
         1,
         (uint8_t*)"core",
         4);
+    assert(!oscore_msgerr_native_is_error(err));
+
+    err = oscore_msg_native_append_option(
+            msg,
+            12,
+            (uint8_t*)"",
+            0);
     assert(!oscore_msgerr_native_is_error(err));
 
     uint8_t *payload;
@@ -68,11 +64,6 @@ int main(void)
 
     next_exists = oscore_msg_native_optiter_next(msg, &iter, &number, &value, &value_length);
     assert(next_exists);
-    assert(number == 12);
-    assert(value_length == 0);
-
-    next_exists = oscore_msg_native_optiter_next(msg, &iter, &number, &value, &value_length);
-    assert(next_exists);
     assert(number == 11);
     assert(value_length == 11);
     assert(memcmp(value, ".well-known", 11) == 0);
@@ -82,6 +73,11 @@ int main(void)
     assert(number == 11);
     assert(value_length == 4);
     assert(memcmp(value, "core", 4) == 0);
+
+    next_exists = oscore_msg_native_optiter_next(msg, &iter, &number, &value, &value_length);
+    assert(next_exists);
+    assert(number == 12);
+    assert(value_length == 0);
 
     next_exists = oscore_msg_native_optiter_next(msg, &iter, &number, &value, &value_length);
     assert(!next_exists);
