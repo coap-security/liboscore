@@ -12,13 +12,13 @@
 
 const size_t max_tag_length = 16;
 
-const static uint8_t key[] = SENDER_KEY;
+static const uint8_t key[] = SENDER_KEY;
 // This happens to be the actually used IV for PIV 0 and the empty sender ID
-const static uint8_t nonce[] = COMMON_IV;
+static const uint8_t nonce[] = COMMON_IV;
 
 const char message[] = "The quick brown fox jumps over the lazy dog.";
 
-int main()
+int main(void)
 {
     oscore_cryptoerr_t err;
 

@@ -56,6 +56,10 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
     assert(state->aad != NULL);
     state->aad_cursor = state->aad;
 
+    // As the actua cranking of the AEAD mechanism only starts when all is
+    // copied to the allocated memory, plaintext_len is ignored for now.
+    (void) plaintext_len;
+
     return COSE_OK;
 }
 
