@@ -1,5 +1,5 @@
 *.o
 *.d
-standalone-demo
-cryptobackend-aead
-unprotect-demo
+./standalone-demo
+./cryptobackend-aead
+./unprotect-demo
