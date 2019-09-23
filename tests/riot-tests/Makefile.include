@@ -2,7 +2,7 @@ RIOTBASE ?= $(CURDIR)/../RIOT
 
 BOARD ?= native
 
-DEVHELP ?= 1
+DEVELHELP ?= 1
 
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
