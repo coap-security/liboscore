@@ -5,7 +5,7 @@
 #include <oscore_native/message.h>
 #include <oscore_native/test.h>
 
-int main()
+int main(void)
 {
     oscore_msgerr_native_t err;
 
