@@ -65,7 +65,7 @@ bool oscore_msg_native_optiter_next(
             iter->is_first
             );
     if (length < 0) {
-        return length;
+        return false;
     }
 
     *value_len = length;
