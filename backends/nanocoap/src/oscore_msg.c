@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-
-// only for abort, FIXME: remove when abort was removed
-#include <stdlib.h>
+#include <errno.h>
 
 #include <oscore_native/message.h>
 
@@ -94,14 +91,42 @@ oscore_msgerr_native_t oscore_msg_native_update_option(
         size_t value_len
         )
 {
-    // FIXME not implemented
-    abort();
+    coap_optpos_t iter;
+    bool is_first = true;
+    uint8_t *iter_value;
 
-    (void)msg;
-    (void)option_number;
-    (void)option_occurrence;
-    (void)value;
-    (void)value_len;
+    while (true) {
+        ssize_t length = coap_opt_get_next(
+                msg,
+                &iter,
+                &iter_value,
+                is_first
+                );
+        is_first = false;
+        if (length < 0) {
+            // Especially, that can be "Not found until end of iteration"
+            return length;
+        }
+        if (iter.opt_num == option_number) {
+            if (option_occurrence > 0) {
+                option_occurrence -= 1;
+            } else {
+                // Found
+
+                // length was shown to be positive, so it can be cast into
+                // the unsigned type safely
+                if (value_len != (size_t)length) {
+                    return -EBADMSG;
+                }
+
+                // Be liberal and accept user provided NULL values for zero-length references
+                if (value_len != 0) {
+                    memcpy(iter_value, value, value_len);
+                }
+                return 0;
+            }
+        }
+    }
 }
 
 void oscore_msg_native_map_payload(
