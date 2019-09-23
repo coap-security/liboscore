@@ -1,0 +1,3 @@
+[submodule "tests/riot-tests/RIOT"]
+	path = tests/riot-tests/RIOT
+	url = https://github.com/RIOT-OS/RIOT
