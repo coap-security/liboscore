@@ -1,0 +1,10 @@
+# First inclusion is exactly when there is this file at the end of
+# MAKEFILE_LIST, fix the value rather than reevaluating this expression at any
+# possible time
+OSCOREBASE := $(abspath $(lastword $(MAKEFILE_LIST))/../../..)
+
+# OSCORE's own includes
+INCLUDES += -I${OSCOREBASE}/src/include
+
+# Backends we choose for RIOT
+INCLUDES += -I${OSCOREBASE}/backends/nanocoap/inc
