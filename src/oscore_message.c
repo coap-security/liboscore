@@ -138,7 +138,7 @@ static bool parse_option(
 static void optiter_peek_inner_option(
         const oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
-)
+        )
 {
     uint8_t *payload;
     size_t payload_len;
@@ -179,7 +179,8 @@ static void optiter_peek_inner_option(
     }
 }
 
-uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg) {
+uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg)
+{
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
@@ -188,7 +189,8 @@ uint8_t oscore_msg_protected_get_code(oscore_msg_protected_t *msg) {
     return payload[0];
 }
 
-void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code) {
+void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code)
+{
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
