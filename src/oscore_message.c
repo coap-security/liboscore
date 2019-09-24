@@ -83,11 +83,11 @@ static bool parse_option(
 }
 
 /**
- * Reads the next inner option into the iterator. If there is none, the value is
- * set to NULL.
+ * Reads the next inner option into the iterator, starting from the first if
+ * value is NULL initially. If there is none, the value is set to NULL.
  */
 static void optiter_peek_inner_option(
-        oscore_msg_protected_t *msg,
+        const oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
 )
 {
@@ -96,14 +96,16 @@ static void optiter_peek_inner_option(
     oscore_msg_native_map_payload(msg->backend, &payload, &payload_len);
     payload_len -= msg->tag_length;
 
-    // If no option was read yet, start at the beginning (2nd byte).
-    const uint8_t *cursor_inner = payload + 1;
-    if (iter->inner_peeked_value != NULL) {
+    const uint8_t *cursor_inner;
+    if (iter->inner_peeked_value == NULL) {
+        // If no option was read yet, start at the beginning (2nd byte).
+        cursor_inner = payload + 1;
+    } else {
         cursor_inner = iter->inner_peeked_value + iter->inner_peeked_value_len;
     }
 
     if (cursor_inner >= payload + payload_len) {
-        // End of payload reached
+        // End of inner payload reached without payload marker
         iter->inner_peeked_value = NULL;
         return;
     }
@@ -117,7 +119,8 @@ static void optiter_peek_inner_option(
         )) {
         iter->inner_peeked_optionnumber += delta;
     } else {
-        // Current option is invalid
+        // End of inner payload reached with payload marker, or invalid option
+        // encountered
         iter->inner_peeked_value = NULL;
     }
 }
