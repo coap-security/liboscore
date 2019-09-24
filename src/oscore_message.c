@@ -104,7 +104,7 @@ static void optiter_peek_inner_option(
         cursor_inner = iter->inner_peeked_value + iter->inner_peeked_value_len;
     }
 
-    if (cursor_inner >= payload + payload_len) {
+    if (cursor_inner == payload + payload_len) {
         // End of inner payload reached without payload marker
         iter->inner_peeked_value = NULL;
         return;
@@ -117,7 +117,12 @@ static void optiter_peek_inner_option(
             &iter->inner_peeked_value,
             &iter->inner_peeked_value_len
         )) {
-        iter->inner_peeked_optionnumber += delta;
+        if (iter->inner_peeked_value_len > (iter->inner_peeked_value - payload) + payload_len) {
+            // Option length exceeds payload length, abort immediately
+            iter->inner_peeked_value = NULL;
+        } else {
+            iter->inner_peeked_optionnumber += delta;
+        }
     } else {
         // End of inner payload reached with payload marker, or invalid option
         // encountered
