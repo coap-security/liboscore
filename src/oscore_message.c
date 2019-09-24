@@ -191,8 +191,6 @@ bool oscore_msg_protected_optiter_next(
         size_t *value_len
         )
 {
-    assert(iter != NULL);
-
     if (iter->optionnumber_inner == 0 && iter->backend_exhausted) {
         return false;
     }

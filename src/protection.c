@@ -112,6 +112,8 @@ struct aad_sizes predict_aad_size(
 
     // FIXME gather thsi from class_i_source
     ret.class_i_length = 0;
+    (void) class_i_source;
+
     ret.external_aad_length = \
             1 /* array length 5 */ +
             1 /* oscore version 1 */ +
@@ -187,6 +189,8 @@ oscore_cryptoerr_t feed_aad(
 
     // Class I options
     assert(aad_sizes.class_i_length == 0);
+    // As long as that holds, the Class I source can be disregarded.
+    (void) class_i_source;
     // 0 byte string
     err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x40", 1);
 
