@@ -6,12 +6,25 @@ typedef enum {
     /** Place this in Class E unconditionally, and refuse to decrypt messages
      * with this as an outer option
      *
-     * This includes all Class E+U options like the Block options, as they need
-     * to be resolved (and removed) by the underlying CoAP library.
+     * This includes all Class E+U options like the Block options or Echo, as
+     * they need to be resolved (and removed) by the underlying CoAP library.
      * */
     ONLY_E,
-    // We could also have a "ONLY_E_IGNORE_OUTER" where the iterator silently
-    // disregards outer options.
+
+    /** Place this in Class E unconditionally. If it turns up as outer options,
+     * they are silently ignored.
+     *
+     * This includes options that are added for the benefit of, or by,
+     * intermediaries, like the Max-Age and the ETag option.
+     *
+     * For backends that do not strip options like Block1 or Block2 on outer
+     * reassembly but leave any of them in the reassembled messages, those
+     * options can be classified as ``ONLY_E_IGNORE_OUTER``; that is not done
+     * in general, as the presence of an outer Block option usually indicates
+     * that no reassembly was executed, and unprotection of the partial message
+     * is bound to fail.
+     */
+    ONLY_E_IGNORE_OUTER,
 
     /** Place this in Class U unconditionally. Inner options of this type are
      * still accepted, and both the outer and inner values are reported when
