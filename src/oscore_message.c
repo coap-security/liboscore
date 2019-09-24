@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 #include <oscore/message.h>
 #include <oscore_native/message.h>
 
@@ -44,6 +45,41 @@ typedef enum {
     HARDCODED,
 
 } option_behavior;
+
+/**
+ * Returns the behaviour (U, I, E, special) for a given option number.
+ */
+static option_behavior get_option_behaviour(uint16_t option_number) {
+    switch (option_number) {
+        case 1: // If-Match
+        case 5: // If-None-Match
+        case 8: // Location-Path
+        case 11: // Uri-Path
+        case 12: // Content-Format
+        case 15: // Uri-Query
+        case 17: // Accept
+        case 20: // Location-Query
+        case 23: // Block2
+        case 27: // Block1
+        case 28: // Size2
+        case 60: // Size1
+            return ONLY_E;
+        case 4: // ETag
+        case 14: // Max-Age
+            return ONLY_E_IGNORE_OUTER;
+        case 3: // Uri-Host
+        case 7: // Uri-Port
+        case 39: // Proxy-Scheme
+            return PRIMARILY_U;
+        case 6: // Observe
+        case 9: // OSCORE
+        case 35: // Proxy-Uri
+        case 258: // No-Response
+            return HARDCODED;
+        default:
+            return HARDCODED;
+    }
+}
 
 /**
  * Parses a CoAP option. The return value indicates success.
@@ -161,6 +197,84 @@ void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code) {
     payload[0] = code;
 }
 
+oscore_msgerr_protected_t oscore_msg_protected_append_option(
+        oscore_msg_protected_t *msg,
+        uint16_t option_number,
+        const uint8_t *value,
+        size_t value_len
+        )
+{
+    option_behavior behavior = get_option_behaviour(option_number);
+    if (behavior == PRIMARILY_U) {
+        oscore_msgerr_native_t err = oscore_msg_native_append_option(
+                msg->backend,
+                option_number,
+                value,
+                value_len
+        );
+        return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
+    } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
+        // FIXME: append inner option.
+        //  Detect overrun into payload with payload marker - but what if there
+        //  isn't any payload yet? Should oscore_msg_protected_map_payload
+        //  create the marker once the payload is accessed?
+        (void)value; // prevent identical branch warning
+        return NOTIMPLEMENTED_ERROR;
+    } else {
+        // FIXME: handle special options
+        return NOTIMPLEMENTED_ERROR;
+    }
+}
+
+oscore_msgerr_protected_t oscore_msg_protected_update_option(
+        oscore_msg_protected_t *msg,
+        uint16_t option_number,
+        size_t option_occurrence,
+        const uint8_t *value,
+        size_t value_len
+        )
+{
+    option_behavior behavior = get_option_behaviour(option_number);
+    if (behavior == PRIMARILY_U) {
+        oscore_msgerr_native_t err = oscore_msg_native_update_option(
+                msg->backend,
+                option_number,
+                option_occurrence,
+                value,
+                value_len
+        );
+        return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
+    } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
+        oscore_msg_protected_optiter_t iter = {
+                .inner_peeked_optionnumber = 0,
+                .inner_peeked_value = NULL
+        };
+        while (true) {
+            optiter_peek_inner_option(msg, &iter);
+            if (iter.inner_peeked_value == NULL) {
+                // Requested option was not found
+                return INVALID_ARG_ERROR;
+            }
+            if (iter.inner_peeked_optionnumber != option_number) {
+                continue;
+            }
+
+            if (option_occurrence == 0) {
+                // Requested option found, now check the length
+                if (value_len != iter.inner_peeked_value_len) {
+                    return INVALID_ARG_ERROR;
+                }
+                memcpy((uint8_t *)iter.inner_peeked_value, value, value_len);
+                return OK;
+            }
+            option_occurrence--;
+        }
+    } else {
+        // FIXME: handle special options
+        return NOTIMPLEMENTED_ERROR;
+    }
+}
+
 void oscore_msg_protected_optiter_init(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
@@ -273,4 +387,35 @@ void oscore_msg_protected_map_payload(
         *payload = p;
         *payload_len = 0;
     }
+}
+
+oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
+        oscore_msg_protected_t *msg,
+        size_t payload_len
+        )
+{
+    uint8_t *p;
+    size_t inner_payload_len;
+    oscore_msg_protected_map_payload(msg, &p, &inner_payload_len);
+
+    if (payload_len > inner_payload_len) {
+        // Cannot extend the payload
+        return INVALID_ARG_ERROR;
+    }
+    if (payload_len == inner_payload_len) {
+        // Nothing to do
+        return OK;
+    }
+
+    size_t native_payload_len;
+    oscore_msg_native_map_payload(msg->backend, &p, &native_payload_len);
+    native_payload_len -= inner_payload_len - payload_len;
+    oscore_msgerr_native_t err;
+    err = oscore_msg_native_trim_payload(msg->backend, native_payload_len);
+    return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
+}
+
+bool oscore_msgerr_protected_is_error(oscore_msgerr_protected_t error)
+{
+    return error != OK;
 }
