@@ -1,1 +1,1 @@
-../../standalone-demo.c
+../../cases/standalone-demo.c
