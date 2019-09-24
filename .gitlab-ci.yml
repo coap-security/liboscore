@@ -9,9 +9,9 @@ test:
     # Makefile.libcose made available at lib build time; calling make in
     # different steps works around that.
     - make libs
-    - make test
+    - make test-all-optlevels
     - apt-get -y install clang
-    - make clean test CC=clang
+    - make test-all-optlevels CC=clang
 
 pages:
   script:
