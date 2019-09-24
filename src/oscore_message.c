@@ -181,11 +181,8 @@ bool oscore_msg_protected_optiter_next(
     }
 
     // Determine next option
-    bool next_is_inner = false;
+    bool next_is_inner;
     if (iter->backend_exhausted) {
-        if (iter->inner_peeked_value == NULL) {
-            return false;
-        }
         next_is_inner = true;
     } else if (iter->inner_peeked_value != NULL) {
         // Return options ordered by option number
