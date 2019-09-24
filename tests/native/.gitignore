@@ -1,0 +1,6 @@
+*.o
+*.d
+libs
+standalone-demo
+cryptobackend-aead
+unprotect-demo

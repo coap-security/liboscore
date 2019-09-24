@@ -5,7 +5,7 @@
 #include <oscore_native/message.h>
 #include <oscore_native/test.h>
 
-int main(void)
+int testmain(int introduce_error)
 {
     oscore_msgerr_native_t err;
 
@@ -31,7 +31,7 @@ int main(void)
         11,
         1,
         (uint8_t*)"core",
-        4);
+        4 - (introduce_error == 1));
     assert(!oscore_msgerr_native_is_error(err));
 
     err = oscore_msg_native_append_option(

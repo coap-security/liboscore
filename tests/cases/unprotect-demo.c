@@ -9,7 +9,7 @@
 #include <oscore/context_impl/primitive.h>
 #include <oscore/message.h>
 
-int main()
+int testmain(int introduce_error)
 {
     oscore_msgerr_native_t msgerr;
 
@@ -39,6 +39,7 @@ int main()
     oscore_msg_native_map_payload(msg, &payload, &payload_len);
     assert(payload_len >= 32);
     memcpy(payload, "\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb", 32);
+    payload[0] ^= (introduce_error == 1);
     msgerr = oscore_msg_native_trim_payload(msg, 32);
     assert(!oscore_msgerr_native_is_error(msgerr));
 

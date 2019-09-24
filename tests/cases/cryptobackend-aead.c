@@ -18,7 +18,7 @@ static const uint8_t nonce[] = COMMON_IV;
 
 const char message[] = "The quick brown fox jumps over the lazy dog.";
 
-int main(void)
+int testmain(int introduce_error)
 {
     oscore_cryptoerr_t err;
 
@@ -59,6 +59,7 @@ int main(void)
     if (oscore_cryptoerr_is_error(err)) return 33;
 
     assert(memcmp(message, arena, sizeof(message)) != 0);
+    arena[0] ^= (introduce_error == 1);
 
     oscore_crypto_aead_decryptstate_t decstate;
     err = oscore_crypto_aead_decrypt_start(
@@ -78,4 +79,6 @@ int main(void)
     if (oscore_cryptoerr_is_error(err)) return 43;
 
     assert(memcmp(message, arena, sizeof(message)) == 0);
+
+    return 0;
 }

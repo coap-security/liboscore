@@ -1,4 +1,6 @@
-CPPFLAGS += -I../src/include/
+include ../cases/Makefile.include
+
+CPPFLAGS += -I../../src/include/
 CFLAGS += -Wall -Werror -Wpedantic -std=c11
 CFLAGS += -g3 -O0
 CFLAGS += -MD
@@ -8,12 +10,15 @@ LDFLAGS += -fsanitize=undefined -fsanitize=address
 
 all: test
 
-vpath %.c ../src/
+vpath %.c ../../src/
+vpath %.c ../cases/
 
 include Makefile.mockoap
 include Makefile.libcose
 
-test: cryptobackend-aead standalone-demo unprotect-demo
+BACKEND_OBJS += testwrapper.c
+
+test: ${CASES}
 	set -ex; for x in $^; do ./$$x; done
 
 include $(wildcard *.d)

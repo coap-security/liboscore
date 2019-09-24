@@ -2,11 +2,11 @@
 libs/libcose/makefiles/sodium.mk: libs
 include libs/libcose/makefiles/sodium.mk
 
-CPPFLAGS += -I../backends/libcose/inc/
+CPPFLAGS += -I../../backends/libcose/inc/
 CPPFLAGS += -Ilibs/libcose/include/
 CPPFLAGS += -Ilibs/nanocbor/include/
 
-vpath %.c ../backends/libcose/src/
+vpath %.c ../../backends/libcose/src/
 vpath %.c libs/libcose/src/
 vpath %.c libs/libcose/src/crypt/
 
