@@ -64,8 +64,10 @@ typedef struct {
     uint16_t inner_peeked_optionnumber;
     const uint8_t *inner_peeked_value;
     size_t inner_peeked_value_len;
+
     oscore_msg_native_optiter_t backend;
     bool backend_exhausted;
+
     uint16_t backend_peeked_optionnumber;
     const uint8_t *backend_peeked_value;
     size_t backend_peeked_value_len;
