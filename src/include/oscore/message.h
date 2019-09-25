@@ -82,6 +82,10 @@ typedef enum {
     OK = 0,
     /** An underlying native CoAP function returned an error */
     NATIVE_ERROR,
+    /** An argument passed to the function is invalid */
+    INVALID_ARG_ERROR,
+    /** The operation is not implemented yet */
+    NOTIMPLEMENTED_ERROR,
 } oscore_msgerr_protected_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
