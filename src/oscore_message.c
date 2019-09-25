@@ -228,6 +228,10 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
     }
 }
 
+// FIXME: This will only work if the options have been put in here by the
+// library (which is typically the case for being-sent messages that are the
+// ones being updated as well). That may not even need to be changed, just
+// documented.
 oscore_msgerr_protected_t oscore_msg_protected_update_option(
         oscore_msg_protected_t *msg,
         uint16_t option_number,
