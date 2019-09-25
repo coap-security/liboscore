@@ -3,7 +3,7 @@
 #include <oscore/message.h>
 #include <oscore_native/message.h>
 
-typedef enum {
+enum option_behavior {
     /** Place this in Class E unconditionally, and refuse to decrypt messages
      * with this as an outer option
      *
@@ -44,12 +44,12 @@ typedef enum {
      * Observe) */
     HARDCODED,
 
-} option_behavior;
+};
 
 /**
  * Returns the behaviour (U, I, E, special) for a given option number.
  */
-static option_behavior get_option_behaviour(uint16_t option_number) {
+static enum option_behavior get_option_behaviour(uint16_t option_number) {
     switch (option_number) {
         case 1: // If-Match
         case 5: // If-None-Match
@@ -206,7 +206,7 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
         size_t value_len
         )
 {
-    option_behavior behavior = get_option_behaviour(option_number);
+    enum option_behavior behavior = get_option_behaviour(option_number);
     if (behavior == PRIMARILY_U) {
         oscore_msgerr_native_t err = oscore_msg_native_append_option(
                 msg->backend,
@@ -236,7 +236,7 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
         size_t value_len
         )
 {
-    option_behavior behavior = get_option_behaviour(option_number);
+    enum option_behavior behavior = get_option_behaviour(option_number);
     if (behavior == PRIMARILY_U) {
         oscore_msgerr_native_t err = oscore_msg_native_update_option(
                 msg->backend,
