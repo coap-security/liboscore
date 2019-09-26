@@ -94,9 +94,9 @@ static void roll_window(struct oscore_context_primitive *ctx) {
  * next number was already used. */
 static void advance_window(struct oscore_context_primitive *ctx, size_t n)
 {
+    ctx->replay_window_left_edge += n;
     if (n > 32) {
         ctx->replay_window = 0;
-        ctx->replay_window_left_edge += n;
         return;
     }
     bool needs_roll = ctx->replay_window & (((uint32_t)1) << (32 - n));
@@ -136,7 +136,7 @@ void oscore_context_strikeout_requestid(
                 is_first = true;
                 roll_window(primitive);
             } else {
-                uint32_t mask = 1 << (32 - (numeric - primitive->replay_window_left_edge));
+                uint32_t mask = ((uint32_t)1) << (32 - (numeric - primitive->replay_window_left_edge));
                 is_first = (mask & primitive->replay_window) == 0;
                 primitive->replay_window |= mask;
             }

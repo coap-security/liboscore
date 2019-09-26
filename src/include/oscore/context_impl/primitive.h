@@ -61,7 +61,20 @@ struct oscore_context_primitive {
     /** Bit-mask of packages right of the left edge. If @p
      * replay_window_left_edge is N, then the most significant bit of this
      * represents sequence number N+1, and the least significant bit
-     * representsd N+33. */
+     * representsd N+32.
+     *
+     * You can visualize the state of the window like this, where 1 means
+     * 'seen' and 0 means 'still good':
+     *
+     * ```
+     *    -------------+---+-----------------------+---------------
+     * ... 1 1 1 1 1 1 | 0 | r_w >> 31 ... r_w & 1 | 0 0 0 0 0 0 0 ...
+     *    -------------+---+-----------------------+---------------
+     *                   ^
+     *          replay_window_left_edge
+     * ```
+     *
+     * */
     uint32_t replay_window;
 };
 
