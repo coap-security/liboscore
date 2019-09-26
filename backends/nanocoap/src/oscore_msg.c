@@ -73,7 +73,7 @@ bool oscore_msg_native_optiter_next(
     return true;
 }
 
-void oscore_msg_native_optiter_finish(
+oscore_msgerr_native_t oscore_msg_native_optiter_finish(
         oscore_msg_native_t msg,
         oscore_msg_native_optiter_t *iter
         )
@@ -81,6 +81,10 @@ void oscore_msg_native_optiter_finish(
     // no-op: we didn't allocate anything for iteration
     (void)msg;
     (void)iter;
+
+    // Infallible: Options are parsed and if need be rejected as a message on
+    // reception
+    return 0;
 }
 
 oscore_msgerr_native_t oscore_msg_native_update_option(
@@ -129,7 +133,7 @@ oscore_msgerr_native_t oscore_msg_native_update_option(
     }
 }
 
-void oscore_msg_native_map_payload(
+oscore_msgerr_native_t oscore_msg_native_map_payload(
         oscore_msg_native_t msg,
         uint8_t **payload,
         size_t *payload_len
@@ -137,6 +141,10 @@ void oscore_msg_native_map_payload(
 {
     *payload = msg->payload;
     *payload_len = msg->payload_len;
+
+    // Infallible: Options are parsed and if need be rejected as a message on
+    // reception
+    return 0;
 }
 
 oscore_msgerr_native_t oscore_msg_native_trim_payload(

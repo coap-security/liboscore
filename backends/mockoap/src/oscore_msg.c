@@ -86,12 +86,13 @@ bool oscore_msg_native_optiter_next(
     return true;
 }
 
-void oscore_msg_native_optiter_finish(
+oscore_msgerr_native_t oscore_msg_native_optiter_finish(
         oscore_msg_native_t msg,
         oscore_msg_native_optiter_t *iter
         )
 {
     // no-op: we didn't allocate anything for iteration
+    return false;
 }
 
 oscore_msgerr_native_t oscore_msg_native_update_option(
@@ -123,7 +124,7 @@ oscore_msgerr_native_t oscore_msg_native_update_option(
     return true;
 }
 
-void oscore_msg_native_map_payload(
+oscore_msgerr_native_t oscore_msg_native_map_payload(
         oscore_msg_native_t msg,
         uint8_t **payload,
         size_t *payload_len
@@ -131,6 +132,8 @@ void oscore_msg_native_map_payload(
 {
     *payload = msg->payload;
     *payload_len = msg->payload_len;
+
+    return false;
 }
 
 oscore_msgerr_native_t oscore_msg_native_trim_payload(

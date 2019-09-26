@@ -58,21 +58,6 @@ typedef struct {
     bool is_observation; // not sure yet when applicable
 } oscore_msg_protected_t;
 
-/** @brief Iterator (cursor) over a protected CoAP message
- */
-typedef struct {
-    uint16_t inner_peeked_optionnumber;
-    const uint8_t *inner_peeked_value;
-    size_t inner_peeked_value_len;
-
-    oscore_msg_native_optiter_t backend;
-    bool backend_exhausted;
-
-    uint16_t backend_peeked_optionnumber;
-    const uint8_t *backend_peeked_value;
-    size_t backend_peeked_value_len;
-} oscore_msg_protected_optiter_t;
-
 /** @brief OSCORE message operation error type
  *
  * These errors are returned by functions manipulating a @ref oscore_msg_protected_t.
@@ -86,7 +71,48 @@ typedef enum {
     INVALID_ARG_ERROR,
     /** The operation is not implemented yet */
     NOTIMPLEMENTED_ERROR,
+    /** An inner option encoding was erroneous */
+    INVALID_INNER_OPTION,
 } oscore_msgerr_protected_t;
+
+/** @brief Iterator (cursor) over a protected CoAP message
+ */
+typedef struct {
+    uint16_t inner_peeked_optionnumber;
+    /** @private
+     *
+     * @brief Pointer to the next available inner option value
+     *
+     * If this is NULL, the iterator was either just created, or it has run to
+     * exhaustion.
+     *
+     */
+    const uint8_t *inner_peeked_value;
+    union {
+        /** @private
+         *
+         * @brief Number of bytes available at @ref inner_peeked_value
+         *
+         * Valid if @ref inner_peeked_value is not NULL.
+         *
+         */
+        size_t inner_peeked_value_len;
+        /** @private
+         *
+         * @brief Reason why iteration was terminated
+         *
+         * Valid if @ref inner_peeked_value is NULL.
+         */
+        oscore_msgerr_protected_t inner_termination_reason;
+    };
+
+    oscore_msg_native_optiter_t backend;
+    bool backend_exhausted;
+
+    uint16_t backend_peeked_optionnumber;
+    const uint8_t *backend_peeked_value;
+    size_t backend_peeked_value_len;
+} oscore_msg_protected_optiter_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
 OSCORE_NONNULL
@@ -147,7 +173,8 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
  *     (cursor) to initialize
  *
  * Callers of this function must call @ref oscore_msg_protected_optiter_finish
- * when done and before attempting to alter the message.
+ * when done (fetching any errors that occurred) and before attempting to alter
+ * the message.
  */
 OSCORE_NONNULL
 void oscore_msg_protected_optiter_init(
@@ -166,7 +193,7 @@ void oscore_msg_protected_optiter_init(
  * If there is a next option to be read in the message, set @p value, @p
  * value_len and @p option_number to that option's data and return true.
  *
- * If the iterator has been exhausted, return false.
+ * If the iterator has been exhausted or failed, return false.
  */
 OSCORE_NONNULL
 bool oscore_msg_protected_optiter_next(
@@ -184,9 +211,15 @@ bool oscore_msg_protected_optiter_next(
  * @param[in] msg Message that was being iterated over
  * @param[inout] iter Iterator (cursor) that will not be used any more after
  *     this invocation
+ *
+ * If any errors were encountered during the iteration, they are returned from
+ * this function. That is to keep the iteration loop simple, and to have a
+ * clear place to handle clean-up. Errors can be encountered when inner options
+ * are encoded invalidly, or when critical Class E options are present in the
+ * outer options.
  */
 OSCORE_NONNULL
-void oscore_msg_protected_optiter_finish(
+oscore_msgerr_protected_t oscore_msg_protected_optiter_finish(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
         );
@@ -199,12 +232,18 @@ void oscore_msg_protected_optiter_finish(
  *
  * This modifies the message as it ends the possibility of adding options.
  *
- * This function can not fail, but it can return a zero length payload
- * indicating that there is insufficient remaining space in the allocated
- * message to send any non-zero payload.
+ * This function can fail if the encoding of the inner options is erroneous (as
+ * their encoding is not checked at decryption time). It will not fail if the
+ * options have been iterated over successfully.
+ *
+ * It could be argued that this can be made infallible and could return
+ * arbitrary zero-length memory as the semantics of the payload can't be
+ * comprehended exhaustively having gone through the options. Given that this
+ * has little cost and large benefits in debugging, this function is allowed an
+ * error code.
  */
 OSCORE_NONNULL
-void oscore_msg_protected_map_payload(
+oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         oscore_msg_protected_t *msg,
         uint8_t **payload,
         size_t *payload_len

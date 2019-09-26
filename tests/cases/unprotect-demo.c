@@ -95,11 +95,13 @@ int testmain(int introduce_error)
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
     assert(!next_ok);
 
-    oscore_msg_protected_optiter_finish(&unprotected, &i_iter);
+    oscerr = oscore_msg_protected_optiter_finish(&unprotected, &i_iter);
+    assert(!oscore_msgerr_protected_is_error(oscerr));
 
     uint8_t *p_payload;
     size_t p_payload_len;
-    oscore_msg_protected_map_payload(&unprotected, &p_payload, &p_payload_len);
+    oscerr = oscore_msg_protected_map_payload(&unprotected, &p_payload, &p_payload_len);
+    assert(!oscore_msgerr_protected_is_error(oscerr));
     assert(p_payload_len == 0);
     
     oscore_test_msg_destroy(msg);

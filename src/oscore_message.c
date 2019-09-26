@@ -156,6 +156,7 @@ static void optiter_peek_inner_option(
     if (cursor_inner == payload + payload_len) {
         // End of inner payload reached without payload marker
         iter->inner_peeked_value = NULL;
+        iter->inner_termination_reason = OK;
         return;
     }
 
@@ -169,6 +170,7 @@ static void optiter_peek_inner_option(
         if (iter->inner_peeked_value_len > (iter->inner_peeked_value - payload) + payload_len) {
             // Option length exceeds payload length, abort immediately
             iter->inner_peeked_value = NULL;
+            iter->inner_termination_reason = INVALID_INNER_OPTION;
         } else {
             iter->inner_peeked_optionnumber += delta;
         }
@@ -176,6 +178,7 @@ static void optiter_peek_inner_option(
         // End of inner payload reached with payload marker, or invalid option
         // encountered
         iter->inner_peeked_value = NULL;
+        iter->inner_termination_reason = *cursor_inner == 0xff ? OK : INVALID_INNER_OPTION;
     }
 }
 
@@ -288,6 +291,9 @@ void oscore_msg_protected_optiter_init(
 {
     iter->inner_peeked_optionnumber = 0;
     iter->inner_peeked_value = NULL;
+    // No need to set inner_termination_reason here as
+    // optiter_peek_inner_option does not access it but will set it one way or
+    // the other
     iter->backend_exhausted = false;
     oscore_msg_native_optiter_init(msg->backend, &iter->backend);
 
@@ -346,20 +352,36 @@ bool oscore_msg_protected_optiter_next(
     return true;
 }
 
-void oscore_msg_protected_optiter_finish(
+oscore_msgerr_protected_t oscore_msg_protected_optiter_finish(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
         )
 {
-    oscore_msg_native_optiter_finish(msg->backend, &iter->backend);
+    oscore_msgerr_native_t native_error;
+    native_error = oscore_msg_native_optiter_finish(msg->backend, &iter->backend);
+    if (oscore_msgerr_native_is_error(native_error)) {
+        // This is rather unlikely to happen given that by the time OSCORE
+        // processing has started, the underlying message's plaintext has
+        // already been mapped successfully, and with the current CoAP
+        // encodings the backend's options must have been parsable in order to
+        // find that, but asserting this here would cause applications to
+        // presumably successfully read options from messages transported on
+        // future CoAP encodings that might be transported differently.
+        return NATIVE_ERROR;
+    }
+
+    return iter->inner_peeked_value == NULL ? iter->inner_termination_reason : OK;
 }
 
-void oscore_msg_protected_map_payload(
+oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         oscore_msg_protected_t *msg,
         uint8_t **payload,
         size_t *payload_len
         )
 {
+    // FIXME memoize the payload location, ideally setting it already when an
+    // iteration first completes.
+
     uint8_t *p;
     size_t native_payload_len;
     oscore_msg_native_map_payload(msg->backend, &p, &native_payload_len);
@@ -371,27 +393,21 @@ void oscore_msg_protected_map_payload(
     size_t value_len;
     while (parse_option(p, &delta, (const uint8_t**)&p, &value_len)) {
         p += value_len;
-        if (p >= native_payload_end) {
-            // No Payload (but possibly over-long option)
-            // FIXME: for the over-long option part, see below about error cases
+        if (p == native_payload_end) {
             *payload = native_payload_end;
             *payload_len = 0;
-            return;
+            return OK;
+        } else if (p > native_payload_end) {
+            return INVALID_INNER_OPTION;
         }
     }
     if (*p == 0xFF) {
         p++; // Skip Payload marker
         *payload = p;
         *payload_len = native_payload_end - p;
+        return OK;
     } else {
-        // FIXME: This is an error case, but the API does not allow passing
-        // errors back here -- primarily because an application can not
-        // reliably make sense of the payload before having gone through all
-        // (possibly critical) options, in which case the error would have
-        // popped up earlier. (Possible mitigations: API change, documentation
-        // pointing to previous option iteration)
-        *payload = p;
-        *payload_len = 0;
+        return INVALID_INNER_OPTION;
     }
 }
 

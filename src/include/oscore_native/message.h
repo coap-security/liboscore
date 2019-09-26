@@ -83,7 +83,8 @@ oscore_msgerr_native_t oscore_msg_native_update_option(
  *     (cursor) to initialize
  *
  * Callers of this function must call @ref oscore_msg_native_optiter_finish
- * when done and before attempting to alter the message.
+ * when done fetching any errors that occurred) and before attempting to alter
+ * the message.
  */
 void oscore_msg_native_optiter_init(oscore_msg_native_t msg,
         oscore_msg_native_optiter_t *iter
@@ -100,8 +101,8 @@ void oscore_msg_native_optiter_init(oscore_msg_native_t msg,
  * If there is a next option to be read in the message, set @p value, @p
  * value_len and @p option_number to that option's data and return true.
  *
- * If the iterator has been exhausted, return false; the iterator will then not
- * be called again.
+ * If the iterator has been exhausted or failed, return false; the iterator
+ * will then not be called again.
  *
  * Native CoAP implementations that store options in their semantic form
  * internally (eg. options of type uint as uint32_t) may need to have a buffer
@@ -130,8 +131,15 @@ bool oscore_msg_native_optiter_next(
  * contains is pointers into the message. They need to take action here if they
  * use any form of read/write locking that prevents writes to a message while
  * it is being iterated over.
+ *
+ * If any errors were encountered during the iteration, they are returned from
+ * this function. That is to keep the iteration loop simple, and to have a
+ * clear place to handle clean-up. Errors can be encountered if the library
+ * allows creating a @ref oscore_msg_native_t from messages that have not been
+ * parsed completely, which may then have invalid (`0x?f` or `0xf?` for `? =
+ * 0xf`) option fields or option lengths exceeding the message.
  */
-void oscore_msg_native_optiter_finish(
+oscore_msgerr_native_t oscore_msg_native_optiter_finish(
         oscore_msg_native_t msg,
         oscore_msg_native_optiter_t *iter
         );
@@ -145,11 +153,18 @@ void oscore_msg_native_optiter_finish(
  * This may modify the message, as a message can keep track of whether its
  * payload has been written or not.
  *
- * This function can not fail, but it can return a zero length payload
- * indicating that there is insufficient remaining space in the allocated
- * message to send any non-zero payload.
+ * This function can fail if the library allows creating a @ref
+ * oscore_msg_native_t from messages that have not been parsed completely, and
+ * where invalid option encodings are encountered on the search for a payload
+ * marker.
+ *
+ * It could be argued that this can be made infallible and could return
+ * arbitrary zero-length memory as the semantics of the payload can't be
+ * comprehended exhaustively having gone through the options. Given that this
+ * has little cost and large benefits in debugging, this function is allowed an
+ * error code.
  */
-void oscore_msg_native_map_payload(
+oscore_msgerr_native_t oscore_msg_native_map_payload(
         oscore_msg_native_t msg,
         uint8_t **payload,
         size_t *payload_len
