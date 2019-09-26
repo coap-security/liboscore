@@ -4,3 +4,4 @@ libs
 standalone-demo
 cryptobackend-aead
 unprotect-demo
+unit-contextpair-window
