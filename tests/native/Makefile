@@ -39,6 +39,8 @@ cryptobackend-aead: cryptobackend-aead.o ${BACKEND_OBJS}
 
 unprotect-demo: unprotect-demo.o contextpair.o protection.o oscore_message.o ${BACKEND_OBJS}
 
+unit-contextpair-window: unit-contextpair-window.o contextpair.o ${BACKEND_OBJS}
+
 libs:
 	mkdir libs
 	# not created as submodules as those are expected to be used in full
