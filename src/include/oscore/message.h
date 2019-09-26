@@ -62,8 +62,32 @@ typedef struct {
  */
 typedef struct {
     uint16_t inner_peeked_optionnumber;
+    /** @private
+     *
+     * @brief Pointer to the next available inner option value
+     *
+     * If this is NULL, the iterator was either just created, or it has run to
+     * exhaustion.
+     *
+     */
     const uint8_t *inner_peeked_value;
-    size_t inner_peeked_value_len;
+    union {
+        /** @private
+         *
+         * @brief Number of bytes available at @ref inner_peeked_value
+         *
+         * Valid if @ref inner_peeked_value is not NULL.
+         *
+         */
+        size_t inner_peeked_value_len;
+        /** @private
+         *
+         * @brief Reason why iteration was terminated
+         *
+         * Valid if @ref inner_peeked_value is NULL.
+         */
+        oscore_msgerr_protected_t inner_termination_reason;
+    };
 
     oscore_msg_native_optiter_t backend;
     bool backend_exhausted;
@@ -86,6 +110,8 @@ typedef enum {
     INVALID_ARG_ERROR,
     /** The operation is not implemented yet */
     NOTIMPLEMENTED_ERROR,
+    /** An inner option encoding was erroneous */
+    INVALID_INNER_OPTION,
 } oscore_msgerr_protected_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
