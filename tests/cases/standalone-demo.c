@@ -82,11 +82,13 @@ int testmain(int introduce_error)
     next_exists = oscore_msg_native_optiter_next(msg, &iter, &number, &value, &value_length);
     assert(!next_exists);
 
-    oscore_msg_native_optiter_finish(msg, &iter);
+    err = oscore_msg_native_optiter_finish(msg, &iter);
+    assert(!oscore_msgerr_native_is_error(err));
 
     uint8_t *out_payload;
     size_t out_payload_len;
-    oscore_msg_native_map_payload(msg, &out_payload, &out_payload_len);
+    err = oscore_msg_native_map_payload(msg, &out_payload, &out_payload_len);
+    assert(!oscore_msgerr_native_is_error(err));
     assert(out_payload_len == 3);
     assert(memcmp(out_payload, "odd", 3) == 0);
 
