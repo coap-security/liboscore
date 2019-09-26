@@ -98,11 +98,11 @@ void oscore_context_strikeout_requestid(
         {
             struct oscore_context_primitive *primitive = secctx->data;
             // request_id->partial_iv is documented to always be zero-padded
-            int64_t numeric = request_id->partial_iv[0] + \
-                              request_id->partial_iv[1] * ((int64_t)1 << 8) + \
+            int64_t numeric = request_id->partial_iv[4] + \
+                              request_id->partial_iv[3] * ((int64_t)1 << 8) + \
                               request_id->partial_iv[2] * ((int64_t)1 << 16) + \
-                              request_id->partial_iv[3] * ((int64_t)1 << 24) + \
-                              request_id->partial_iv[4] * ((int64_t)1 << 32);
+                              request_id->partial_iv[1] * ((int64_t)1 << 24) + \
+                              request_id->partial_iv[0] * ((int64_t)1 << 32);
 
             // FIXME add a fast path for > 65 jumps -- that'll probably make
             // the below easier and make us refactor roll_window into a
