@@ -147,7 +147,8 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
  *     (cursor) to initialize
  *
  * Callers of this function must call @ref oscore_msg_protected_optiter_finish
- * when done and before attempting to alter the message.
+ * when done (fetching any errors that occurred) and before attempting to alter
+ * the message.
  */
 OSCORE_NONNULL
 void oscore_msg_protected_optiter_init(
@@ -166,7 +167,7 @@ void oscore_msg_protected_optiter_init(
  * If there is a next option to be read in the message, set @p value, @p
  * value_len and @p option_number to that option's data and return true.
  *
- * If the iterator has been exhausted, return false.
+ * If the iterator has been exhausted or failed, return false.
  */
 OSCORE_NONNULL
 bool oscore_msg_protected_optiter_next(
@@ -184,9 +185,15 @@ bool oscore_msg_protected_optiter_next(
  * @param[in] msg Message that was being iterated over
  * @param[inout] iter Iterator (cursor) that will not be used any more after
  *     this invocation
+ *
+ * If any errors were encountered during the iteration, they are returned from
+ * this function. That is to keep the iteration loop simple, and to have a
+ * clear place to handle clean-up. Errors can be encountered when inner options
+ * are encoded invalidly, or when critical Class E options are present in the
+ * outer options.
  */
 OSCORE_NONNULL
-void oscore_msg_protected_optiter_finish(
+oscore_msgerr_protected_t oscore_msg_protected_optiter_finish(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
         );
@@ -199,12 +206,18 @@ void oscore_msg_protected_optiter_finish(
  *
  * This modifies the message as it ends the possibility of adding options.
  *
- * This function can not fail, but it can return a zero length payload
- * indicating that there is insufficient remaining space in the allocated
- * message to send any non-zero payload.
+ * This function can fail if the encoding of the inner options is erroneous (as
+ * their encoding is not checked at decryption time). It will not fail if the
+ * options have been iterated over successfully.
+ *
+ * It could be argued that this can be made infallible and could return
+ * arbitrary zero-length memory as the semantics of the payload can't be
+ * comprehended exhaustively having gone through the options. Given that this
+ * has little cost and large benefits in debugging, this function is allowed an
+ * error code.
  */
 OSCORE_NONNULL
-void oscore_msg_protected_map_payload(
+oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         oscore_msg_protected_t *msg,
         uint8_t **payload,
         size_t *payload_len
