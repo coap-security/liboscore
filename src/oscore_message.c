@@ -302,7 +302,7 @@ void oscore_msg_protected_optiter_init(
 }
 
 bool oscore_msg_protected_optiter_next(
-        oscore_msg_protected_t msg,
+        oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter,
         uint16_t *option_number,
         const uint8_t **value,
@@ -330,13 +330,13 @@ bool oscore_msg_protected_optiter_next(
         *option_number = iter->inner_peeked_optionnumber;
         *value = iter->inner_peeked_value;
         *value_len = iter->inner_peeked_value_len;
-        optiter_peek_inner_option(&msg, iter);
+        optiter_peek_inner_option(msg, iter);
     } else {
         *option_number = iter->backend_peeked_optionnumber;
         *value = iter->backend_peeked_value;
         *value_len = iter->backend_peeked_value_len;
         iter->backend_exhausted =
-                !oscore_msg_native_optiter_next(msg.backend,
+                !oscore_msg_native_optiter_next(msg->backend,
                         &iter->backend,
                         &iter->backend_peeked_optionnumber,
                         &iter->backend_peeked_value,
@@ -347,11 +347,11 @@ bool oscore_msg_protected_optiter_next(
 }
 
 void oscore_msg_protected_optiter_finish(
-        oscore_msg_protected_t msg,
+        oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
         )
 {
-    oscore_msg_native_optiter_finish(msg.backend, &iter->backend);
+    oscore_msg_native_optiter_finish(msg->backend, &iter->backend);
 }
 
 void oscore_msg_protected_map_payload(

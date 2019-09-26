@@ -170,7 +170,7 @@ void oscore_msg_protected_optiter_init(
  */
 OSCORE_NONNULL
 bool oscore_msg_protected_optiter_next(
-        oscore_msg_protected_t msg,
+        oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter,
         uint16_t *option_number,
         const uint8_t **value,
@@ -187,7 +187,7 @@ bool oscore_msg_protected_optiter_next(
  */
 OSCORE_NONNULL
 void oscore_msg_protected_optiter_finish(
-        oscore_msg_protected_t msg,
+        oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
         );
 
