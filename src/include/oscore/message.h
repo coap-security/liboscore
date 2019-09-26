@@ -58,6 +58,23 @@ typedef struct {
     bool is_observation; // not sure yet when applicable
 } oscore_msg_protected_t;
 
+/** @brief OSCORE message operation error type
+ *
+ * These errors are returned by functions manipulating a @ref oscore_msg_protected_t.
+ */
+typedef enum {
+    /** Successful (no error) result */
+    OK = 0,
+    /** An underlying native CoAP function returned an error */
+    NATIVE_ERROR,
+    /** An argument passed to the function is invalid */
+    INVALID_ARG_ERROR,
+    /** The operation is not implemented yet */
+    NOTIMPLEMENTED_ERROR,
+    /** An inner option encoding was erroneous */
+    INVALID_INNER_OPTION,
+} oscore_msgerr_protected_t;
+
 /** @brief Iterator (cursor) over a protected CoAP message
  */
 typedef struct {
@@ -96,23 +113,6 @@ typedef struct {
     const uint8_t *backend_peeked_value;
     size_t backend_peeked_value_len;
 } oscore_msg_protected_optiter_t;
-
-/** @brief OSCORE message operation error type
- *
- * These errors are returned by functions manipulating a @ref oscore_msg_protected_t.
- */
-typedef enum {
-    /** Successful (no error) result */
-    OK = 0,
-    /** An underlying native CoAP function returned an error */
-    NATIVE_ERROR,
-    /** An argument passed to the function is invalid */
-    INVALID_ARG_ERROR,
-    /** The operation is not implemented yet */
-    NOTIMPLEMENTED_ERROR,
-    /** An inner option encoding was erroneous */
-    INVALID_INNER_OPTION,
-} oscore_msgerr_protected_t;
 
 /** Retrieve the inner CoAP code (request method or response code) from a protected message */
 OSCORE_NONNULL
