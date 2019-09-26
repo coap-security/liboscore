@@ -1,2 +1,3 @@
-CFLAGS += -O0
+USEMODULE += testwrapper
+
 include ../Makefile.include
