@@ -89,6 +89,23 @@ static void roll_window(struct oscore_context_primitive *ctx) {
     }
 }
 
+/** @brief Remove the @par n (>= 1) sequence numbers starting at
+ * replay_window_left_edge from the window, rolling on the window in case the
+ * next number was already used. */
+static void advance_window(struct oscore_context_primitive *ctx, size_t n)
+{
+    if (n > 32) {
+        ctx->replay_window = 0;
+        ctx->replay_window_left_edge += n;
+        return;
+    }
+    bool needs_roll = ctx->replay_window & (((uint32_t)1) << (32 - n));
+    ctx->replay_window <<= n;
+    if (needs_roll) {
+        roll_window(ctx);
+    }
+}
+
 void oscore_context_strikeout_requestid(
         oscore_context_t *secctx,
         oscore_requestid_t *request_id)
@@ -104,15 +121,11 @@ void oscore_context_strikeout_requestid(
                               request_id->partial_iv[1] * ((int64_t)1 << 24) + \
                               request_id->partial_iv[0] * ((int64_t)1 << 32);
 
-            // FIXME add a fast path for > 65 jumps -- that'll probably make
-            // the below easier and make us refactor roll_window into a
-            // roll_window_by_atleast
-
             // We can keep comparing here as all is signed and the possible
             // input magnitudes come nowhere near over-/underflowing
-            while (numeric - primitive->replay_window_left_edge > 32) {
-                // Strike out unseen number as a far larger one is coming in
-                roll_window(primitive);
+            int64_t necessary_shift = numeric - primitive->replay_window_left_edge - 32;
+            if (necessary_shift >= 1) {
+                advance_window(primitive, necessary_shift);
             }
 
             bool is_first;
