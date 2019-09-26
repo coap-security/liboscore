@@ -24,11 +24,13 @@ BACKEND_OBJS += testwrapper.c
 test: ${CASES}
 	set -ex; for x in $^; do ./$$x; done
 
-test-all-optlevels:
+test-all-versions:
 	${MAKE} clean
-	${MAKE} OPTFLAGS=-O0 test
+	${MAKE} CC=gcc OPTFLAGS=-O0 test
 	${MAKE} clean
-	${MAKE} OPTFLAGS=-O3 test
+	${MAKE} CC=gcc OPTFLAGS=-O3 test
+	${MAKE} clean
+	${MAKE} CC=clang test
 	${MAKE} clean
 
 include $(wildcard *.d)

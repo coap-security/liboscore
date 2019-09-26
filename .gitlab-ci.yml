@@ -3,15 +3,13 @@ image: debian
 test:
   script:
     - apt-get update
-    - apt-get -y install git build-essential pkg-config libsodium-dev
+    - apt-get -y install git build-essential pkg-config libsodium-dev clang
     - cd tests/native
     # The current Makefile setup fails to consider the vpaths intgroduced in
     # Makefile.libcose made available at lib build time; calling make in
     # different steps works around that.
     - make libs
-    - make test-all-optlevels
-    - apt-get -y install clang
-    - make test-all-optlevels CC=clang
+    - make test-all-versions
 
 pages:
   script:
