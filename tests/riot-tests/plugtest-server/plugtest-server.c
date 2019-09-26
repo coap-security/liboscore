@@ -91,18 +91,39 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscore_msg_protected_t incoming_decrypted;
     oscerr = oscore_unprotect_request(pdu, &incoming_decrypted, header, &secctx, &request_id);
 
-    if (oscerr != OSCORE_UNPROTECT_REQUEST_OK && oscerr != OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
-        errormessage = "Unprotect failed";
+    if (oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
+        if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
+            errormessage = "Unprotect failed, it's a duplicate";
+        } else {
+            errormessage = "Unprotect failed";
+        }
         goto error;
     }
 
-    printf("Wow it got decoded\n");
-    if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
-        printf("It's a duplicate though\n");
+    // For lack of full integration, we now manually implement a resource dispatch
+    oscore_msg_protected_optiter_t iter;
+    uint16_t opt_num;
+    const uint8_t *opt_val;
+    size_t opt_len;
+    oscore_msg_protected_optiter_init(&incoming_decrypted, &iter);
+    while (oscore_msg_protected_optiter_next(&incoming_decrypted, &iter, &opt_num, &opt_val, &opt_len)) {
+        printf("Reading option %d: \"", opt_num);
+        for (size_t j = 0; j < opt_len; ++j) {
+            if (opt_val[j] >= 32 && opt_val[j] < 127) {
+                printf("%c", opt_val[j]);
+            } else {
+                printf("\\x%02x", opt_val[j]);
+            }
+        }
+        printf("\"\n");
     }
+    oscore_msg_protected_optiter_finish(&incoming_decrypted, &iter);
 
-    (void)buf;
-    (void)len;
+    // For now as we don't parse the above yet, the next easiest step would be
+    // to send back a protected error message ... can't do that yet.
+    errormessage = "Can't respond meaningfully yet";
+    goto error;
+
     return 0;
 
 error:
