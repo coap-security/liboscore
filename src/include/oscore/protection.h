@@ -183,6 +183,40 @@ oscore_msg_native_t oscore_release_unprotected(
         oscore_msg_protected_t *unprotected
         );
 
+/** @brief Results of message encryption preparation
+ *
+ * Users of the library should never check for identity to unsuccessful values,
+ * as those may be extended in future to provide better debugging.
+ * */
+enum oscore_prepare_result {
+    /** Preparation successful */
+    OSCORE_PREPARE_OK,
+    /** The security context can not provide protection for this message */
+    // There may be a future distinction between temporary ("Can't send yet,
+    // flash write not completed yet") and permanent failures
+    OSCORE_PREPARE_SECCTX_UNAVAILABLE,
+};
+
+/** @brief Response message preparation
+ *
+ * Start building a message for encryption with a given security context.
+ *
+ * @param[in] protected An allocated message into which the operations on @p unprotected can write
+ * @param[in] unprotected A pre-allocated, uninititialized @ref oscore_msg_protected_t that the message can be written to
+ * @param[inout] secctx A security context used to protect the message, which a sequence number will be taken from on demand
+ * @param[inout] request_id The request ID of the incoming message. This is marked for input and output because creating the response re-using the request ID's sequence number will clear its "first use" property.
+ *
+ * @return OSCORE_PREPARE_OK if all information is available to continue, or
+ * any other if not.
+ */
+OSCORE_NONNULL
+enum oscore_prepare_result oscore_prepare_response(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        );
+
 /** @} */
 
 #endif

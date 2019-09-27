@@ -369,3 +369,27 @@ oscore_msg_native_t oscore_release_unprotected(
 {
     return unprotected->backend;
 }
+
+enum oscore_prepare_result oscore_prepare_response(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        )
+{
+    // FIXME: Should we take the native message's code and set it as inner?
+    // Users from libraries that set a code on creation may expect that, but
+    // for others it's needless memory shoving.
+
+    oscore_native_set_code(protected, 0x02); // POST
+
+    oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
+    size_t tag_length = oscore_crypto_aead_get_taglength(aeadalg);
+
+    // FIXME obtain and store sequence number
+
+    // FIXME initialize the rest
+
+    unprotected->backend = protected;
+    unprotected->tag_length = tag_length;
+}
