@@ -356,9 +356,6 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
 
     oscore_context_strikeout_requestid(secctx, request_id);
 
-    // FIXME: for testing only!
-    //  oscore_msg_native_t should not be accessed like that!
-
     // FIXME all of that needs to be initialized
     unprotected->backend = protected;
     unprotected->tag_length = tag_length;
