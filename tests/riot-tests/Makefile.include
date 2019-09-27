@@ -6,6 +6,10 @@ BOARD ?= native
 
 DEVELHELP ?= 1
 
+# C11 features are accepted in the OSCORE implementation, but that causes
+# pedantic Werrors to show up in RIOT source; gnu11 seems to ignore those.
+CFLAGS += -std=gnu11
+
 EXTERNAL_MODULE_DIRS += $(abspath ../../..)/backends/riot-module
 USEMODULE += oscore
 
