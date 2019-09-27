@@ -167,6 +167,22 @@ enum oscore_unprotect_response_result oscore_unprotect_response(
         oscore_requestid_t *request_id
         );
 
+/** @brief Free a native message from a protected message's control
+ *
+ * This relinquishes an @ref oscore_msg_protected_t's hold on a native message
+ * after it has been used in an unprotect operation.
+ *
+ * The message can not be expected to have meaningful content any more (in
+ * practice, it will contain its outer options as well as a payload consisting
+ * of the OSCORE plaintext).
+ *
+ * @todo Point to the equivalent option for protection, which returns a
+ * ready-to-use protected native message
+ */
+oscore_msg_native_t oscore_release_unprotected(
+        oscore_msg_protected_t *unprotected
+        );
+
 /** @} */
 
 #endif

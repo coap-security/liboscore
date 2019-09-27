@@ -365,3 +365,10 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
 
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }
+
+oscore_msg_native_t oscore_release_unprotected(
+        oscore_msg_protected_t *unprotected
+        )
+{
+    return unprotected->backend;
+}

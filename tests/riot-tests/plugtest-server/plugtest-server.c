@@ -119,6 +119,12 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     }
     oscore_msg_protected_optiter_finish(&incoming_decrypted, &iter);
 
+    // Anything we were trying to learn from the incoming message needs to be
+    // copied to the stack by now.
+    pdu = oscore_release_unprotected(incoming_decrypted);
+
+    gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
+
     // For now as we don't parse the above yet, the next easiest step would be
     // to send back a protected error message ... can't do that yet.
     errormessage = "Can't respond meaningfully yet";
