@@ -73,6 +73,8 @@ typedef enum {
     NOTIMPLEMENTED_ERROR,
     /** An inner option encoding was erroneous */
     INVALID_INNER_OPTION,
+    /** An inacceptable outer option was erroneous */
+    INVALID_OUTER_OPTION,
 } oscore_msgerr_protected_t;
 
 /** @brief Iterator (cursor) over a protected CoAP message

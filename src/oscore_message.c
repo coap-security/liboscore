@@ -307,6 +307,26 @@ void oscore_msg_protected_optiter_init(
             &iter->backend_peeked_value_len);
 }
 
+/** Set all iterator and message properties to the given error reasons, and
+ * return like oscore_msg_protected_optiter_next should after having
+ * encountered such an error */
+static bool optiter_abort(
+        oscore_msg_protected_t *msg,
+        oscore_msg_protected_optiter_t *iter,
+        oscore_msgerr_protected_t reason
+        )
+{
+    // Right now the error is not stored in the msg yet, but it likely will
+    // given the map_payload memoization
+    (void)msg;
+
+    iter->backend_exhausted = true;
+    iter->inner_peeked_value = NULL;
+    iter->inner_termination_reason = reason;
+
+    return false;
+}
+
 bool oscore_msg_protected_optiter_next(
         oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter,
@@ -315,45 +335,102 @@ bool oscore_msg_protected_optiter_next(
         size_t *value_len
         )
 {
-    if (iter->inner_peeked_value == NULL && iter->backend_exhausted) {
-        return false;
-    }
+    while (true) {
+        if (iter->inner_peeked_value == NULL && iter->backend_exhausted) {
+            return false;
+        }
 
-    // Determine next option
-    bool next_is_inner;
-    if (iter->backend_exhausted) {
-        next_is_inner = true;
-    } else if (iter->inner_peeked_value == NULL) {
-        next_is_inner = false;
-    } else {
-        // Return options ordered by option number
-        next_is_inner = iter->inner_peeked_optionnumber <
-                iter->backend_peeked_optionnumber;
-    }
+        // Determine next option
+        bool next_is_inner;
+        if (iter->backend_exhausted) {
+            next_is_inner = true;
+        } else if (iter->inner_peeked_value == NULL) {
+            next_is_inner = false;
+        } else {
+            // Return options ordered by option number
+            next_is_inner = iter->inner_peeked_optionnumber <
+                    iter->backend_peeked_optionnumber;
+        }
 
-    if (next_is_inner) {
-        *option_number = iter->inner_peeked_optionnumber;
-    } else {
-        *option_number = iter->backend_peeked_optionnumber;
-    }
+        if (next_is_inner) {
+            *option_number = iter->inner_peeked_optionnumber;
+        } else {
+            *option_number = iter->backend_peeked_optionnumber;
+        }
 
-    // Return current inner/outer option and peek at next one.
-    if (next_is_inner) {
-        *value = iter->inner_peeked_value;
-        *value_len = iter->inner_peeked_value_len;
-        optiter_peek_inner_option(msg, iter);
-    } else {
-        *value = iter->backend_peeked_value;
-        *value_len = iter->backend_peeked_value_len;
-        iter->backend_exhausted =
-                !oscore_msg_native_optiter_next(msg->backend,
-                        &iter->backend,
-                        &iter->backend_peeked_optionnumber,
-                        &iter->backend_peeked_value,
-                        &iter->backend_peeked_value_len);
-    }
+        enum option_behavior class = get_option_behaviour(*option_number);
+        bool skip = false;
+        // Default behvior is not to skip but to emit; common behaviors are to
+        // skip the option, or to abort iteration altogether.
+        switch (class) {
+        case ONLY_E:
+            if (!next_is_inner) {
+                return optiter_abort(msg, iter, INVALID_OUTER_OPTION);
+            }
+            break;
+        case ONLY_E_IGNORE_OUTER:
+            if (!next_is_inner) {
+                skip = true;
+            };
+            break;
+        case PRIMARILY_U:
+        case PRIMARILY_I:
+            break;
+        case HARDCODED:
+            switch (*option_number) {
+            case 6: // Observe
+                if (next_is_inner) {
+                    // FIXME let responders peek into the sequence number
+                } else {
+                    skip = true;
+                }
+                break;
+            case 9: // OSCORE
+                if (next_is_inner) {
+                    // Nested OSCORE is not allowed per specification
+                    return optiter_abort(msg, iter, INVALID_INNER_OPTION);
+                } else {
+                    skip = true;
+                }
+                break;
+            case 35: // Proxy-Uri
+                // Might be kind of acceptable as an inner option, but it's not
+                // specified that way
+                return optiter_abort(msg, iter, INVALID_OUTER_OPTION);
+            default:
+                return optiter_abort(msg, iter, NOTIMPLEMENTED_ERROR);
+            }
+            break;
+        }
 
-    return true;
+        if (!skip) {
+            // Return current inner/outer option
+            if (next_is_inner) {
+                *value = iter->inner_peeked_value;
+                *value_len = iter->inner_peeked_value_len;
+            } else {
+                *value = iter->backend_peeked_value;
+                *value_len = iter->backend_peeked_value_len;
+            }
+            // ... but don't actually *return* yet as the peeking still has to be done
+        }
+
+        // Peek at next one.
+        if (next_is_inner) {
+            optiter_peek_inner_option(msg, iter);
+        } else {
+            iter->backend_exhausted =
+                    !oscore_msg_native_optiter_next(msg->backend,
+                            &iter->backend,
+                            &iter->backend_peeked_optionnumber,
+                            &iter->backend_peeked_value,
+                            &iter->backend_peeked_value_len);
+        }
+
+        if (!skip) {
+            return true;
+        }
+    }
 }
 
 oscore_msgerr_protected_t oscore_msg_protected_optiter_finish(
