@@ -66,6 +66,7 @@ static enum option_behavior get_option_behaviour(uint16_t option_number) {
             return ONLY_E;
         case 4: // ETag
         case 14: // Max-Age
+        case 258: // No-Response
             return ONLY_E_IGNORE_OUTER;
         case 3: // Uri-Host
         case 7: // Uri-Port
@@ -74,7 +75,6 @@ static enum option_behavior get_option_behaviour(uint16_t option_number) {
         case 6: // Observe
         case 9: // OSCORE
         case 35: // Proxy-Uri
-        case 258: // No-Response
             return HARDCODED;
         default:
             return HARDCODED;
