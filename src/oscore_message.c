@@ -331,14 +331,18 @@ bool oscore_msg_protected_optiter_next(
                 iter->backend_peeked_optionnumber;
     }
 
-    // Return current inner/outer option and peek at next one.
     if (next_is_inner) {
         *option_number = iter->inner_peeked_optionnumber;
+    } else {
+        *option_number = iter->backend_peeked_optionnumber;
+    }
+
+    // Return current inner/outer option and peek at next one.
+    if (next_is_inner) {
         *value = iter->inner_peeked_value;
         *value_len = iter->inner_peeked_value_len;
         optiter_peek_inner_option(msg, iter);
     } else {
-        *option_number = iter->backend_peeked_optionnumber;
         *value = iter->backend_peeked_value;
         *value_len = iter->backend_peeked_value_len;
         iter->backend_exhausted =
