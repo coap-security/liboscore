@@ -1,6 +1,8 @@
 #ifndef OSCORE_CONTEXTPAIR_H
 #define OSCORE_CONTEXTPAIR_H
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <oscore_native/crypto.h>
 #include <oscore/helpers.h>
 
@@ -83,6 +85,27 @@ OSCORE_NONNULL
 const uint8_t *oscore_context_get_key(
         const oscore_context_t *secctx,
         enum oscore_context_role role
+        );
+
+/** @brief Take a request ID from a security context
+ *
+ * This populates a partial IV matching the context's sender sequence number,
+ * and increments the sender sequence number.
+ *
+ * The is_first_use flag of the request ID will be set, as this is a fresh
+ * ID. Even though it's not used with the field's regular semantics here (it's
+ * not being tracked in a receive window on this side), that can be helpful in
+ * avoiding duplicate use.
+ *
+ * @param[inout] secctx Security context pair whose sender role to work on
+ * @param[out] request_id Uninitialized request ID to populate with the sequence number
+ *
+ * @return ``true`` if a sequence number was available, otherwise ``false``
+ */
+OSCORE_NONNULL
+bool oscore_context_take_seqno(
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
         );
 
 /** @} */

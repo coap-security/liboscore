@@ -1,6 +1,8 @@
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/primitive.h>
 
+#define SEQNO_MAX INT64_C(0xffffffffff)
+
 oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secctx)
 {
     switch (secctx->type) {
@@ -64,6 +66,37 @@ const uint8_t *oscore_context_get_key(
                 return primitive->recipient_key;
             else
                 return primitive->sender_key;
+        }
+    default:
+        abort();
+    }
+}
+
+bool oscore_context_take_seqno(
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        )
+{
+    switch (secctx->type) {
+    case OSCORE_CONTEXT_PRIMITIVE:
+        {
+            struct oscore_context_primitive *primitive = secctx->data;
+            uint64_t seqno = primitive->sender_sequence_number;
+            if (seqno >= SEQNO_MAX) {
+                return false;
+            }
+            request_id->is_first_use = true;
+            request_id->partial_iv[0] = (seqno >> 32) & 0xff;
+            request_id->partial_iv[1] = (seqno >> 24) & 0xff;
+            request_id->partial_iv[2] = (seqno >> 16) & 0xff;
+            request_id->partial_iv[3] = (seqno >> 8) & 0xff;
+            request_id->partial_iv[4] = seqno & 0xff;
+            request_id->used_bytes = request_id->partial_iv[0] != 0 ? 5 :
+                                     request_id->partial_iv[1] != 0 ? 4 :
+                                     request_id->partial_iv[2] != 0 ? 3 :
+                                     request_id->partial_iv[3] != 0 ? 2 :
+                                     1; // The 0th sequence number explicitly has length 1 as well.
+            return true;
         }
     default:
         abort();
