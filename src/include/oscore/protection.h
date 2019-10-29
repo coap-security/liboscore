@@ -217,6 +217,56 @@ enum oscore_prepare_result oscore_prepare_response(
         oscore_requestid_t *request_id
         );
 
+/** @brief Results of message encryption
+ *
+ * Users of the library should never check for identity to unsuccessful values,
+ * as those may be extended in future to provide better debugging.
+ * */
+enum oscore_finish_result {
+    /** Encryption successful */
+    OSCORE_FINISH_OK,
+    /** Additional options had to be inserted before encryption, and that operation failed */
+    OSCORE_FINISH_ERROR_OPTIONS,
+    /** The space allocated for the message was insufficient for adding the
+     * AEAD tag. This error showing indicaes a programming error in one of the
+     * previously executed OSCORE message manipulation functions, as those
+     * should fail rather than use data allocated for the tag. */
+    OSCORE_FINISH_ERROR_SIZE,
+    /** The cryptography backend produced an error while encrypting the
+     * message. This may not even be possible in some implementations, but can,
+     * for example, indicate that the backend needs to perform memory
+     * allocation for creating a contiguous AAD, and failed in that.
+     */
+    OSCORE_FINISH_ERROR_CRYPTO,
+};
+
+
+/** @brief Encrypt a previously prepared and populated message
+ *
+ * This encrypts a that has been initiallized by @ref oscore_prepare_request or
+ * oscore_prepare_response. It may execute additional steps like flushing out
+ * pending option writes, especially of the OSCORE option.
+ *
+ * @param[inout] unprotected The message that has been built. This is described as "inout" because while the struct is coming in initialized, it should be considered uninitialized after this function. It is a usage error (that is caught unless assertions are disabled) to use the same struct for anything else that assumes that it is initialized.
+ * @param[out] protected The native message that was passed in in the protection step, which now contains the ciphertext.
+ * @return OSCORE_FINISH_OK if all steps succeeded, any other value otherwise.
+ *
+ * @attention Be sure to check the success value of this before sending @p
+ * protected. That message may be easily in a state in which the CoAP backend
+ * would accept it for sending, but contains unencrypted data. Not setting that
+ * field was considered as an API alternative (that would be slightly safer to
+ * use as the user has chances of getting NULL pointers back that the sending
+ * CoAP library would hopefully refuse loudly), but eventually discarded
+ * because of the risks of whole-program optimizing compilers reinstating
+ * turning that undefined behavior into the present behavior (without the
+ * benefit of this warning to the user).
+ */
+OSCORE_NONNULL
+enum oscore_finish_result oscore_encrypt_message(
+        oscore_msg_protected_t *unprotected,
+        oscore_msg_native_t *protected
+        );
+
 /** @} */
 
 #endif

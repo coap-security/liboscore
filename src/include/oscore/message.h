@@ -32,12 +32,23 @@
 #include <stdint.h>
 #include <oscore/helpers.h>
 #include <oscore_native/message.h>
+#include <oscore/contextpair.h>
 
 /** @brief OSCORE protected CoAP message
  *
  * @todo This struct may need splitting up according to read/write state
+ *
+ * This structure represents a CoAP message built ready for in-place
+ * encryption, or decrypted in-place. Its outer options are placed as options
+ * of its backend. Its code, inner options, payload and padding for the AEAD
+ * tag are placed in the backend's payload according to the OSCORE
+ * specification.
  */
 typedef struct {
+    /** @brief Underlying CoAP message
+     *
+     * @private
+     */
     oscore_msg_native_t backend;
     /** @brief Number of bytes at the end of backend's plaintext reserved for the tag
      *
@@ -46,15 +57,75 @@ typedef struct {
      * for the message to be usable on its own. While the need to store this
      * information could be circumvented in received messages by truncating
      * them, messages being written require a place to store that datum.
+     *
+     * @private
      * */
     size_t tag_length;
+
+    //
+    // only used in writable messages
+    //
+
+    // FIXME to be replaced by more sophisicaed typing?
+    bool is_request;
+
+    /** @brief Security context used for encryption
+     *
+     * This context pointer is only used for the (yet to be defined, FIXME)
+     * constant properties of a security context. Its use does not preclude
+     * simultaneous (even non-const) use of the same context for creating new
+     * messages from it, but does require its immutable properties to stay
+     * constant. (I.e. the context can't just be destroyed and another
+     * recreated in its place).
+     *
+     */
+    const oscore_context_t *secctx;
+
+    /** @brief Partial IV assigned to this message
+     *
+     * This is only fully initialized on messages that can not reuse the
+     * request_id.
+     *
+     * As an extra security against double encryption of a message, the
+     * is_first_use flag is set to true in those cases until encryption is
+     * performed. (Thus, the is_first_use flag is always initialized).
+     *
+     * @private
+     */
+    oscore_requestid_t partial_iv;
+
+    /** @brief Identification of the request
+     *
+     * In requests, this is identical to the partial_iv in its bytes (but not
+     * in its is_first_use flag).
+     *
+     * Its is_first_use flag is set while the request ID can be used as an
+     * implicit partial IV in a response, and never in a request.
+     *
+     * @private
+     */
+    oscore_requestid_t request_id;
+
+    /** @brief Highest autooption number that has been written
+     *
+     * @see flush_autooptions_until
+     *
+     * @note The design of this as "has been written" (as opposed to "has not
+     * been written yet") doesn't allow postponing option 0, but allows
+     * expressing whether the last option has been written or not; given that
+     * neither option is an autooption, this is kind of irrelevant.
+     *
+     * @private
+     */
+    uint16_t autooption_written;
+
+    // still to be evalated
 
     void *aad_state; // Only for writing
     uint16_t last_e_option; // Only for writing messages (otherwise it's in the iterator)
     uint16_t last_i_option; // like last_e_option
     uint16_t last_u_option; // like last_e_option
     uint8_t code; // Probably only for writing messages
-    bool is_request; // May move into type state (as this'll need splitting up by read/write anyway)
     bool is_observation; // not sure yet when applicable
 } oscore_msg_protected_t;
 
