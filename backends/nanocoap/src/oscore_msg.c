@@ -5,16 +5,27 @@
 
 #include <oscore_native/message.h>
 
+/** Access the coapk_pkt pointer inside a oscore_msg_native_t.
+ *
+ * Doing this through a function makes it easy to move the implementation back
+ * and forth between the native type being just a pointer and being a poiner
+ * with additional metadata.
+ *
+ */
+static inline coap_pkt_t *_pkt(oscore_msg_native_t msg) {
+    return msg.pkt;
+}
+
 uint8_t oscore_msg_native_get_code(oscore_msg_native_t msg)
 {
     // The get_code / set_code helpers all try to transform the code into the
     // concatenated decimal form of the dotted representation
-    return msg->hdr->code;
+    return _pkt(msg)->hdr->code;
 }
 
 void oscore_msg_native_set_code(oscore_msg_native_t msg, uint8_t code)
 {
-    msg->hdr->code = code;
+    _pkt(msg)->hdr->code = code;
 }
 
 oscore_msgerr_native_t oscore_msg_native_append_option(
@@ -24,7 +35,7 @@ oscore_msgerr_native_t oscore_msg_native_append_option(
         size_t value_len
         )
 {
-    ssize_t result = coap_opt_add_opaque(msg, option_number, value, value_len);
+    ssize_t result = coap_opt_add_opaque(_pkt(msg), option_number, value, value_len);
     if (result > 0)
         return 0;
 
@@ -56,7 +67,7 @@ bool oscore_msg_native_optiter_next(
         )
 {
     ssize_t length = coap_opt_get_next(
-            msg,
+            _pkt(msg),
             &iter->pos,
             (uint8_t **)value,
             iter->is_first
@@ -101,7 +112,7 @@ oscore_msgerr_native_t oscore_msg_native_update_option(
 
     while (true) {
         ssize_t length = coap_opt_get_next(
-                msg,
+                _pkt(msg),
                 &iter,
                 &iter_value,
                 is_first
@@ -139,8 +150,14 @@ oscore_msgerr_native_t oscore_msg_native_map_payload(
         size_t *payload_len
         )
 {
-    *payload = msg->payload;
-    *payload_len = msg->payload_len;
+    *payload = _pkt(msg)->payload;
+    *payload_len = _pkt(msg)->payload_len;
+
+    if (!msg.payload_is_real && _pkt(msg)->payload_len != 0) {
+        **payload = 0xff;
+        (*payload) ++;
+        (*payload_len) --;
+    }
 
     // Infallible: Options are parsed and if need be rejected as a message on
     // reception
@@ -152,10 +169,14 @@ oscore_msgerr_native_t oscore_msg_native_trim_payload(
         size_t payload_len
         )
 {
-    if (payload_len > msg->payload_len) {
+    if (!msg.payload_is_real && payload_len > 0) {
+        payload_len ++;
+    }
+
+    if (payload_len > _pkt(msg)->payload_len) {
         return true;
     }
 
-    msg->payload_len = payload_len;
+    _pkt(msg)->payload_len = payload_len;
     return false;
 }

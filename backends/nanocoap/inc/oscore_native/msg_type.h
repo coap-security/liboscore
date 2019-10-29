@@ -5,7 +5,14 @@
 
 #include <stdbool.h>
 
-typedef coap_pkt_t *oscore_msg_native_t;
+typedef struct {
+    /** Pointer to the actual package */
+    coap_pkt_t *pkt;
+    /** Set to true if pkt->payload{,_length} reflects the actual payload (as
+     * it does in a received message), and to false if reflects the writable
+     * portion of the message (as it does in a being-constructed message) */
+    bool payload_is_real;
+} oscore_msg_native_t;
 typedef struct {
     coap_optpos_t pos;
     bool is_first;

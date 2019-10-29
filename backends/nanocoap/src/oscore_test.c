@@ -8,6 +8,7 @@
 
 static bool is_allocated = false;
 static coap_pkt_t the_message;
+static oscore_msg_native_t the_enhanced_message;
 static uint8_t the_buffer[MESSAGE_DEFAULT_SIZE];
 
 oscore_msg_native_t oscore_test_msg_create(void)
@@ -25,7 +26,10 @@ oscore_msg_native_t oscore_test_msg_create(void)
 
     is_allocated = true;
 
-    return &the_message;
+    the_enhanced_message.payload_is_real = false;
+    the_enhanced_message.pkt = &the_message;
+
+    return the_enhanced_message;
 }
 
 void oscore_test_msg_destroy(oscore_msg_native_t message)
