@@ -202,13 +202,13 @@ oscore_cryptoerr_t feed_aad(
  * role
  *
  * @param[out] iv The output buffer
- * @param[in] partiv The zero-padded partial IV
+ * @param[in] requestid The request ID containing the partial IV data
  * @param[in] secctx The security context pair this is used with
  * @param[in] piv_role The role the creator of the Partial IV has in this security context
  * */
 void build_iv(
         uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN],
-        const uint8_t partiv[PIV_BYTES],
+        const oscore_requestid_t *requestid,
         const oscore_context_t *secctx,
         enum oscore_context_role piv_role
         )
@@ -229,7 +229,7 @@ void build_iv(
     size_t pad1_len = iv_len - 6 - id_piv_len;
     memset(&iv[1], 0, pad1_len);
     memcpy(&iv[1 + pad1_len], id_piv, id_piv_len);
-    memcpy(&iv[iv_len - PIV_BYTES], partiv, PIV_BYTES);
+    memcpy(&iv[iv_len - PIV_BYTES], requestid->partial_iv, PIV_BYTES);
 
     for (size_t i = 0; i < iv_len; i++) {
         iv[i] ^= common_iv[i];
@@ -308,7 +308,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
      */
 
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
-    size_t tag_length = oscore_crypto_aead_get_taglength(aeadalg); 
+    size_t tag_length = oscore_crypto_aead_get_taglength(aeadalg);
     size_t minimum_ciphertext_length = 1 + tag_length;
 
     uint8_t *ciphertext;
@@ -328,7 +328,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
     struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
 
     uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
-    build_iv(iv, request_id->partial_iv, secctx, OSCORE_ROLE_RECIPIENT);
+    build_iv(iv, request_id, secctx, OSCORE_ROLE_RECIPIENT);
 
     oscore_cryptoerr_t err;
     oscore_crypto_aead_decryptstate_t dec;
