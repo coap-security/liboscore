@@ -42,7 +42,7 @@ struct oscore_context_primitive {
     uint8_t common_iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
 
     /** The sender ID */
-    uint8_t sender_id[OSCORE_CRYPTO_AEAD_IV_MAXLEN - IV_KEYID_UNUSABLE];
+    uint8_t sender_id[OSCORE_KEYID_MAXLEN];
     /** The length of @p sender_id */
     size_t sender_id_len;
     /** The sender key */
@@ -51,7 +51,7 @@ struct oscore_context_primitive {
     uint64_t sender_sequence_number;
 
     /** The recipient ID */
-    uint8_t recipient_id[OSCORE_CRYPTO_AEAD_IV_MAXLEN - IV_KEYID_UNUSABLE];
+    uint8_t recipient_id[OSCORE_KEYID_MAXLEN];
     /** The length of @p recipient_id */
     size_t recipient_id_len;
     /** The recipient key */

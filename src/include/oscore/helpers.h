@@ -25,6 +25,25 @@
 /** @brief Number of bytes in the IV that are not usable for key IDs */
 #define IV_KEYID_UNUSABLE (1 + PIV_BYTES)
 
+/** @brief Maximum length of a Key ID
+ *
+ * This may be lower for particular algorithms (as they need space in their IV
+ * length), but this size can be used when storing Key IDs.
+ * */
+#define OSCORE_KEYID_MAXLEN (OSCORE_CRYPTO_AEAD_IV_MAXLEN - IV_KEYID_UNUSABLE)
+
+/** @brief Maximum lenfgth of a Key ID
+ *
+ * The length given here limits the length of KID context values that can be
+ * processed. It also affects the lengths usable with B.2 negotiation.
+ *
+ * The value can be overridden at build time by predefining it to a numeric
+ * value in the compiler invocation.
+ * */
+#ifndef OSCORE_KEYIDCONTEXT_MAXLEN
+#define OSCORE_KEYIDCONTEXT_MAXLEN 16
+#endif
+
 /** @brief Message correlation data
  *
  * This type contains all the information that needs to be kept around to match
