@@ -97,7 +97,7 @@ struct aad_sizes {
  * @todo Actually use Class I options (currently, it is assumed that there are none)
  */
 struct aad_sizes predict_aad_size(
-        oscore_context_t *secctx,
+        const oscore_context_t *secctx,
         enum oscore_context_role requester_role,
         oscore_requestid_t *request,
         oscore_crypto_aeadalg_t aeadalg,
@@ -144,7 +144,7 @@ struct aad_sizes predict_aad_size(
 oscore_cryptoerr_t feed_aad(
         oscore_crypto_aead_decryptstate_t *state,
         struct aad_sizes aad_sizes,
-        oscore_context_t *secctx,
+        const oscore_context_t *secctx,
         enum oscore_context_role requester_role,
         oscore_requestid_t *request,
         oscore_crypto_aeadalg_t aeadalg,
@@ -209,7 +209,7 @@ oscore_cryptoerr_t feed_aad(
 void build_iv(
         uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN],
         const uint8_t partiv[PIV_BYTES],
-        oscore_context_t *secctx,
+        const oscore_context_t *secctx,
         enum oscore_context_role piv_role
         )
 {
