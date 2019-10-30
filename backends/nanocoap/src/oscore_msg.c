@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <oscore_native/message.h>
 
@@ -35,9 +36,38 @@ oscore_msgerr_native_t oscore_msg_native_append_option(
         size_t value_len
         )
 {
+#ifndef OSCORE_NANOCOAP_MEMMOVE_MODE
+    if (msg.payload_is_real) {
+        return -ENOSPC;
+    }
+#else
+    // Dipping into nanocoap internals due to the understandable lack of a
+    // predictor for payload after option addition.
+    //
+    // Underflow is ignored here as it results in harmless wrong size
+    // estimations and a later error by nanocoap
+    uint16_t delta = option_number - (_pkt(msg)->options_len
+            ? _pkt(msg)->options[_pkt(msg)->options_len - 1].opt_num : 0);
+    size_t optionlength = value_len + 1 + \
+                                (delta >= 13) + (delta >= 269) + \
+                                (value_len >= 13) + (value_len >= 269);
+    uint8_t *predicted_payload = NULL;
+    size_t predicted_length = 0;
+    if (optionlength <= _pkt(msg)->payload_len) {
+        predicted_length = _pkt(msg)->payload_len - optionlength;
+        predicted_payload = _pkt(msg)->payload + optionlength;
+        memmove(predicted_payload, _pkt(msg)->payload, predicted_length);
+    }
+#endif
+
     ssize_t result = coap_opt_add_opaque(_pkt(msg), option_number, value, value_len);
-    if (result > 0)
+    if (result > 0) {
+#ifdef OSCORE_NANOCOAP_MEMMOVE_MODE
+        assert(_pkt(msg)->payload == predicted_payload);
+        assert(_pkt(msg)->payload_len == predicted_length);
+#endif
         return 0;
+    }
 
     return result;
 }
@@ -150,14 +180,28 @@ oscore_msgerr_native_t oscore_msg_native_map_payload(
         size_t *payload_len
         )
 {
+#ifndef OSCORE_NANOCOAP_MEMMOVE_MODE
+    if (!msg.payload_is_real) {
+        // This'd be going the strict route
+        msg.payload_is_real = true;
+        if (_pkt(msg)->payload_len > 0) {
+            _pkt(msg)->payload[0] = 0xff;
+            _pkt(msg)->payload ++;
+            _pkt(msg)->payload_len --;
+        }
+    }
+#endif
+
     *payload = _pkt(msg)->payload;
     *payload_len = _pkt(msg)->payload_len;
 
+#ifdef OSCORE_NANOCOAP_MEMMOVE_MODE
     if (!msg.payload_is_real && _pkt(msg)->payload_len != 0) {
         **payload = 0xff;
         (*payload) ++;
         (*payload_len) --;
     }
+#endif
 
     // Infallible: Options are parsed and if need be rejected as a message on
     // reception
