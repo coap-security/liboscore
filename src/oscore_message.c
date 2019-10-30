@@ -202,6 +202,62 @@ void oscore_msg_protected_set_code(oscore_msg_protected_t *msg, uint8_t code)
     payload[0] = code;
 }
 
+#define OPTPART_OFFSET_1BYTE 13
+#define OPTPART_OFFSET_2BYTE 269
+#define OPTPART_FLAG_1BYTE 13
+#define OPTPART_FLAG_2BYTE 14
+
+/** Length of the extended option delta or option length encoding for the given
+ * @p value */
+static uint8_t _optpart_length(uint16_t value) {
+    return (value >= OPTPART_OFFSET_1BYTE) + (value >= OPTPART_OFFSET_2BYTE);
+}
+
+/** Encode an option @p delta and a @p size into a @p buffer, and return the
+ * number of bytes written (which is `1 + _optpart_length(delta) +
+ * _optpart_length(size)`) */
+static size_t _optparts_encode(uint8_t *buffer, uint16_t delta, uint16_t size) {
+    uint8_t deltalen = _optpart_length(delta);
+    uint8_t sizelen = _optpart_length(size);
+
+    uint8_t *startbuffer = buffer;
+    buffer ++;
+
+    switch (deltalen) {
+        case 0:
+            *startbuffer = delta << 4;
+            break;
+        case 1:
+            *startbuffer = OPTPART_FLAG_1BYTE << 4;
+            delta -= OPTPART_OFFSET_1BYTE;
+            *buffer++ = delta;
+            break;
+        case 2:
+            *startbuffer = OPTPART_FLAG_2BYTE << 4;
+            delta -= OPTPART_OFFSET_2BYTE;
+            *buffer++ = delta >> 8;
+            *buffer++ = delta;
+            break;
+    }
+    switch (sizelen) {
+        case 0:
+            *startbuffer |= size;
+            break;
+        case 1:
+            *startbuffer |= OPTPART_FLAG_1BYTE;
+            size -= OPTPART_OFFSET_1BYTE;
+            *buffer++ = size;
+            break;
+        case 2:
+            *startbuffer |= OPTPART_FLAG_2BYTE;
+            size -= OPTPART_OFFSET_2BYTE;
+            *buffer++ = size >> 8;
+            *buffer++ = size;
+            break;
+    }
+    return buffer - startbuffer;
+}
+
 oscore_msgerr_protected_t oscore_msg_protected_append_option(
         oscore_msg_protected_t *msg,
         uint16_t option_number,
@@ -219,12 +275,39 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
         );
         return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
     } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
-        // FIXME: append inner option.
-        //  Detect overrun into payload with payload marker - but what if there
-        //  isn't any payload yet? Should oscore_msg_protected_map_payload
-        //  create the marker once the payload is accessed?
-        (void)value; // prevent identical branch warning
-        return NOTIMPLEMENTED_ERROR;
+        if (option_number < msg->class_e.option_number) {
+            return OPTION_SEQUENCE;
+        }
+        uint8_t *payload;
+        size_t payload_length;
+        oscore_msgerr_native_t err = oscore_msg_native_map_payload(msg->backend, &payload, &payload_length);
+        if (oscore_msgerr_native_is_error(err)) {
+            return NATIVE_ERROR;
+        }
+
+        uint16_t delta = option_number - msg->class_e.option_number;
+        size_t total_length = value_len + 1 + \
+                              _optpart_length(delta) + \
+                              _optpart_length(value_len);
+
+        if (
+                /* can't be expressed in encoded options */
+                value_len > UINT16_MAX
+                ||
+                /* overflow occurred -- after the above, this can only happen where size_t == uint16_t */
+                total_length < value_len
+                ||
+                /* Regular 'option too long' */
+                total_length > payload_length - msg->class_e.cursor - 1
+                ) {
+            return OPTION_SIZE;
+        }
+        size_t opthead = _optparts_encode(&payload[1 + msg->class_e.cursor], delta, value_len);
+        memcpy(&payload[1 + msg->class_e.cursor + opthead], value, value_len);
+
+        msg->class_e.cursor += opthead + value_len;
+        msg->class_e.option_number = option_number;
+        return OK;
     } else {
         // FIXME: handle special options
         return NOTIMPLEMENTED_ERROR;

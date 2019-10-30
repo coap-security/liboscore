@@ -34,6 +34,18 @@
 #include <oscore_native/message.h>
 #include <oscore/contextpair.h>
 
+/** @brief Tracking helper for CoAP-encoded option sequences
+ *
+ * This struct is used to keep track of the Class-E options being written
+ * inside the plaintext, and can be used for tracking Class-I options as well.
+ *
+ * @private
+ */
+struct oscore_opttrack {
+    size_t cursor;
+    uint16_t option_number;
+};
+
 /** @brief OSCORE protected CoAP message
  *
  * @todo This struct may need splitting up according to read/write state
@@ -119,14 +131,7 @@ typedef struct {
      */
     uint16_t autooption_written;
 
-    // still to be evalated
-
-    void *aad_state; // Only for writing
-    uint16_t last_e_option; // Only for writing messages (otherwise it's in the iterator)
-    uint16_t last_i_option; // like last_e_option
-    uint16_t last_u_option; // like last_e_option
-    uint8_t code; // Probably only for writing messages
-    bool is_observation; // not sure yet when applicable
+    struct oscore_opttrack class_e;
 } oscore_msg_protected_t;
 
 /** @brief OSCORE message operation error type
@@ -146,6 +151,10 @@ typedef enum {
     INVALID_INNER_OPTION,
     /** An inacceptable outer option was erroneous */
     INVALID_OUTER_OPTION,
+    /** An added option was out of supported sequence */
+    OPTION_SEQUENCE,
+    /** An added option is too large */
+    OPTION_SIZE,
 } oscore_msgerr_protected_t;
 
 /** @brief Iterator (cursor) over a protected CoAP message
