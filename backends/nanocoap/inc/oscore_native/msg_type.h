@@ -5,13 +5,15 @@
 
 #include <stdbool.h>
 
+/** Note that while a regular coap_pkt_t has its payload marker to the actual
+ * payload on receipt and to the option write position on sending, this always
+ * has uses the latter behavior.
+ *
+ * The pointer is wrapped in a struct to denote this difference
+ * */
 typedef struct {
     /** Pointer to the actual package */
     coap_pkt_t *pkt;
-    /** Set to true if pkt->payload{,_length} reflects the actual payload (as
-     * it does in a received message), and to false if reflects the writable
-     * portion of the message (as it does in a being-constructed message) */
-    bool payload_is_real;
 } oscore_msg_native_t;
 typedef struct {
     coap_optpos_t pos;

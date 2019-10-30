@@ -26,7 +26,6 @@ oscore_msg_native_t oscore_test_msg_create(void)
 
     is_allocated = true;
 
-    the_enhanced_message.payload_is_real = false;
     the_enhanced_message.pkt = &the_message;
 
     return the_enhanced_message;

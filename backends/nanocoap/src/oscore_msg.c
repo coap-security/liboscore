@@ -36,11 +36,7 @@ oscore_msgerr_native_t oscore_msg_native_append_option(
         size_t value_len
         )
 {
-#ifndef OSCORE_NANOCOAP_MEMMOVE_MODE
-    if (msg.payload_is_real) {
-        return -ENOSPC;
-    }
-#else
+#ifdef OSCORE_NANOCOAP_MEMMOVE_MODE
     // Dipping into nanocoap internals due to the understandable lack of a
     // predictor for payload after option addition.
     //
@@ -180,28 +176,14 @@ oscore_msgerr_native_t oscore_msg_native_map_payload(
         size_t *payload_len
         )
 {
-#ifndef OSCORE_NANOCOAP_MEMMOVE_MODE
-    if (!msg.payload_is_real) {
-        // This'd be going the strict route
-        msg.payload_is_real = true;
-        if (_pkt(msg)->payload_len > 0) {
-            _pkt(msg)->payload[0] = 0xff;
-            _pkt(msg)->payload ++;
-            _pkt(msg)->payload_len --;
-        }
-    }
-#endif
-
     *payload = _pkt(msg)->payload;
     *payload_len = _pkt(msg)->payload_len;
 
-#ifdef OSCORE_NANOCOAP_MEMMOVE_MODE
-    if (!msg.payload_is_real && _pkt(msg)->payload_len != 0) {
+    if (_pkt(msg)->payload_len != 0) {
         **payload = 0xff;
         (*payload) ++;
         (*payload_len) --;
     }
-#endif
 
     // Infallible: Options are parsed and if need be rejected as a message on
     // reception
@@ -213,14 +195,14 @@ oscore_msgerr_native_t oscore_msg_native_trim_payload(
         size_t payload_len
         )
 {
-    if (!msg.payload_is_real && payload_len > 0) {
+    if (payload_len > 0) {
         payload_len ++;
     }
 
     if (payload_len > _pkt(msg)->payload_len) {
-        return true;
+        return -ENOSPC;
     }
 
     _pkt(msg)->payload_len = payload_len;
-    return false;
+    return 0;
 }
