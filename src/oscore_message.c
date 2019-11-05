@@ -337,7 +337,9 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
             return OPTION_SIZE;
         }
         size_t opthead = _optparts_encode(&payload[1 + msg->class_e.cursor], delta, value_len);
-        memcpy(&payload[1 + msg->class_e.cursor + opthead], value, value_len);
+        if (value_len) {
+            memcpy(&payload[1 + msg->class_e.cursor + opthead], value, value_len);
+        }
 
         msg->class_e.cursor += opthead + value_len;
         msg->class_e.option_number = option_number;
@@ -390,7 +392,15 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
                 if (value_len != iter.inner_peeked_value_len) {
                     return INVALID_ARG_ERROR;
                 }
-                memcpy((uint8_t *)iter.inner_peeked_value, value, value_len);
+                if (value_len != 0) {
+                    memcpy((uint8_t *)iter.inner_peeked_value, value, value_len);
+                } else {
+                    // Updating a known-to-be zero-length option with new empty
+                    // values is admittedly unexpected, but the condition is
+                    // still in here to avoid UB when it does happen -- and
+                    // user-facing interfaces are documented to be tolerant of
+                    // zero-length NULL arrays.
+                }
                 return OK;
             }
             option_occurrence--;
