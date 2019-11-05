@@ -4,6 +4,8 @@ USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gcoap
 
+CFLAGS += -DOSCORE_NANOCOAP_MEMMOVE_MODE
+
 BOARD ?= native
 ifneq ($(BOARD),native)
 # when using particle-xenon
