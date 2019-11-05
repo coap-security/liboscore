@@ -312,6 +312,14 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
         if (option_number < msg->class_e.option_number) {
             return OPTION_SEQUENCE;
         }
+        if (msg->payload_offset != 0) {
+            // FIXME (but probably more "extend me"): Allow this case, set the
+            // payload_offset right after, and move any existing memory. (That
+            // should be optional, as this behavior is sufficient in most
+            // applications other than OSCORE-in-OSCORE).
+            return OPTION_SEQUENCE;
+        }
+
         uint8_t *payload;
         size_t payload_length;
         oscore_msgerr_native_t err = oscore_msg_native_map_payload(msg->backend, &payload, &payload_length);

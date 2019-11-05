@@ -86,12 +86,11 @@ typedef struct {
      *
      * In writable messages, it being zero indicates that the inner payload has
      * not been mapped yet (and adding options therefore does not require
-     * memmoving the payload, FIXME if implemented and/or enabled). In readable
+     * memmoving the payload, if implemented and enabled). In readable
      * messages, it being zero indicates that the inner options have not been
      * iterated over, and is used to memoize the payload's offset on the first
      * mapping.
      * */
-    // FIXME This is not checked for (abort or memmove but not ignore) by the append options function
     size_t payload_offset;
 
     //
