@@ -190,6 +190,10 @@ typedef struct {
      * exhaustion.
      *
      */
+    // FIXME document what's needed from the backends to justify keeping a
+    // pointer to repeatedly mapped payloads ("MUST return the same memory area
+    // if no writes happen in the meantime", where the presence of our iterator
+    // guarantees we don't write ourselves), or just use an offset
     const uint8_t *inner_peeked_value;
     union {
         /** @private

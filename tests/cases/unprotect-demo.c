@@ -87,6 +87,8 @@ int testmain(int introduce_error)
     bool next_ok;
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
     assert(next_ok && opt_num == 11 && opt_len == 6 && memcmp(opt_val, "oscore", 6) == 0);
+    // FIXME: Introduce variant where this iteration is not completed, and
+    // map_payload needs to do it on its own
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
     assert(next_ok && opt_num == 11 && opt_len == 5 && memcmp(opt_val, "hello", 5) == 0);
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
