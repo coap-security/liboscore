@@ -137,13 +137,12 @@ static bool parse_option(
  * This can be called whenever the length of the inner options becomes known
  * through iteration.
  */
-// FIXME: This has a side effect on writable messages as well, in that
-// it'd flag the payload as dirty. Just a small performance penalty,
-// and unlikely given that iterating over a writable message's option
-// is expeced to happen, if at all, after writing the payload.
-//
-// FIXME Check whether with NDEBUG this can be implemented as an unconditional
-// set
+// FIXME: This has a side effect even if it is not wanted, which when the
+// protected message's options are iterated over before payload is intended to
+// be added (eg. when updating an option before rendering the payload).
+// Consider catering for that, eg. by using a different sentinel payload_offset
+// in writable messages and only replacing it with the "please populate me" 0
+// sentinel at oscore_msg_protected_map_payload time.
 static void optiter_maybe_set_payload_length(
         oscore_msg_protected_t *msg,
         size_t length
@@ -381,6 +380,9 @@ oscore_msgerr_protected_t oscore_msg_protected_update_option(
         );
         return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
     } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
+        // Actually we only need those values, consider making them into a
+        // separate struct and making optiter_peek_inner_option take a pointer
+        // to that -- but that's more a small optimization rather than a FIXME
         oscore_msg_protected_optiter_t iter = {
                 .inner_peeked_optionnumber = 0,
                 .inner_peeked_value = NULL
@@ -451,8 +453,7 @@ static bool optiter_abort(
         oscore_msgerr_protected_t reason
         )
 {
-    // Right now the error is not stored in the msg yet, but it likely will
-    // given the map_payload memoization
+    // Not storing the error anyhere
     (void)msg;
 
     iter->backend_exhausted = true;
@@ -600,19 +601,43 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         return NATIVE_ERROR;
     }
 
-    if (msg->payload_offset != 0) {
-        // Memoized value in place
+    if (msg->payload_offset == 0) {
+        // Run through the inner options
+        //
+        // This could be optimized by using the class_e member for writable
+        // options; see commented-out code block below for more details
 
-        size_t total_delta = msg->payload_offset + msg->tag_length;
+        // This is a stripped-down version of running through all the options
+        // which only reads the inner ones, saving possibly costly calls to the
+        // backend library. We only do this for the
+        // optiter_maybe_set_payload_length side effect.
+        oscore_msg_protected_optiter_t iter = {
+                .inner_peeked_optionnumber = 0,
+                .inner_peeked_value = NULL
+        };
+        do {
+            optiter_peek_inner_option(msg, &iter);
+        } while (iter.inner_peeked_value != NULL);
+        if (iter.inner_termination_reason != OK) {
+            // Can't map payload if options are unreadable
+            return iter.inner_termination_reason;
+        }
+    }
+    assert(msg->payload_offset != 0);
 
-        assert(total_delta <= *payload_len);
-        *payload += msg->payload_offset;
-        *payload_len -= total_delta;
-        return OK;
-    };
+    // Memoized value in place
 
-    // FIXME That below is only valid for writable messages (and should set the
-    // memoized value to indicate possibly dirty inner payload)
+    size_t total_delta = msg->payload_offset + msg->tag_length;
+
+    assert(total_delta <= *payload_len);
+    *payload += msg->payload_offset;
+    *payload_len -= total_delta;
+    return OK;
+
+    /* This code would be valid for writable messages, but as long as readable
+     * and writable messages are not distinguished, it can't be used -- and
+     * either way, the speed benefits would need to be traded off against the
+     * code size increase of having both in
 
     // Code and any written options; inner payload marker not considered as not necessarily present
     size_t start_bytes = 1 + msg->class_e.cursor;
@@ -629,40 +654,6 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         *payload_len -= 1;
     }
     return OK;
-
-    /* Code for iteration -- the above supports only write messages, the below
-     * only read messages. A memoized end-of-options part should do both.
-
-    // FIXME memoize the payload location, ideally setting it already when an
-    // iteration first completes.
-
-    uint8_t *p;
-    size_t native_payload_len;
-    oscore_msg_native_map_payload(msg->backend, &p, &native_payload_len);
-    uint8_t *native_payload_end = p + (native_payload_len - msg->tag_length);
-
-    p++; // Skip Code
-
-    uint16_t delta; // Ignored
-    size_t value_len;
-    while (parse_option(p, &delta, (const uint8_t**)&p, &value_len)) {
-        p += value_len;
-        if (p == native_payload_end) {
-            *payload = native_payload_end;
-            *payload_len = 0;
-            return OK;
-        } else if (p > native_payload_end) {
-            return INVALID_INNER_OPTION;
-        }
-    }
-    if (*p == 0xFF) {
-        p++; // Skip Payload marker
-        *payload = p;
-        *payload_len = native_payload_end - p;
-        return OK;
-    } else {
-        return INVALID_INNER_OPTION;
-    }
 
     */
 }
