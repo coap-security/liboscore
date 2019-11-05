@@ -479,13 +479,16 @@ enum oscore_prepare_result oscore_prepare_response(
         unprotected->partial_iv.is_first_use = false;
     }
 
-    // FIXME initialize the rest (esp. class_e_written)
+    // Initialize everything except the previously initialized partial_iv and
+    // request_id
 
     unprotected->backend = protected;
     unprotected->tag_length = tag_length;
-    unprotected->autooption_written = 0;
-    unprotected->secctx = secctx;
     unprotected->is_request = false;
+    unprotected->secctx = secctx;
+    unprotected->autooption_written = 0;
+    unprotected->class_e.cursor = 0;
+    unprotected->class_e.option_number = 0;
 
     return OSCORE_PREPARE_OK;
 }
