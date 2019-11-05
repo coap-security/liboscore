@@ -155,6 +155,8 @@ typedef enum {
     OPTION_SEQUENCE,
     /** An added option is too large */
     OPTION_SIZE,
+    /** Insufficient size of the backend message */
+    MESSAGESIZE,
 } oscore_msgerr_protected_t;
 
 /** @brief Iterator (cursor) over a protected CoAP message

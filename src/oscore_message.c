@@ -543,6 +543,30 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         size_t *payload_len
         )
 {
+    oscore_msgerr_native_t err = oscore_msg_native_map_payload(msg->backend, payload, payload_len);
+    if (oscore_msgerr_native_is_error(err)) {
+        return NATIVE_ERROR;
+    }
+
+    // Code and any written options; inner payload marker not considered as not necessarily present
+    size_t start_bytes = 1 + msg->class_e.cursor;
+    if (start_bytes + msg->tag_length > *payload_len) {
+        return MESSAGESIZE;
+    }
+
+    *payload += start_bytes;
+    *payload_len -= start_bytes + msg->tag_length;
+    if (*payload_len > 0) {
+        // Set inner payload marker, and compensate for it
+        **payload = 0xff;
+        *payload += 1;
+        *payload_len -= 1;
+    }
+    return OK;
+
+    /* Code for iteration -- the above supports only write messages, the below
+     * only read messages. A memoized end-of-options part should do both.
+
     // FIXME memoize the payload location, ideally setting it already when an
     // iteration first completes.
 
@@ -573,6 +597,8 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
     } else {
         return INVALID_INNER_OPTION;
     }
+
+    */
 }
 
 oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
@@ -580,24 +606,20 @@ oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
         size_t payload_len
         )
 {
-    uint8_t *p;
-    size_t inner_payload_len;
-    oscore_msg_protected_map_payload(msg, &p, &inner_payload_len);
+    oscore_msgerr_native_t err = oscore_msg_native_trim_payload(msg->backend,
+            // outer payload marker
+            1 +
+            // code
+            1 +
+            // class-E options
+            msg->class_e.cursor +
+            // inner payload marker
+            (payload_len > 0) +
+            // inner payload
+            payload_len +
+            // tag
+            msg->tag_length);
 
-    if (payload_len > inner_payload_len) {
-        // Cannot extend the payload
-        return INVALID_ARG_ERROR;
-    }
-    if (payload_len == inner_payload_len) {
-        // Nothing to do
-        return OK;
-    }
-
-    size_t native_payload_len;
-    oscore_msg_native_map_payload(msg->backend, &p, &native_payload_len);
-    native_payload_len -= inner_payload_len - payload_len;
-    oscore_msgerr_native_t err;
-    err = oscore_msg_native_trim_payload(msg->backend, native_payload_len);
     return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
 }
 
