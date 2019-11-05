@@ -431,6 +431,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
     // FIXME all of that needs to be initialized
     unprotected->backend = protected;
     unprotected->tag_length = tag_length;
+    unprotected->payload_offset = 0;
 
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }
@@ -484,6 +485,7 @@ enum oscore_prepare_result oscore_prepare_response(
 
     unprotected->backend = protected;
     unprotected->tag_length = tag_length;
+    unprotected->payload_offset = 0;
     unprotected->is_request = false;
     unprotected->secctx = secctx;
     unprotected->autooption_written = 0;

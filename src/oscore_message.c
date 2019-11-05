@@ -131,12 +131,38 @@ static bool parse_option(
     return true;
 }
 
+/** Indicate in the given @msg that the inner payload starts @length bytes into
+ * the outer payload.
+ *
+ * This can be called whenever the length of the inner options becomes known
+ * through iteration.
+ */
+// FIXME: This has a side effect on writable messages as well, in that
+// it'd flag the payload as dirty. Just a small performance penalty,
+// and unlikely given that iterating over a writable message's option
+// is expeced to happen, if at all, after writing the payload.
+//
+// FIXME Check whether with NDEBUG this can be implemented as an unconditional
+// set
+static void optiter_maybe_set_payload_length(
+        oscore_msg_protected_t *msg,
+        size_t length
+        )
+{
+    if (msg->payload_offset == 0) {
+        msg->payload_offset = length;
+    } else {
+        assert(length == msg->payload_offset);
+    }
+}
+
 /**
  * Reads the next inner option into the iterator, starting from the first if
  * value is NULL initially. If there is none, the value is set to NULL.
  */
+// FIXME Will this properly stop in a writable message?
 static void optiter_peek_inner_option(
-        const oscore_msg_protected_t *msg,
+        oscore_msg_protected_t *msg,
         oscore_msg_protected_optiter_t *iter
         )
 {
@@ -157,6 +183,8 @@ static void optiter_peek_inner_option(
         // End of inner payload reached without payload marker
         iter->inner_peeked_value = NULL;
         iter->inner_termination_reason = OK;
+
+        optiter_maybe_set_payload_length(msg, payload_len);
         return;
     }
 
@@ -178,7 +206,13 @@ static void optiter_peek_inner_option(
         // End of inner payload reached with payload marker, or invalid option
         // encountered
         iter->inner_peeked_value = NULL;
-        iter->inner_termination_reason = *cursor_inner == 0xff ? OK : INVALID_INNER_OPTION;
+        if (*cursor_inner == 0xff) {
+            iter->inner_termination_reason = OK;
+
+            optiter_maybe_set_payload_length(msg, cursor_inner + 1 - payload);
+        } else {
+            iter->inner_termination_reason = INVALID_INNER_OPTION;
+        }
     }
 }
 
@@ -547,6 +581,20 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
     if (oscore_msgerr_native_is_error(err)) {
         return NATIVE_ERROR;
     }
+
+    if (msg->payload_offset != 0) {
+        // Memoized value in place
+
+        size_t total_delta = msg->payload_offset + msg->tag_length;
+
+        assert(total_delta <= *payload_len);
+        *payload += msg->payload_offset;
+        *payload_len -= total_delta;
+        return OK;
+    };
+
+    // FIXME That below is only valid for writable messages (and should set the
+    // memoized value to indicate possibly dirty inner payload)
 
     // Code and any written options; inner payload marker not considered as not necessarily present
     size_t start_bytes = 1 + msg->class_e.cursor;

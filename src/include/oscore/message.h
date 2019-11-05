@@ -74,6 +74,26 @@ typedef struct {
      * */
     size_t tag_length;
 
+    /** @brief Start of inner payload
+     *
+     * If not equal to zero, this gives the index in the backend's payload at
+     * which the inner payload starts. (Typically that's the location after the
+     * payload marker; when no payload is present, it is equal to the backend's
+     * length).
+     *
+     * (Zero is a valid sentinel value because due to the presence of the inner
+     * code, the inner payload can never start at offset 0).
+     *
+     * In writable messages, it being zero indicates that the inner payload has
+     * not been mapped yet (and adding options therefore does not require
+     * memmoving the payload, FIXME if implemented and/or enabled). In readable
+     * messages, it being zero indicates that the inner options have not been
+     * iterated over, and is used to memoize the payload's offset on the first
+     * mapping.
+     * */
+    // FIXME This is not checked for (abort or memmove but not ignore) by the append options function
+    size_t payload_offset;
+
     //
     // only used in writable messages
     //
