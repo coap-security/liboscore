@@ -430,6 +430,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
 
     // FIXME all of that needs to be initialized
     unprotected->backend = protected;
+    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_NONE;
     unprotected->tag_length = tag_length;
     unprotected->payload_offset = 0;
 
@@ -484,6 +485,7 @@ enum oscore_prepare_result oscore_prepare_response(
     // request_id
 
     unprotected->backend = protected;
+    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_WRITABLE;
     unprotected->tag_length = tag_length;
     unprotected->payload_offset = 0;
     unprotected->is_request = false;

@@ -601,11 +601,32 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         return NATIVE_ERROR;
     }
 
+    if (msg->flags & OSCORE_MSG_PROTECTED_FLAG_WRITABLE) {
+        // Code and any written options; inner payload marker not considered as not necessarily present
+        size_t start_bytes = 1 + msg->class_e.cursor;
+        if (start_bytes + msg->tag_length > *payload_len) {
+            return MESSAGESIZE;
+        }
+
+        *payload_len -= start_bytes + msg->tag_length;
+
+        if (*payload_len > 0) {
+            // Set inner payload marker, and compensate for it
+            (*payload)[start_bytes] = 0xff;
+            start_bytes += 1;
+            *payload_len -= 1;
+        }
+
+        *payload += start_bytes;
+
+        // Mark the payload as possibly written-to
+        msg->payload_offset = start_bytes;
+
+        return OK;
+    }
+
     if (msg->payload_offset == 0) {
         // Run through the inner options
-        //
-        // This could be optimized by using the class_e member for writable
-        // options; see commented-out code block below for more details
 
         // This is a stripped-down version of running through all the options
         // which only reads the inner ones, saving possibly costly calls to the
@@ -633,29 +654,6 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
     *payload += msg->payload_offset;
     *payload_len -= total_delta;
     return OK;
-
-    /* This code would be valid for writable messages, but as long as readable
-     * and writable messages are not distinguished, it can't be used -- and
-     * either way, the speed benefits would need to be traded off against the
-     * code size increase of having both in
-
-    // Code and any written options; inner payload marker not considered as not necessarily present
-    size_t start_bytes = 1 + msg->class_e.cursor;
-    if (start_bytes + msg->tag_length > *payload_len) {
-        return MESSAGESIZE;
-    }
-
-    *payload += start_bytes;
-    *payload_len -= start_bytes + msg->tag_length;
-    if (*payload_len > 0) {
-        // Set inner payload marker, and compensate for it
-        **payload = 0xff;
-        *payload += 1;
-        *payload_len -= 1;
-    }
-    return OK;
-
-    */
 }
 
 oscore_msgerr_protected_t oscore_msg_protected_trim_payload(

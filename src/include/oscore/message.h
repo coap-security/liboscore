@@ -46,6 +46,26 @@ struct oscore_opttrack {
     uint16_t option_number;
 };
 
+/** @brief Flags used inside OSCORE messages
+ *
+ * These flags keep some state about a message, especially about which fields
+ * are initialized.
+ *
+ * This enum is used for flag value to be OR-ed together. Valid flag values may
+ * be the union of several named enum states.
+ *
+ * @private
+ */
+enum oscore_msg_protected_flags {
+    /** Empty flag value */
+    OSCORE_MSG_PROTECTED_FLAG_NONE = 0,
+    /** Message is writable. This means that all its writable-message-only
+     * fields are initialized. It also means that the payload marker may not
+     * have been set yet, and that the `class_e` member must be used to
+     * determine the payload's position. */
+    OSCORE_MSG_PROTECTED_FLAG_WRITABLE = 1 << 0,
+};
+
 /** @brief OSCORE protected CoAP message
  *
  * @todo This struct may need splitting up according to read/write state
@@ -62,6 +82,10 @@ typedef struct {
      * @private
      */
     oscore_msg_native_t backend;
+
+    /** @brief Various flags, see @ref oscore_msg_protected_flags */
+    enum oscore_msg_protected_flags flags;
+
     /** @brief Number of bytes at the end of backend's plaintext reserved for the tag
      *
      * This information is not available from the message alone as the message
