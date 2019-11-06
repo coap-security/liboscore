@@ -244,7 +244,7 @@ static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 }
 
 static const coap_resource_t _resources[] = {
-    { "/", COAP_GET | COAP_POST, _oscore, NULL },
+    { "/", COAP_POST | COAP_FETCH, _oscore, NULL },
     { "/oscore/hello/coap", COAP_GET, _hello, NULL },
     { "/riot/board", COAP_GET, _riot_board_handler, NULL },
     // FIXME: This creates an artefact entry in .well-known/core, and at the
