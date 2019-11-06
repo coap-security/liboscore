@@ -50,25 +50,46 @@ static ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     return resp_len;
 }
 
-#define SENDER_KEY {50, 136, 42, 28, 97, 144, 48, 132, 56, 236, 152, 230, 169, 50, 240, 32, 112, 143, 55, 57, 223, 228, 109, 119, 152, 155, 3, 155, 31, 252, 28, 172}
-#define RECIPIENT_KEY {213, 48, 30, 177, 141, 6, 120, 73, 149, 8, 147, 186, 42, 200, 145, 65, 124, 137, 174, 9, 223, 74, 56, 85, 170, 0, 10, 201, 255, 243, 135, 81}
-#define COMMON_IV {100, 240, 189, 49, 77, 75, 224, 60, 39, 12, 43, 28}
+#define B_SENDER_KEY {50, 136, 42, 28, 97, 144, 48, 132, 56, 236, 152, 230, 169, 50, 240, 32, 112, 143, 55, 57, 223, 228, 109, 119, 152, 155, 3, 155, 31, 252, 28, 172}
+#define B_RECIPIENT_KEY {213, 48, 30, 177, 141, 6, 120, 73, 149, 8, 147, 186, 42, 200, 145, 65, 124, 137, 174, 9, 223, 74, 56, 85, 170, 0, 10, 201, 255, 243, 135, 81}
+#define B_COMMON_IV {100, 240, 189, 49, 77, 75, 224, 60, 39, 12, 43, 28}
+
+
+#define D_SENDER_KEY {79, 177, 204, 118, 107, 180, 59, 3, 14, 118, 123, 233, 14, 12, 59, 241, 144, 219, 242, 68, 113, 65, 139, 251, 152, 212, 46, 145, 230, 180, 76, 252}
+#define D_RECIPIENT_KEY {173, 139, 170, 28, 148, 232, 23, 226, 149, 11, 247, 99, 61, 79, 20, 148, 10, 6, 12, 149, 135, 5, 18, 168, 164, 11, 216, 42, 13, 221, 69, 39}
+#define D_COMMON_IV {199, 178, 145, 95, 47, 133, 49, 117, 132, 37, 73, 212}
 
 // Having those static is OK here because the gcoap thread will only process messages one at a time
-static struct oscore_context_primitive primitive = {
+static struct oscore_context_primitive primitive_b = {
     .aeadalg = 24,
-    .common_iv = COMMON_IV,
+    .common_iv = B_COMMON_IV,
 
     .recipient_id_len = 0,
-    .recipient_key = RECIPIENT_KEY,
+    .recipient_key = B_RECIPIENT_KEY,
 
     .sender_id_len = 1,
     .sender_id = "\x01",
-    .sender_key = SENDER_KEY,
+    .sender_key = B_SENDER_KEY,
 };
-static oscore_context_t secctx = {
+static oscore_context_t secctx_b = {
     .type = OSCORE_CONTEXT_PRIMITIVE,
-    .data = (void*)(&primitive),
+    .data = (void*)(&primitive_b),
+};
+
+static struct oscore_context_primitive primitive_d = {
+    .aeadalg = 24,
+    .common_iv = D_COMMON_IV,
+
+    .recipient_id_len = 0,
+    .recipient_key = D_RECIPIENT_KEY,
+
+    .sender_id_len = 1,
+    .sender_id = "\x01",
+    .sender_key = D_SENDER_KEY,
+};
+static oscore_context_t secctx_d = {
+    .type = OSCORE_CONTEXT_PRIMITIVE,
+    .data = (void*)(&primitive_d),
 };
 
 static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
@@ -100,9 +121,16 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscore_msg_native_t pdu_read = { .pkt = pdu };
 
     oscore_msg_protected_t incoming_decrypted;
+    oscore_context_t *secctx;
     // FIXME: THis is short-cutting through a lookup process that should
     // actually be there to find the right secctx from the header
-    oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, &secctx, &request_id);
+    if (header.option_length && header.option[0] & 0x10) {
+        // Only one context known with KID context
+        secctx = &secctx_d;
+    } else {
+        secctx = &secctx_b;
+    }
+    oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
 
     if (oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
         if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
@@ -143,7 +171,7 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     enum oscore_prepare_result oscerr2;
     oscore_msg_native_t pdu_write = { .pkt = pdu };
     oscore_msg_protected_t outgoing_plaintext;
-    oscerr2 = oscore_prepare_response(pdu_write, &outgoing_plaintext, &secctx, &request_id);
+    oscerr2 = oscore_prepare_response(pdu_write, &outgoing_plaintext, secctx, &request_id);
     if (oscerr2 != OSCORE_PREPARE_OK) {
         errormessage = "Context not ready";
         goto error;
