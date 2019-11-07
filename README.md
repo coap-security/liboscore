@@ -86,9 +86,9 @@ Documentation entry points are split into different use cases:
   please use full library integration
   or build (and consider publishing) a more powerful dispatcher.
 
-[full integration guide]: https://oscore.gitlab.io/oscore-implementation/md_doc_guides_full_integration.html
-[Using light integration in application development]: https://oscore.gitlab.io/oscore-implementation/md_doc_guides_light_integration_usage.html
-[light integration guide]: https://oscore.gitlab.io/oscore-implementation/md_doc_guides_light_integration.html
+[full integration guide]: https://oscore.gitlab.io/liboscore/md_doc_guides_full_integration.html
+[Using light integration in application development]: https://oscore.gitlab.io/liboscore/md_doc_guides_light_integration_usage.html
+[light integration guide]: https://oscore.gitlab.io/liboscore/md_doc_guides_light_integration.html
 
 Library integrations
 --------------------
