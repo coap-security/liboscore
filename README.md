@@ -1,7 +1,7 @@
 libOSCORE: An OSCORE implementation (not only) for embedded systems
 ===================================================================
 
-This repository contains
+The libOSCORE library is
 a portable implementation of [OSCORE (RFC8613)]
 usable for embedded devices.
 
@@ -115,6 +115,13 @@ but they are being looked into for portability)
 [wakaama]: https://github.com/eclipse/wakaama
 [OpenSSL]: https://www.openssl.org/
 [Rust]: https://www.rust-lang.org/
+
+Links
+-----
+
+* [Source code](https://gitlab.com/oscore/liboscore) and issue tracker
+* [Documentation](https://oscore.gitlab.io/liboscore/) entry point
+* [RFC8613](https://tools.ietf.org/html/rfc8613]) (the OSCORE specification)
 
 License
 -------
