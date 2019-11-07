@@ -60,7 +60,7 @@ Documentation entry points are split into different use cases:
   which gives good opportunities for tuning and optimization,
   but at the same time is tedious and error-prone.
 
-  The guide "[Using light integration in application development]"
+  The guide “[Using light integration in application development]”
   describe the steps in developing applications that way.
 
   Library authors wishing to provide light integration
