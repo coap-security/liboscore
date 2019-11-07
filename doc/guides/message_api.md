@@ -1,5 +1,4 @@
-Message API background
-======================
+@page message_api Message API background
 
 CoAP messages are accessed using two different interfaces in this library:
 when the application (or a more high-level library) manipulates to-be-encrypted or decrypted messages (@ref oscore_msg),

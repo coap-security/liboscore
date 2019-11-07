@@ -10,8 +10,8 @@
  * its messages
  *
  * Apart from implementing the below functions and making them available
- * through the linker, the backend needs to define the @group
- * oscore_native_msg_types types in its `oscore_native/msg_type.h` header file.
+ * through the linker, the backend needs to define the @ref
+ * oscore_native_msg_types in its `oscore_native/msg_type.h` header file.
  *
  * If the implementer desires to implement oscore_msg_native functions as
  * static inline functions or even macros, it can set the
