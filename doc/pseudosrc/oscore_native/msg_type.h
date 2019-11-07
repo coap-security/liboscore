@@ -18,7 +18,7 @@ typedef void *oscore_msg_native_t;
  * in conjunction with the same message, and may rely on the message not being
  * modified while that iterator is in use.
  */
-typedef struct { uint16_t option_number; size_t offset; } oscore_msg_native_optiter_t;
+typedef struct example_optiter oscore_msg_native_optiter_t;
 
 /** @brief Error type of fallible operations on CoAP messages
  *

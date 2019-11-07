@@ -28,7 +28,7 @@ typedef int32_t oscore_crypto_aeadalg_t;
  *
  * It must be defined in the backend's own ``oscore_native/crypto_type.h``.
  */
-typedef struct {} oscore_crypto_aead_encryptstate_t;
+typedef struct example_encryptstate oscore_crypto_aead_encryptstate_t;
 
 /** @brief State of an ongoing AEAD operation
  *
@@ -38,7 +38,7 @@ typedef struct {} oscore_crypto_aead_encryptstate_t;
  *
  * It must be defined in the backend's own ``oscore_native/crypto_type.h``.
  */
-typedef struct {} oscore_crypto_aead_decryptstate_t;
+typedef struct example_decryptstate oscore_crypto_aead_decryptstate_t;
 
 /** @brief Maximum length of an AEAD nonce (IV)
  *
