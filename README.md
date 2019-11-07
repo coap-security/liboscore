@@ -1,7 +1,7 @@
-An OSCORE implementation
-========================
+libOSCORE: An OSCORE implementation (not only) for embedded systems
+===================================================================
 
-This repository contains code developed to be
+This repository contains
 a portable implementation of [OSCORE (RFC8613)]
 usable for embedded devices.
 
@@ -11,10 +11,10 @@ against eavesdropping or manipulation
 in an end-to-end fashion
 without sacrificing the compactness of the messages and protocol implementations.
 
-This implementation aims to be usable as a generic implementation;
-it achieves this by describing its requirements towards the used CoAP library
+This implementation aims to be usable on various platforms, especially embedded ones;
+it achieves this by describing its requirements towards the used platform's CoAP implementation
 with a small generic API that can then be implemented by different CoAP libraries,
-for example RIOT-OS's gcoap.
+for example [RIOT-OS]'s gcoap.
 By the choice of programming language (C),
 the avoidance of dynamic memory allocation
 as well as the extensive use of in-place operations,
@@ -23,13 +23,17 @@ and of performing cryptographic operations at all.
 
 [OSCORE (RFC8613)]: https://tools.ietf.org/html/rfc8613
 [CoAP]: https://coap.technology/
+[RIOT-OS]: https://riot-os.org/
 
 State of the project
 --------------------
 
-The library is currently in a planning phase
-and will proceed into first implementation steps soon;
-a usable version is aimed for around September 2019.
+The library is nearing completion of the basic features,
+and an implemenation of the OSCORE [plug test] server
+is usable on RIOT-OS,
+even though it does not pass all the tests yet.
+
+[plug test]: https://ericssonresearch.github.io/OSCOAP/
 
 Use and documentation
 ---------------------
@@ -38,21 +42,53 @@ Documentation entry points are split into different use cases:
 
 * Use in fully integrated CoAP libraries:
   
-  You will little direct interaction with this library
+  As a user of a CoAP library with full integration,
+  you will have little direct interaction with this library,
   as all OSCORE operations are handled by your CoAP library;
-  see its documentation.
+  see its documentation in the integrations list below.
 
-  TBD (link into documentation of full-integration libraries,
-  and list of interactions still expected there,
-  probably only context setup)
+  Implementers of CoAP libraries that want to provide full integration
+  can read about the process in the [full integration guide].
 
 * Use with lightly integrated CoAP libraries:
 
-  TBD (link into documentation -- contexts, request and response walk-throughs)
+  When full integration is not available on a plaform,
+  not feasible or undesirable for a particular application,
+  liboscore can be used directly by the application.
 
-* Building library integration:
+  Writing applications that way is a very manual process,
+  which gives good opportunities for tuning and optimization,
+  but at the same time is tedious and error-prone.
 
-  TBD (link into documentation -- "how to wrap")
+  The guide "[Using light integration in application development]"
+  describe the steps in developing applications that way.
+
+  Library authors wishing to provide light integration
+  should consult the [light integration guide].
+
+* Intermediate integration – using libOSCORE as a CoAP library
+
+  For quick tests, demos and as a getting-started point,
+  libOSCORE plans to ship a partial CoAP server implementation.
+  This builds on any existing light CoAP integration
+  and needs to be registered as the FETCH and POST handler
+  of the underlying CoAP server.
+  From there, it dispatches requests into per-resource handlers
+  and implements error handling.
+
+  The intermediate integration server is very limited in its capabilities:
+  it will not be able to offer opportunistic protection
+  (ie. serve OSCORE requests to resources that do not require it),
+  and only supports pre-allcoated resource handlers.
+  Its intended use are demos runnable across different backends
+  (like the plug test server).
+  For more advanced applications,
+  please use full library integration
+  or build (and consider publishing) a more powerful dispatcher.
+
+[full integration guide]: https://oscore.gitlab.io/oscore-implementation/md_doc_guides_full_integration.html
+[Using light integration in application development]: https://oscore.gitlab.io/oscore-implementation/md_doc_guides_light_integration_usage.html
+[light integration guide]: https://oscore.gitlab.io/oscore-implementation/md_doc_guides_light_integration.html
 
 Library integrations
 --------------------
