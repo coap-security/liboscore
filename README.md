@@ -10,6 +10,7 @@ exchanges of [CoAP] messages (network traffic between typical IoT devices)
 against eavesdropping or manipulation
 in an end-to-end fashion
 without sacrificing the compactness of the messages and protocol implementations.
+The article [OSCORE: A look at the new IoT security protocol] provides a newcomer friendly summary.
 
 This implementation aims to be usable on various platforms, especially embedded ones;
 it achieves this by describing its requirements towards the used platform's CoAP implementation
@@ -23,6 +24,7 @@ and of performing cryptographic operations at all.
 
 [OSCORE (RFC8613)]: https://tools.ietf.org/html/rfc8613
 [CoAP]: https://coap.technology/
+[OSCORE: A look at the new IoT security protocol]: https://www.ericsson.com/en/blog/2019/11/oscore-iot-security-protocol
 [RIOT-OS]: https://riot-os.org/
 
 State of the project
@@ -38,64 +40,30 @@ even though it does not pass all the tests yet.
 Use and documentation
 ---------------------
 
-Documentation entry points are split into different use cases:
+The libOSCORE library can be used in different ways depending on the support of the underlying CoAP library.
 
-* Use in fully integrated CoAP libraries:
-  
-  As a user of a CoAP library with full integration,
-  you will have little direct interaction with this library,
-  as all OSCORE operations are handled by your CoAP library;
-  see its documentation in the integrations list below.
+The [integration levels] guide gives an overview of the possibilites,
+and also serves as a starting point into the rest of the documentation.
 
-  Implementers of CoAP libraries that want to provide full integration
-  can read about the process in the [full integration guide].
+For a quick start, some examples and demos cover the common use cases:
+(Tutorials are not available yet)
 
-* Use with lightly integrated CoAP libraries:
+* Running the plug test server on RIOT on Linux
+* Exchanging data between Particle Xenon boards over 6LoWPAN
+* Pulling data from devices in the field (by example of the FIT/IoT-Lab testbed) into an application
 
-  When full integration is not available on a plaform,
-  not feasible or undesirable for a particular application,
-  liboscore can be used directly by the application.
+Please note that the examples currently use what is described as "intermediate integration" (see [integration levels]) in their code.
+For high-level applications, it is recommended to use full integration,
+but that level is not even provided for the RIOT plattform yet.
 
-  Writing applications that way is a very manual process,
-  which gives good opportunities for tuning and optimization,
-  but at the same time is tedious and error-prone.
-
-  The guide “[Using light integration in application development]”
-  describe the steps in developing applications that way.
-
-  Library authors wishing to provide light integration
-  should consult the [light integration guide].
-
-* Intermediate integration – using libOSCORE as a CoAP library
-
-  For quick tests, demos and as a getting-started point,
-  libOSCORE plans to ship a partial CoAP server implementation.
-  This builds on any existing light CoAP integration
-  and needs to be registered as the FETCH and POST handler
-  of the underlying CoAP server.
-  From there, it dispatches requests into per-resource handlers
-  and implements error handling.
-
-  The intermediate integration server is very limited in its capabilities:
-  it will not be able to offer opportunistic protection
-  (ie. serve OSCORE requests to resources that do not require it),
-  and only supports pre-allcoated resource handlers.
-  Its intended use are demos runnable across different backends
-  (like the plug test server).
-  For more advanced applications,
-  please use full library integration
-  or build (and consider publishing) a more powerful dispatcher.
-
-[full integration guide]: https://oscore.gitlab.io/liboscore/md_doc_guides_full_integration.html
-[Using light integration in application development]: https://oscore.gitlab.io/liboscore/md_doc_guides_light_integration_usage.html
-[light integration guide]: https://oscore.gitlab.io/liboscore/md_doc_guides_light_integration.html
+[integration levels]: https://oscore.gitlab.io/liboscore/integration_levels.html
 
 Library integrations
 --------------------
 
-CoAP libraries with planned integration:
+Libraries with planned integration:
 
-* [RIOT-OS] - tracked at [11761]
+* [RIOT-OS] - light integration available; full integration tracked at [11761]
 * MoCkoAP – an internal minimal CoAP library used as a mock-up in tests
 * [libcose] – providing the required crypto primitives
 

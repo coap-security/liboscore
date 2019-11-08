@@ -21,7 +21,8 @@ These underlying libraries are called the native CoAP and cryptography libraries
 and are selected at build time.
 
 It is possible, but not generally recommended, to build applications directly on this,
-as those applications need to drive libOSCORE through every step of the encryption and decryption process.
+as those applications need to drive libOSCORE through every step of the encryption and decryption process,
+as that is both tedious and error-prone.
 In return, the application gets full control of the OSCORE steps,
 and may perform optimizations that can not easily be done otherwise.
 
