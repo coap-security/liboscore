@@ -4,6 +4,7 @@ CoAP messages are accessed using two different interfaces in this library:
 when the application (or a more high-level library) manipulates to-be-encrypted or decrypted messages (@ref oscore_msg),
 and when this library builds the encrypted message (@ref oscore_native_msg)
 (or reads an incoming message for decryption).
+For how this fits into the larger scheme of library integration, see @ref integration_levels.
 
 These two APIs are intentionally similar,
 as they reflect what is considered to be a suitable minimal API towards CoAP messages:
@@ -16,8 +17,9 @@ for example, it does not contain methods for removing options,
 and updates to option values can only happen if the new value has the exact same size as the old one.
 These limits are to ensure that it can be implemented even on the most resource-constrained backends,
 which often serialize added options right into a transmit buffer.
+It does not contain any operations for serializing and deserializing the higher-level option values like uint or block options.
 
-There is some flexibility for CoAP implementations in how strict to be with respect to options;
+There is some flexibility for CoAP implementations in how strict to be with respect to the insertion of options;
 for the purpose of this discussion, we'll classify them as
 
 * *lax*: CoAP options and payload can be set in any sequence,

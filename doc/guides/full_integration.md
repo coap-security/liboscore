@@ -1,5 +1,4 @@
-Full integration implementation guide
-=====================================
+@page full_integration Full integration implementation guide
 
 This guide is written for CoAP library authors
 who want to make OSCORE available for effortless usage through their library.

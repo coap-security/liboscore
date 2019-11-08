@@ -1,5 +1,4 @@
-Light integration implementation guide
-======================================
+@page light_integration Light integration implementation guide
 
 "Light integration" in the context of this library means that
 the @ref oscore_native_msg API is implemented for the CoAP library,
@@ -32,12 +31,12 @@ Typically, a light integration backend contains two or three files:
 
   This file needs to be available to libOSCORE for inclusion under this paht and name the when it gets built.
 
-* `mycoaplibrary_msg.c`:
+* `mycoaplibrary_oscore_msg.c`:
   This file contains implementations of all functions described in @ref oscore_native_msg.
 
   The resulting symbols must be made available to libOSCORE at link time.
 
-* `oscore_msg_conversion.h`:
+* `mycoaplibrary_oscore_msg_conversion.h`:
   If the conversion between the actual native message type and @ref oscore_msg_native_t is more involved than just using a type alias,
   for example if a message's length is always transported in parralel to the actual native message type
   and @ref oscore_msg_native_t points to a helper struct that binds them together,
@@ -54,11 +53,11 @@ a structure like the one used by the nanocoap implementatino is recommended:
     backends/nanocoap/
     ├── README.md
     ├── inc
-    │   ├── nanocoap_msg.c  # not actually present there
+    │   ├── nanocoap_oscore_msg_conversion.c  # not actually present there
     │   └── oscore_native
     │       └── msg_type.h
     └── src
-        ├── oscore_msg.c
+        ├── nanocoap_oscore_msg.c # @FIXME actually named oscore_msg.c
         └── oscore_test.c
 
 ### Cryptography backends

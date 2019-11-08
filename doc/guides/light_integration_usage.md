@@ -1,5 +1,4 @@
-Using light integration in application development
-==================================================
+@page light_integration_usage Using light integration in application development
 
 This guide accompanies you step by step through writing an OSCORE protected application
 using only light integration,
@@ -27,19 +26,44 @@ Server side processing
 
 The general steps required of a server are, in that sequence:
 
-* Receive a message
-* Look whether it has a header
-* Look up a context for it
-* Decrypt it
-* Read it
-* Discard the received message (sequence boundary or not, depending on lower layers)
+* Receive a request message
+* Resolve any preprocessing outside OSCORE (eg. reassemble a block-wise request, if supported)
+* Identify its OSCORE header
+* Look up a context based on information from the header
+* Decrypt the message
+* Read the message
+* Discard the received message
 * Start composing a response message
-* Prepare encryption
+* Prepare encryption of the messge
 * Populate the message
 * Finish encryption
-* Send it
+* Send the message
+
+Two aspects of this sequence may vary depending on the underlying CoAP library:
+
+* Discard the received message befoer composing the response:
+
+  This is the most strict sequence that caters for CoAP libraries with only a single message buffer.
+  On less constrained devices, the response preparation can be started earlier,
+  and both messages are available at the same time.
+
+* Prepare encryption before populating the message before populating:
+
+  This sequence is used in the common case when the underlying CoAP library expects options to be added sequentially,
+  and the application puts in the options in ascending sequence.
+  When applications are allowed to enter options in arbitrary sequence
+  (which is more common on platforms with dynamic allocations,
+  as well as in CoAP libraries whose limited set and size of options comes pre-allocated in the message),
+  the sequence is inverted: The message is populated first,
+  then the encryption process is started,
+  and then the pre-populated options are moved out of the message one by one
+  and fed back the message,
+  at which time it is decided where exactly the option is placed.
+  Alternatively, encryption can be delayed to serialization time for those cases.
 
 @FIXME This part of the documentation is incomplete.
+
+... link @ref oscore_protection
 
 Context creation and management
 -------------------------------
