@@ -189,7 +189,7 @@ error:
 static void hello2_parse(oscore_msg_protected_t *in, void *vstate)
 {
     struct hello_state *state = vstate;
-    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 4 /* ETag */));
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 15 /* Uri-Query */));
 }
 
 static void hello2_build(oscore_msg_protected_t *out, const void *vstate)
@@ -218,16 +218,11 @@ error:
     oscore_msg_protected_trim_payload(out, 0);
 }
 
-struct handler hello2_handler = {
-    .parse = hello2_parse,
-    .build = hello2_build,
-};
-
 struct dispatcher_choice {
     /** Number of entries in path */
     size_t path_items;
     /** Path components */
-    char **path;
+    const char* const *path;
     struct handler handler;
 };
 
@@ -249,7 +244,11 @@ struct dispatcher_config {
          * the address of all other union memebers */
         uint8_t dummy;
         // FIXME: check that hello and dummy have the same addreses
-        struct hello_state hello;
+#define RESOURCE(name, pathcount, path, handler_parse, handler_build, statetype) statetype name;
+#define PATH(...)
+#include "plugtest-resources.inc"
+#undef RESOURCE
+#undef PATH
     } handlerstate;
 };
 
@@ -314,9 +313,17 @@ static void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
     config->current_choice->handler.build(out, data);
 }
 
-static char *hello1[] = {"oscore", "hello", "1"};
+#define RESOURCE(name, pathcount, path, handler_parse, handler_build, statetype) static const char* const name[pathcount] = path;
+#define PATH(...) { __VA_ARGS__ }
+#include "plugtest-resources.inc"
+#undef RESOURCE
+#undef PATH
 static struct dispatcher_choice plugtest_choices[] = {
-    { 3, hello1, { hello_parse, hello_build } },
+#define RESOURCE(name, pathcount, path, handler_parse, handler_build, statetype) { pathcount, name, { handler_parse, handler_build } },
+#define PATH(...)
+#include "plugtest-resources.inc"
+#undef RESOURCE
+#undef PATH
     { 0, NULL, { NULL, NULL } },
 };
 static struct dispatcher_config  plugtest_config = {
