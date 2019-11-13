@@ -19,6 +19,9 @@ These limits are to ensure that it can be implemented even on the most resource-
 which often serialize added options right into a transmit buffer.
 It does not contain any operations for serializing and deserializing the higher-level option values like uint or block options.
 
+Option and payload sequences
+----------------------------
+
 There is some flexibility for CoAP implementations in how strict to be with respect to the insertion of options;
 for the purpose of this discussion, we'll classify them as
 
@@ -71,3 +74,22 @@ see [issue 35](https://gitlab.com/oscore/liboscore/issues/35) for library extens
 [2]: Even on a *strict-options-lax-payload* backend, the OSCORE-wrapped message behaves in a *strict-options* fashion.
 No currently known applications other than OSCORE itself have a strong need utilizing the lax-payload aspect;
 if you do, please voice your need at [issue 36](https://gitlab.com/oscore/liboscore/issues/36).
+
+@section oscore_specific_native_requirements OSCORE-specific requirements inside the native message API
+
+While most of the CoAP APIs is quite general,
+there are exceptional requirements currently in the native API description purely for the benefit of OSCORE --
+they make little sense outside this use case,
+but are expected to be trivial to provide and simplify libOSCORE's work quite a bit:
+
+* @ref oscore_msg_native_optiter_next:
+  The `uint8_t` memory slice produced when iterating over a native message's OSCORE option
+  must stay valid for as long as the message is not modifed.
+  (The usual requirement is that it is valid until the next item is pulled from the iterator).
+
+  This is trivially fulfilled for backends that store options in their serialized form.
+  Backends that store option values in their semantic form may, in general, use a per-iterator buffer to serialize the semantic into the binary form.
+  As such a backend's semantic form is anyway determined by the OSCORE library used,
+  this library demands that the form be as an opaque string, into which a pointer can be returned.
+
+* Introducing a requirement to allow and preserve writes to the first byte of the payload even in the strict case is being considered (but currently not required).

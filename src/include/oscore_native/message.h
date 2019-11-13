@@ -110,6 +110,10 @@ void oscore_msg_native_optiter_init(oscore_msg_native_t msg,
  * duration of an iteration step. That overhead is considered acceptable here
  * as serialized storage of options is predominant in embedded libraries in
  * cases where an OSCORE library is useful.
+ *
+ * As a special exception (see also @ref oscore_specific_native_requirements),
+ * the memory area indicated for a found OSCORE option needs to stay valid for
+ * as long as the message is not modified.
  */
 bool oscore_msg_native_optiter_next(
         oscore_msg_native_t msg,

@@ -53,6 +53,10 @@ typedef struct {
  * Typically this is used at initial processing of a message when its options
  * are first iterated over, and an OSCORE option is encountered.
  *
+ * The @p input provided needs to be valid for as long as the resulting @p out
+ * is used. In the typical case, this is provided by the @ref
+ * oscore_specific_native_requirements.
+ *
  * @param[out] out Uninitialized memory to parse the option into
  * @param[in] input OSCORE option encoded according to OSCORE Header Compression
  * @param[in] input_len Length of the encoded OSCORE option
