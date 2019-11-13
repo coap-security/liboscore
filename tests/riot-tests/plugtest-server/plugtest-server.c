@@ -240,10 +240,6 @@ struct dispatcher_config {
      * NULL is sentinel for not found */
     const struct dispatcher_choice *current_choice;
     union {
-        /** Unique item that is checked for (FIXME), and later assumed to have,
-         * the address of all other union memebers */
-        uint8_t dummy;
-        // FIXME: check that hello and dummy have the same addreses
 #define RESOURCE(name, pathcount, path, handler_parse, handler_build, statetype) statetype name;
 #define PATH(...)
 #include "plugtest-resources.inc"
@@ -296,7 +292,8 @@ static void dispatcher_parse(oscore_msg_protected_t *in, void *vstate)
         return;
     }
 
-    void *data = (void*)&config->handlerstate.dummy;
+    // Casting via void into any member's type is OK according to https://stackoverflow.com/questions/24010052/pointer-to-union-member
+    void *data = &config->handlerstate;
     config->current_choice->handler.parse(in, data);
 }
 
@@ -309,7 +306,7 @@ static void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
         return;
     }
 
-    const void *data = &config->handlerstate.dummy;
+    const void *data = &config->handlerstate;
     config->current_choice->handler.build(out, data);
 }
 
