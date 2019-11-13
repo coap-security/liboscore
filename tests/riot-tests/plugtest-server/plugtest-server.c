@@ -258,12 +258,23 @@ static gcoap_listener_t _listener = {
     NULL
 };
 
+#include "shell.h"
+#define MAIN_QUEUE_SIZE (4)
+static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
+
+static const shell_command_t shell_commands[] = {
+    { NULL, NULL, NULL }
+};
+
 int main(void)
 {
     gcoap_register_listener(&_listener);
 
-    puts("Running OSCORE plugtest server");
+    msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
+    char line_buf[SHELL_DEFAULT_BUFSIZE];
 
-    /* setup is over, coap server will run indefinitely */
+    puts("Running OSCORE plugtest server");
+    shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+
     return 0;
 }

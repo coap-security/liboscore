@@ -4,6 +4,10 @@ USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gcoap
 
+USEMODULE += shell
+USEMODULE += shell_commands
+USEMODULE += ps
+
 CFLAGS += -DOSCORE_NANOCOAP_MEMMOVE_MODE
 
 BOARD ?= native
