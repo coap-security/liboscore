@@ -156,6 +156,7 @@ static bool options_are_as_expected(oscore_msg_protected_t *msg, uint64_t expect
 }
 
 struct hello_state {
+    bool code_ok;
     bool options_ok;
 };
 
@@ -163,11 +164,17 @@ static void hello_parse(oscore_msg_protected_t *in, void *vstate)
 {
     struct hello_state *state = vstate;
     state->options_ok = options_are_as_expected(in, 1 << 11 /* Uri-Path */);
+    state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
 }
 
 static void hello_build(oscore_msg_protected_t *out, const void *vstate)
 {
     const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+        goto error2;
+    }
 
     oscore_msg_protected_set_code(out, 0x45 /* 2.05 content */);
 
@@ -182,7 +189,8 @@ static void hello_build(oscore_msg_protected_t *out, const void *vstate)
 
 error:
     oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
-    // not unwinding the plain-text option, there's no API for that and it doesn't really matter
+error2:
+    // not unwinding any option, there's no API for that and it doesn't really matter
     oscore_msg_protected_trim_payload(out, 0);
 }
 
@@ -190,11 +198,17 @@ static void hello2_parse(oscore_msg_protected_t *in, void *vstate)
 {
     struct hello_state *state = vstate;
     state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 15 /* Uri-Query */));
+    state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
 }
 
 static void hello2_build(oscore_msg_protected_t *out, const void *vstate)
 {
     const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+        goto error2;
+    }
 
     oscore_msg_protected_set_code(out, 0x45 /* 2.05 content */);
 
@@ -214,7 +228,132 @@ static void hello2_build(oscore_msg_protected_t *out, const void *vstate)
 
 error:
     oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
-    // not unwinding the plain-text option, there's no API for that and it doesn't really matter
+error2:
+    // not unwinding any option, there's no API for that and it doesn't really matter
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
+static void hello3_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 17 /* Accept */));
+    state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
+}
+
+static void hello3_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+        goto error2;
+    }
+
+    oscore_msg_protected_set_code(out, 0x45 /* 2.05 content */);
+
+    oscore_msgerr_protected_t err;
+    err = oscore_msg_protected_append_option(out, 12 /* content-format */, (uint8_t*)"", 0);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    err = oscore_msg_protected_append_option(out, 14 /* Max-Age */, (uint8_t*)"\x05", 1);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    if (!set_message(out, state->options_ok ? "Hello World!" : "Hello Unexpected!"))
+        goto error;
+
+    return;
+
+error:
+    oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
+error2:
+    // not unwinding any option, there's no API for that and it doesn't really matter
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
+static void hello6_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 12 /* Content-Format */));
+    state->code_ok = oscore_msg_protected_get_code(in) == 2 /* POST */;
+    /* FIXME check payload */
+}
+
+static void hello6_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+        goto error2;
+    }
+
+    oscore_msg_protected_set_code(out, 0x44 /* 2.04 Changed */);
+
+    oscore_msgerr_protected_t err;
+    err = oscore_msg_protected_append_option(out, 12 /* content-format */, (uint8_t*)"", 0);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    if (!set_message(out, state->options_ok ? "\x4a" : "Would have been 0x4a if options matched"))
+        goto error;
+
+    return;
+
+error:
+    oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
+error2:
+    // not unwinding any option, there's no API for that and it doesn't really matter
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
+static void hello7_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 12 /* Content-Format */) |  (1 << 1 /* If-Match */));
+    state->code_ok = oscore_msg_protected_get_code(in) == 3 /* PUT */;
+    /* FIXME check payload */
+}
+
+static void hello7_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+    } else if (state->options_ok) {
+        // For test 9
+        oscore_msg_protected_set_code(out, 0x44 /* 2.04 Changed */);
+    } else {
+        // For test 10 -- FIXME this could be sharper, but hey it's enough to
+        // pass, and we're not checking every detail of the requests anyway
+        oscore_msg_protected_set_code(out, 0x8c /* 4.12 Precondition Failed */);
+    }
+
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
+static void delete_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */));
+    state->code_ok = oscore_msg_protected_get_code(in) == 4 /* DELETE */;
+}
+
+static void delete_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+    } else if (state->options_ok) {
+        // For test 9
+        oscore_msg_protected_set_code(out, 0x42 /* 2.02 Deleted */);
+    } else {
+        oscore_msg_protected_set_code(out, 0x80 /* 4.00 Bad Request */);
+    }
+
     oscore_msg_protected_trim_payload(out, 0);
 }
 
