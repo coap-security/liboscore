@@ -476,17 +476,21 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscore_oscoreoption_t header;
     oscore_requestid_t request_id;
     const char *errormessage;
+    uint8_t errorcode = COAP_CODE_INTERNAL_SERVER_ERROR;
 
     // This is nanocoap's shortcut (compare to unprotect-demo, where we iterate through the outer options)
     uint8_t *header_data;
     ssize_t header_size = coap_opt_get_opaque(pdu, 9, &header_data);
     if (header_size < 0) {
         errormessage = "No OSCORE option found";
+        // Having a </> resource in parallel to OSCORE is not supported here.
+        errorcode = COAP_CODE_PATH_NOT_FOUND;
         goto error;
     }
     bool parsed = oscore_oscoreoption_parse(&header, header_data, header_size);
     if (!parsed) {
         errormessage = "OSCORE option unparsable";
+        errorcode = COAP_CODE_BAD_OPTION;
         goto error;
     }
 
@@ -499,7 +503,8 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscore_msg_protected_t incoming_decrypted;
     oscore_context_t *secctx;
     // FIXME: THis is short-cutting through a lookup process that should
-    // actually be there to find the right secctx from the header
+    // actually be there to find the right secctx from the header.
+    // Should actually set 4.01 Unauthorized if it's neither.
     if (header.option_length && header.option[0] & 0x10) {
         // Only one context known with KID context
         secctx = &secctx_d;
@@ -511,8 +516,10 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     if (oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
         if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
             errormessage = "Unprotect failed, it's a duplicate";
+            errorcode = COAP_CODE_UNAUTHORIZED;
         } else {
             errormessage = "Unprotect failed";
+            errorcode = COAP_CODE_BAD_REQUEST;
         }
         goto error;
     }
@@ -553,9 +560,8 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     return (pdu->payload - buf) + pdu->payload_len;
 
 error:
-    // FIXME do error coes right
     printf("Error: %s\n", errormessage);
-    return gcoap_response(pdu, buf, len, COAP_CODE_INTERNAL_SERVER_ERROR);
+    return gcoap_response(pdu, buf, len, errorcode);
 }
 
 static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
