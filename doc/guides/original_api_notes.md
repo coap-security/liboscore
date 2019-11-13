@@ -1,15 +1,22 @@
+@page apisketch Original API sketches
+
+This page merely documents the original roadmap for the API.
+It is obsolete (but can still be useful for background information) in the message and encrypt/decrypt sections,
+but can be viewed as a (possibly not fully up-to-date) road map for the remaining parts.
+
+
 Messages
 ========
 
 Structs and methods for CoAP messages.
 Those will need to be present twice,
-once operating on the underlying CoAP library's messages (``osc_msg_native_``)
-and once operating on an OSCORE message (``osc_msg_protected_``)
+once operating on the underlying CoAP library's messages (``oscore_msg_native_``)
+and once operating on an OSCORE message (``oscore_msg_protected_``)
 
-* ``osc_msg_native_t``: A type provided by the native library.
-* ``osc_msg_protected_t``: A type provided by the OSCORE library.
+* ``oscore_msg_native_t``: A type provided by the native library.
+* ``oscore_msg_protected_t``: A type provided by the OSCORE library.
 
-  It contains an ``osc_msg_native_t`` as well as pointers inside there ("how many U options have we written (esp. for tracking whether the OSCORE option has been written), how many E options have we written (esp. for tracking whether the inner Observe option has been written))") as well as some other state (eg. to track the total length of the Class-I options).
+  It contains an ``oscore_msg_native_t`` as well as pointers inside there ("how many U options have we written (esp. for tracking whether the OSCORE option has been written), how many E options have we written (esp. for tracking whether the inner Observe option has been written))") as well as some other state (eg. to track the total length of the Class-I options).
 
   The expectation is that the message is built in-place, with the to-be-encrypted data in the very place where its ciphertext will be.
   For this to work we'll need to demand that either
@@ -26,7 +33,7 @@ and once operating on an OSCORE message (``osc_msg_protected_``)
   * ``_iter_options`` (a pair of "set up an iterator" / "get the next pointers" functions or possibly macros)
   * ``_map_payload`` ("give me pointers to the area into which I can put my payload, or read payload from", possibly with a dedicated method for read-only messages)
   * ``_trim_payload`` (truncate the message to the given length)
-  * possibly some rewind savepointing (useful in existing libraries to just set 5.03 in error cases when building the payload failed; unencrypted that's rather trivial truncation, here it'd mean having slightly bigger savepoints that contain copies of some ``osc_msg_protected_t`` data like the Class-I snapshot)
+  * possibly some rewind savepointing (useful in existing libraries to just set 5.03 in error cases when building the payload failed; unencrypted that's rather trivial truncation, here it'd mean having slightly bigger savepoints that contain copies of some ``oscore_msg_protected_t`` data like the Class-I snapshot)
   * possibly a function to estimate the remaining payload size if payload were added now
 
 Encrypt / decrypt
@@ -34,19 +41,19 @@ Encrypt / decrypt
 
 Moving between native and encrypted messages runs through encryption and decryption functions below, many of which also take a security context pointer.
 
-* ``osc_requestid_t`` contains all message identity passed around from (un)protecting a request to (un)protecting a response (like aiocoap's RequestIdentifiers; among other things, this contains a flag of whether the flag about whether the response can re-use the request's PIV because it was just freshly struck out of the replay window)
-  * ``osc_requestid_clone`` that copies over a requestid but clears the copy's "can re-use" flag because it's a copy -- for use with storing the requestid of an observation, or if an underlying retransmitting CoAP library prefers to re-compute the response for any retransmissions rather than storing the full response.
+* ``oscore_requestid_t`` contains all message identity passed around from (un)protecting a request to (un)protecting a response (like aiocoap's RequestIdentifiers; among other things, this contains a flag of whether the flag about whether the response can re-use the request's PIV because it was just freshly struck out of the replay window)
+  * ``oscore_requestid_clone`` that copies over a requestid but clears the copy's "can re-use" flag because it's a copy -- for use with storing the requestid of an observation, or if an underlying retransmitting CoAP library prefers to re-compute the response for any retransmissions rather than storing the full response.
   * possibly distinguish between incoming and outgoing messages on type level
 
-* ``osc_msg_unprotect_request`` takes a native message and, if successfully decrypted, returns (C: populates a caller-allocated pointer to) an ``osc_msg_protected_t`` (from which the application can read) and a requestid
+* ``oscore_msg_unprotect_request`` takes a native message and, if successfully decrypted, returns (C: populates a caller-allocated pointer to) an ``oscore_msg_protected_t`` (from which the application can read) and a requestid
   * cater for any synthetic observe number to be extracted, either by a dedicated access function or by synthesizing an Observe option when an iterater over the unprotected message gets to it. Preferably it'll be the former, given that different transports have different rules for re-ordering anyway (eg. TCP has no numbers in there either).
   * possibly a ``_finish`` function that allows clean re-claiming of the consumed native message
-* ``osc_msg_protect_response`` takes a native empty pre-allocated message and a requestid and returns an ``osc_msg_protected_t`` into which the response can be written.
+* ``oscore_msg_protect_response`` takes a native empty pre-allocated message and a requestid and returns an ``oscore_msg_protected_t`` into which the response can be written.
   * a ``_finish`` function that does encryption and returns the original native message for sending
-* ``osc_msg_protect_request`` (name to be enhanced) that takes a native empty message and returns an ``osc_msg_protected_t`` to be populated and a requestid to be kept around.
+* ``oscore_msg_protect_request`` (name to be enhanced) that takes a native empty message and returns an ``oscore_msg_protected_t`` to be populated and a requestid to be kept around.
   * a ``_finish`` function actually does the encryption and produces a native message to be sent (possibly, that and not protect_request produces the requestid)
-* ``osc_msg_unprotect_response`` takes a native message and a requestid and, if successfully decrypted, returns an ``osc_msg_protected_t`` that can be read.
-  * Like with ``osc_msg_unprotect_request``, a finish function should probably go with it
+* ``oscore_msg_unprotect_response`` takes a native message and a requestid and, if successfully decrypted, returns an ``oscore_msg_protected_t`` that can be read.
+  * Like with ``oscore_msg_unprotect_request``, a finish function should probably go with it
 
 (better names may be ``decrypt`` (with ``cleanup``?) / ``prepare_encrypt`` / ``finish_encrypt``)
 
@@ -95,11 +102,11 @@ for others that'd be risky (AES etc) but an external library can be used as fall
     and others just need to implement the switch that needs to be in there somewhere anyway.
   * HKDF execution, likewise (but probably by an enum rather than COSE number, given they are not specified the same way).
 * CBOR (?; may not be enough to not warrant hard-coding)
-* ``osc_helper_encode_option(target_buf, target_len, last_optno, option_buf, option_len)`` and a suitable decoder
+* ``oscore_helper_encode_option(target_buf, target_len, last_optno, option_buf, option_len)`` and a suitable decoder
 
 Others
 ======
 
-* "build a reply out of the failure result of ``osc_msg_unprotect_request`` -- initially that spares the users the hassle of setting the right codes for different failure modes; later this is where receive window recovery using Echo is implemented
+* "build a reply out of the failure result of ``oscore_msg_unprotect_request`` -- initially that spares the users the hassle of setting the right codes for different failure modes; later this is where receive window recovery using Echo is implemented
 * similarly, provide guidance for client side. If a client received a response that contains a protected Echo, the library will unprotect it but return neither a "unprotection failed" error nor an unprotected fake-5.03 but an additional "unprotection indicated you must retry".
   * The server's Echo value will either live in that return code (but we aren't Rust to make it a valued Enum...), or the context has a limited field for the next Echo value demanded by the server.
