@@ -208,6 +208,11 @@ enum oscore_prepare_result {
  *
  * @return OSCORE_PREPARE_OK if all information is available to continue, or
  * any other if not.
+ *
+ * @attention The @p secctx passed in here may only be used to protect and
+ * unprotect other messages (and not altered in any other way) until the
+ * subsequent @ref oscore_encrypt_message function has been called.
+ * See @ref design_thread for more details.
  */
 OSCORE_NONNULL
 enum oscore_prepare_result oscore_prepare_response(
