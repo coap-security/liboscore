@@ -92,6 +92,239 @@ static oscore_context_t secctx_d = {
     .data = (void*)(&primitive_d),
 };
 
+struct handler {
+    void (*parse)(/* not const because of memoization */ oscore_msg_protected_t *in, void *state);
+    void (*build)(oscore_msg_protected_t *in, const void *state);
+};
+
+/** Write @p text into @p msg and return true on success */
+static bool set_message(oscore_msg_protected_t *out, const char *text)
+{
+    uint8_t *payload;
+    size_t payload_length;
+    size_t printed = 0;
+    oscore_msgerr_native_t err = oscore_msg_protected_map_payload(out, &payload, &payload_length);
+    if (oscore_msgerr_protected_is_error(err)) {
+        return false;
+    }
+
+    printed = snprintf((char*)payload, payload_length, "%s", text);
+    if (printed > payload_length) {
+        return false;
+    }
+    err = oscore_msg_protected_trim_payload(out, printed);
+    if (oscore_msgerr_protected_is_error(err)) {
+        return false;
+    }
+
+    return true;
+}
+
+/** Return true only if exactly the options present in the messages have their
+ * respective bit set in expected_options, and dump the options on stdout in
+ * either case. (expected_options can't be -1). */
+static bool options_are_as_expected(oscore_msg_protected_t *msg, uint64_t expected_options) {
+    uint64_t seen = 0;
+
+    oscore_msg_protected_optiter_t iter;
+    uint16_t opt_num;
+    const uint8_t *opt_val;
+    size_t opt_len;
+    oscore_msg_protected_optiter_init(msg, &iter);
+    while (oscore_msg_protected_optiter_next(msg, &iter, &opt_num, &opt_val, &opt_len)) {
+        printf("Checking option %d: \"", opt_num);
+        for (size_t j = 0; j < opt_len; ++j) {
+            if (opt_val[j] >= 32 && opt_val[j] < 127) {
+                printf("%c", opt_val[j]);
+            } else {
+                printf("\\x%02x", opt_val[j]);
+            }
+        }
+        printf("\"\n");
+
+        if (opt_num >= 64) {
+            printf("Option was high and unexpected\n");
+            seen = -1;
+        } else {
+            if (((1 << opt_num) & expected_options) == 0) {
+                printf("Option was unexpected\n");
+            }
+            seen |= 1 << opt_num;
+        }
+    }
+    return seen == expected_options;
+}
+
+struct hello_state {
+    bool options_ok;
+};
+
+static void hello_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, 1 << 11 /* Uri-Path */);
+}
+
+static void hello_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const struct hello_state *state = vstate;
+
+    oscore_msg_protected_set_code(out, 0x45 /* 2.05 content */);
+
+    oscore_msgerr_protected_t err = oscore_msg_protected_append_option(out, 12 /* content-format */, (uint8_t*)"", 0);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    if (!set_message(out, state->options_ok ? "Hello World!" : "Hello Unexpected!"))
+        goto error;
+
+    return;
+
+error:
+    oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
+    // not unwinding the plain-text option, there's no API for that and it doesn't really matter
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
+static void hello2_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) | (1 << 4 /* ETag */));
+}
+
+static void hello2_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const struct hello_state *state = vstate;
+
+    oscore_msg_protected_set_code(out, 0x45 /* 2.05 content */);
+
+    oscore_msgerr_protected_t err;
+    err = oscore_msg_protected_append_option(out, 4 /* ETag */, (uint8_t*)"\x2b", 1);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    err = oscore_msg_protected_append_option(out, 12 /* content-format */, (uint8_t*)"", 0);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    if (!set_message(out, state->options_ok ? "Hello World!" : "Hello Unexpected!"))
+        goto error;
+
+    return;
+
+error:
+    oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
+    // not unwinding the plain-text option, there's no API for that and it doesn't really matter
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
+struct handler hello2_handler = {
+    .parse = hello2_parse,
+    .build = hello2_build,
+};
+
+struct dispatcher_choice {
+    /** Number of entries in path */
+    size_t path_items;
+    /** Path components */
+    char **path;
+    struct handler handler;
+};
+
+struct dispatcher_config {
+    /** Paths available to the dispatcher. Must hold several properties:
+     * * Paths with shared prefixes must be grouped by prefix
+     * * Resources right at a shared prefix path must come first in the list
+     * * The strings in the shared prefixes must be pointer-identical
+     * * The list must be terminated with an entry that has path_depth 0.
+     */
+    const struct dispatcher_choice *choices;
+    /** Information about the picked choice carried around until it is used to
+     * select the builder
+     *
+     * NULL is sentinel for not found */
+    const struct dispatcher_choice *current_choice;
+    union {
+        /** Unique item that is checked for (FIXME), and later assumed to have,
+         * the address of all other union memebers */
+        uint8_t dummy;
+        // FIXME: check that hello and dummy have the same addreses
+        struct hello_state hello;
+    } handlerstate;
+};
+
+static void dispatcher_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct dispatcher_config *config = vstate;
+    config->current_choice = &config->choices[0];
+    size_t path_depth = 0;
+    // During this function, current_choice and path_depth always indicate a
+    // plausible-as-of-now option: inside current_choice, path_depth option
+    // components have already been seen.
+
+    oscore_msg_protected_optiter_t iter;
+    uint16_t opt_num;
+    const uint8_t *opt_val;
+    size_t opt_len;
+    oscore_msg_protected_optiter_init(in, &iter);
+    while (oscore_msg_protected_optiter_next(in, &iter, &opt_num, &opt_val, &opt_len)) {
+        if (opt_num == 11 /* Uri-Path */) {
+            while (path_depth == config->current_choice->path_items /* no additional path component accepted */ ||
+                    strlen(config->current_choice->path[path_depth]) != opt_len /* or the new one doesn't fit */ ||
+                    memcmp(config->current_choice->path[path_depth], opt_val, opt_len) != 0)
+            {
+                // Current item is not suitable, try advancing or break with error
+                const struct dispatcher_choice *next = config->current_choice + 1;
+                if (next->path_items == 0 /* reached the end of the list */ ||
+                        next->path_items < path_depth /* already used path is certainly not a shared prefix */ ||
+                        memcmp(next->path, config->current_choice->path, path_depth * sizeof(char **)) != 0 /* already used path is not a shared prefix */
+                    ) {
+                    config->current_choice = NULL;
+                    return;
+                }
+                // OK, the next is at least as well-suited as the current one was, retry
+                config->current_choice += 1;
+            }
+
+            // All fits, accept the option
+            path_depth += 1;
+        }
+    }
+
+    if (path_depth != config->current_choice->path_items) {
+        // Path fits but we'd have expected more path options
+        config->current_choice = NULL;
+        return;
+    }
+
+    void *data = (void*)&config->handlerstate.dummy;
+    config->current_choice->handler.parse(in, data);
+}
+
+static void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
+    const struct dispatcher_config *config = vstate;
+
+    if (config->current_choice == NULL) {
+        oscore_msg_protected_set_code(out, 0x84 /* 4.04 Not Found */);
+        oscore_msg_protected_trim_payload(out, 0);
+        return;
+    }
+
+    const void *data = &config->handlerstate.dummy;
+    config->current_choice->handler.build(out, data);
+}
+
+static char *hello1[] = {"oscore", "hello", "1"};
+static struct dispatcher_choice plugtest_choices[] = {
+    { 3, hello1, { hello_parse, hello_build } },
+    { 0, NULL, { NULL, NULL } },
+};
+static struct dispatcher_config  plugtest_config = {
+    .choices = plugtest_choices,
+    // state is initialized for whatever is just parsing
+};
+
+
 static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
     (void)ctx;
@@ -141,24 +374,8 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         goto error;
     }
 
-    // For lack of full integration, we now manually implement a resource dispatch
-    oscore_msg_protected_optiter_t iter;
-    uint16_t opt_num;
-    const uint8_t *opt_val;
-    size_t opt_len;
-    oscore_msg_protected_optiter_init(&incoming_decrypted, &iter);
-    while (oscore_msg_protected_optiter_next(&incoming_decrypted, &iter, &opt_num, &opt_val, &opt_len)) {
-        printf("Reading option %d: \"", opt_num);
-        for (size_t j = 0; j < opt_len; ++j) {
-            if (opt_val[j] >= 32 && opt_val[j] < 127) {
-                printf("%c", opt_val[j]);
-            } else {
-                printf("\\x%02x", opt_val[j]);
-            }
-        }
-        printf("\"\n");
-    }
-    oscore_msg_protected_optiter_finish(&incoming_decrypted, &iter);
+    // Deferring to the dispatcher for actual resource handling
+    dispatcher_parse(&incoming_decrypted, &plugtest_config);
 
     // Anything we were trying to learn from the incoming message needs to be
     // copied to the stack by now.
@@ -177,35 +394,8 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         goto error;
     }
 
-    // Set outer options: none
-
-    // Set code
-    oscore_msg_protected_set_code(&outgoing_plaintext, COAP_CODE_CONTENT);
-
-    // Set inner options
-    oscore_msgerr_protected_t oscerr3;
-    oscerr3 = oscore_msg_protected_append_option(&outgoing_plaintext, 12, (uint8_t*)"", 0);
-    if (oscore_msgerr_protected_is_error(oscerr3)) {
-        errormessage = "Failed to add content format";
-        goto error;
-    }
-
-    uint8_t *payload;
-    size_t payload_length;
-    size_t printed = 0;
-    oscerr3 = oscore_msg_protected_map_payload(&outgoing_plaintext, &payload, &payload_length);
-    if (oscore_msgerr_protected_is_error(oscerr3)) {
-        errormessage = "Failed to map message";
-        goto error;
-    }
-
-    printed = snprintf((char*)payload, payload_length, "Hello World!");
-
-    oscerr3 = oscore_msg_protected_trim_payload(&outgoing_plaintext, printed);
-    if (oscore_msgerr_protected_is_error(oscerr3)) {
-        errormessage = "Failed to trim message";
-        goto error;
-    }
+    // Deferring to the dispatcher again for actual response building
+    dispatcher_build(&outgoing_plaintext, &plugtest_config);
 
     enum oscore_finish_result oscerr4;
     oscore_msg_native_t pdu_write_out;
