@@ -502,14 +502,28 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 
     oscore_msg_protected_t incoming_decrypted;
     oscore_context_t *secctx;
-    // FIXME: THis is short-cutting through a lookup process that should
-    // actually be there to find the right secctx from the header.
-    // Should actually set 4.01 Unauthorized if it's neither.
-    if (header.option_length && header.option[0] & 0x10) {
-        // Only one context known with KID context
+    // FIXME accessing private fields without accessor
+    if (header.kid_context != NULL &&
+            header.kid_context_len == 8 &&
+            memcmp(header.kid_context, "\x37\xcb\xf3\x21\x00\x17\xa2\xd3", 8) == 0 &&
+            header.kid != NULL &&
+            header.kid_len == 0
+            // && memcmp(header.kid, "", 0) == 0
+            )
+    {
         secctx = &secctx_d;
-    } else {
+    } else if (
+            header.kid_context == NULL &&
+            header.kid != NULL &&
+            header.kid_len == 0
+            // && memcmp(header.kid, "", 0) == 0
+            )
+    {
         secctx = &secctx_b;
+    } else {
+        errormessage = "No security context found";
+        errorcode = COAP_CODE_UNAUTHORIZED;
+        goto error;
     }
     oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
 

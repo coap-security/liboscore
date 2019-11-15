@@ -41,8 +41,52 @@
  *
  */
 typedef struct {
-    const uint8_t *option;
-    size_t option_length;
+    /** @brief IV length
+     *
+     * This is exactly the `n` of the flags.
+     *
+     * @private
+     * */
+    uint8_t partial_iv_len;
+    /** @brief Length of the KID context
+     *
+     * This is only initialized if @p kid_context is not NULL.
+     *
+     * In the struct's sequence, this is swapped with @p partial_iv with
+     * respect to the occurrence on the wire to reduce padding introduced by
+     * C's requirement of alignment and member sequence preservation.
+     *
+     * @private
+     */
+    uint8_t kid_context_len;
+    /** @brief Pointer to the partial IV
+     *
+     * The valid size after the pointer is determined by the `n` bits of @p
+     * flags, and is NULL iff `n = 0` in the flags.
+     *
+     * @private
+     * */
+    const uint8_t *partial_iv;
+    /** @brief KID context
+     *
+     * The valid size after the pointer is determined by `s`. This points to
+     * NULL iff `h=0` in the flags.
+     *
+     * @private */
+    const uint8_t *kid_context;
+    /** @brief KID
+     *
+     * The valid size after the pointer is determined by `kid_len`. This points
+     * to NULL iff `k=0` in the flags.
+     *
+     * @private */
+    const uint8_t *kid;
+    /** @brief Length of the KID
+     *
+     * This is only set if @p kid is not NULL.
+     *
+     * @private */
+    size_t kid_len;
 } oscore_oscoreoption_t;
 
 /** @brief Parse an OSCORE option

@@ -13,11 +13,8 @@
  * This leaves request unmodified if no PartIV was present in the option. */
 bool extract_requestid(const oscore_oscoreoption_t *option, oscore_requestid_t *request)
 {
-    if (option->option_length == 0) {
-        return false;
-    }
+    uint8_t n = option->partial_iv_len;
 
-    size_t n = option->option[0] & 0x7;
     if (n == 0) {
         return false;
     }
@@ -32,7 +29,7 @@ bool extract_requestid(const oscore_oscoreoption_t *option, oscore_requestid_t *
     memset(request->partial_iv, 0, PIV_BYTES - n);
     request->is_first_use = false;
     uint8_t *dest = &request->partial_iv[PIV_BYTES - n];
-    memcpy(dest, &option->option[1], n);
+    memcpy(dest, option->partial_iv, n);
 
     return true;
 }
@@ -321,6 +318,8 @@ bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input,
             // Reserved lengths
             return false;
         }
+        out->partial_iv_len = n;
+        out->partial_iv = n > 0 ? &input[1] : NULL;
         size_t tail_start = n + 1;
 
         if (header & 0x10) {
@@ -329,8 +328,13 @@ bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input,
                 return false;
             }
 
+            out->kid_context_len = input[tail_start];
+            out->kid_context = &input[tail_start + 1];
+
             // Not validating its value: KID context is opaque
-            tail_start += input[tail_start];
+            tail_start += input[tail_start] + 1;
+        } else {
+            out->kid_context = NULL;
         }
 
         if (header & 0x08) {
@@ -338,16 +342,20 @@ bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input,
             if (tail_start > input_len) {
                 return false;
             }
+
             // Not validating its value
+
+            out->kid = &input[tail_start];
+            out->kid_len = input_len - tail_start;
         } else {
             if (tail_start != input_len) {
                 return false;
             }
+
+            out->kid = NULL;
         }
     }
 
-    out->option = input;
-    out->option_length = input_len;
     return true;
 }
 
