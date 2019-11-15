@@ -7,7 +7,7 @@
 
 /** Note that while a regular coap_pkt_t has its payload marker to the actual
  * payload on receipt and to the option write position on sending, this always
- * has uses the latter behavior.
+ * has uses the latter behavior (like it is before coap_opt_finish is called).
  *
  * The pointer is wrapped in a struct to denote this difference
  * */
