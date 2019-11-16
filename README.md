@@ -42,7 +42,7 @@ Use and documentation
 
 The libOSCORE library can be used in different ways depending on the support of the underlying CoAP library.
 
-The [integration levels] guide gives an overview of the possibilites,
+The [integration levels] guide gives an overview of the possibilities,
 and also serves as a starting point into the rest of the documentation.
 
 For a quick start, some examples and demos cover the common use cases:
@@ -54,7 +54,7 @@ For a quick start, some examples and demos cover the common use cases:
 
 Please note that the examples currently use what is described as "intermediate integration" (see [integration levels]) in their code.
 For high-level applications, it is recommended to use full integration,
-but that level is not even provided for the RIOT plattform yet.
+but that level is not even provided for the RIOT platform yet.
 
 [integration levels]: https://oscore.gitlab.io/liboscore/integration_levels.html
 
