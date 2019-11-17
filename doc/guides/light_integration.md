@@ -10,7 +10,7 @@ these operations will be performed by the application in accordance with the idi
 The guide @ref message_api explains some of the background behind that API.
 
 (There exists a module for creating and finalizing (but not sending or receiving) CoAP messages
-called @ref coap_naitive_test.
+called @ref coap_native_test.
 This is useful to implement as it allows running some of the backend tests.)
 
 As CoAP libraries often come integrated with an embedded operating system
@@ -29,7 +29,7 @@ Typically, a light integration backend contains two or three files:
   All the types described in @ref oscore_native_msg_types need to be defined in there.
   Most of the time those should be easy -- @ref oscore_msg_native_t can be typedef'd to be a pointer to a native message structure, and @ref oscore_msgerr_native_t can be identical to the native error type.
 
-  This file needs to be available to libOSCORE for inclusion under this paht and name the when it gets built.
+  This file needs to be available to libOSCORE for inclusion under this path and name the when it gets built.
 
 * `mycoaplibrary_oscore_msg.c`:
   This file contains implementations of all functions described in @ref oscore_native_msg.
@@ -38,7 +38,7 @@ Typically, a light integration backend contains two or three files:
 
 * `mycoaplibrary_oscore_msg_conversion.h`:
   If the conversion between the actual native message type and @ref oscore_msg_native_t is more involved than just using a type alias,
-  for example if a message's length is always transported in parralel to the actual native message type
+  for example if a message's length is always transported in parallel to the actual native message type
   and @ref oscore_msg_native_t points to a helper struct that binds them together,
   the creation and dissolution of such helpers can happen here
 
@@ -48,7 +48,7 @@ Typically, a light integration backend contains two or three files:
 If those files are integrated in the CoAP library's source code,
 they probably have suitable locations there.
 If they are to be shipped with libOSCORE or in a dedicated glue code bundle,
-a structure like the one used by the nanocoap implementatino is recommended:
+a structure like the one used by the nanocoap implementation is recommended:
 
     backends/nanocoap/
     ├── README.md
@@ -99,5 +99,5 @@ It is recommended to employ link time optimization.
 Testing
 -------
 
-@FIXME The test cases described in `tests/cases/` can be run on any platform that has the @ref coap_naitive_test implemened.
+@FIXME The test cases described in `tests/cases/` can be run on any platform that has the @ref coap_native_test implemented.
 See `tests/riot-tests/` and `tests/native/` for examples of how they can be executed.

@@ -65,7 +65,7 @@ when a server tries to add options out of order on a server that does not suppor
 the backend's error will occur just as if the application had itself entered options in the wrong sequence.
 
 [1]: On arbitrary-sequence platforms, the unprotected messages are typically built before the encryption step starts,
-and then fed into the OSCORE encryption in the right seequence;
+and then fed into the OSCORE encryption in the right sequence;
 see [issue 35](https://gitlab.com/oscore/liboscore/issues/35) for library extension ideas that would make those more convenient to work with.
 
 [2]: Even on a *strict-options-lax-payload* backend, the OSCORE-wrapped message behaves in a *strict-options* fashion.

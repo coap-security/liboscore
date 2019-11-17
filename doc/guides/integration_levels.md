@@ -13,7 +13,7 @@ Light integration
 (Renaming to "Basic integration" is being considered).
 
 Light integration describes the most basic way of interacting with libOSCORE.
-It only requiers a basic CoAP library
+It only requires a basic CoAP library
 (as well as one for cryptographic primitives)
 to be made available to libOSCORE.
 
@@ -31,7 +31,7 @@ and depend both on a particular underlying CoAP library and libOSCORE in their c
 
 ### Further documentation
 
-* To implement light integration for an exising CoAP library, see the @ref light_integration.
+* To implement light integration for an existing CoAP library, see the @ref light_integration.
 * To write an application based on light integration, carefully read @ref light_integration_usage
 
 Full integration
@@ -44,8 +44,8 @@ but transparently passes on interactions with messages to OSCORE protected messa
 Applications built on this pattern do not interact with libOSCORE directly,
 but see regular messages of their CoAP library.
 They can query or set the security context of a message
-in a similar way as they set the the remote address in any message
-(and thus contain clauses like "if security contex is not whitelisted, return 4.01"),
+in a similar way as they set the remote address in any message
+(and thus contain clauses like "if security context is not whitelisted, return 4.01"),
 or are even ignorant of the security context if their access control happens inside their CoAP library
 (and list their resources as "`/door/lock` requires a security context of at least X to GET, and of at least Y to PUT").
 
@@ -69,7 +69,7 @@ Intermediate integration
 (Renaming to "Sideways integration" is being considered).
 
 Code that orchestrates and simplifies libOSCORE steps
-but does not provide the original native CoAP's inerfaces again
+but does not provide the original native CoAP's interfaces again
 is called intermediate integration.
 
 Such code can range from the narrow-purpose helpers to REST frameworks.
@@ -96,7 +96,7 @@ The @ref light_integration_usage guide can be used as a starting point, as an in
 APIs and integration levels
 ---------------------------
 
-The interface the native CoAP library needs to implent for all levels of integration
+The interface the native CoAP library needs to implement for all levels of integration
 is the @ref oscore_native_msg;
 libOSCORE provides the @ref oscore_msg which is intentionally similar;
 @ref message_api explains a bit more about those two.
@@ -146,7 +146,7 @@ In contrast, applications built on light integration interact both with libOSCOR
 
 The application typically needs to access functions of the native CoAP library that are not expressed in the @ref oscore_native_msg
 (for example to send and receive messages), which are not depicted here.
-@FIXME (With possible renaming of the "native" parts, that might become moer usable in the illustration).
+@FIXME (With possible renaming of the "native" parts, that might become more usable in the illustration).
 
 With sideways integration in place, the picture looks similar to the light integration case,
 but the integration module takes the application's place:
@@ -176,6 +176,6 @@ Currently implemented integrations
 * A native CoAP API binding for nanocoap is shipped with libOSCORE,
   enabling light integration on RIOT-OS.
 * An intermediate module for server operation is being actively worked on.
-  It provides a push-based API for applications that can be implemened as simple state machines,
+  It provides a push-based API for applications that can be implemented as simple state machines,
   and is used in the plugtest server as well as upcoming demos.
 * Full integration into the nanocoap/Gcoap ecosystem of RIOT-OS is being planned.
