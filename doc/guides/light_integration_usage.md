@@ -34,14 +34,14 @@ The general steps required of a server are, in that sequence:
 * Read the message
 * Discard the received message
 * Start composing a response message
-* Prepare encryption of the messge
+* Prepare encryption of the message
 * Populate the message
 * Finish encryption
 * Send the message
 
 Two aspects of this sequence may vary depending on the underlying CoAP library:
 
-* Discard the received message befoer composing the response:
+* Discard the received message before composing the response:
 
   This is the most strict sequence that caters for CoAP libraries with only a single message buffer.
   On less constrained devices, the response preparation can be started earlier,
