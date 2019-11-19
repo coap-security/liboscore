@@ -8,5 +8,6 @@ RESOURCE(delete, 2, PATH("oscore", "test"), delete_parse, delete_build, struct h
 /** Will be the demo application */
 
 RESOURCE(light, 1, PATH("light"), light_parse, light_build, uint16_t)
+RESOURCE(sensordata, 1, PATH("sensordata"), sensordata_parse, sensordata_build, struct sensordata_blockopt)
 
 /** End of demo application */

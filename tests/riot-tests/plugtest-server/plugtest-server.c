@@ -403,6 +403,168 @@ static void light_build(oscore_msg_protected_t *out, const void *vstate)
     }
 }
 
+struct sensordata_blockopt {
+    uint32_t num;
+    uint8_t szx;
+    uint8_t responsecode;
+};
+
+/** Parse @p msg's Block2 option into @p blockopt */
+bool get_blockopt2(oscore_msg_protected_t *msg, struct sensordata_blockopt *blockopt)
+{
+    bool error = false;
+    blockopt->num = 0;
+    blockopt->szx = 6;
+
+    oscore_msg_protected_optiter_t iter;
+    uint16_t opt_num;
+    const uint8_t *opt_val;
+    size_t opt_len;
+    oscore_msg_protected_optiter_init(msg, &iter);
+    while (oscore_msg_protected_optiter_next(msg, &iter, &opt_num, &opt_val, &opt_len)) {
+        if (opt_num != 23 /* Block2 */)
+            continue;
+        if (opt_len >= 4) {
+            error = true;
+            break;
+        }
+        network_uint32_t buf = { .u32 = 0 };
+        memcpy(&buf.u8[4 - opt_len], opt_val, opt_len);
+        uint32_t numeric = byteorder_ntohl(buf);
+        blockopt->num = numeric >> 4;
+        // ignoring the "M" bit
+        blockopt->szx = numeric & 0x7;
+        if (blockopt->szx == 7) {
+            error = true;
+            break;
+        }
+        break;
+    }
+
+    return oscore_msgerr_protected_is_error(oscore_msg_protected_optiter_finish(msg, &iter)) || error;
+}
+
+static void sensordata_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct sensordata_blockopt *state = vstate;
+
+    // This application is sloppily ignoring any set critical options. A
+    // diligent application would go through the options if those checks are
+    // not provided by the framework. As this is both a demo of a simple
+    // framework (the minimal intermediate integration) and a simple
+    // application (the sensordata demo), those checks are ignored.
+
+    if (oscore_msg_protected_get_code(in) != 1 /* GET */) {
+        state->responsecode = 0x85 /* 4.05 Method Not Allowed */;
+        return;
+    }
+
+    bool err = get_blockopt2(in, state);
+    if (err)
+        state->responsecode = 0x80 /* 4.00 Bad Option */;
+    else
+        state->responsecode = 0x45 /* 2.05 Content */;
+}
+
+const char message[] = "{\"data\": ["
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
+"42]}";
+
+static void sensordata_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    struct sensordata_blockopt state = *(struct sensordata_blockopt*)vstate;
+
+    oscore_msg_protected_set_code(out, state.responsecode);
+
+    if (state.responsecode != 0x45 /* 2.05 Content */) {
+        oscore_msg_protected_trim_payload(out, 0);
+        return;
+    }
+
+    oscore_msgerr_protected_t err;
+    // Will be overwritten later, but needs to be allocated now
+    err = oscore_msg_protected_append_option(out, 23 /* Block 2 */, (uint8_t*)"XXXX", 4);
+
+    uint8_t *payload;
+    size_t payload_length;
+    err = oscore_msg_protected_map_payload(out, &payload, &payload_length);
+
+    if (oscore_msgerr_protected_is_error(err)) {
+        oscore_msg_protected_set_code(out, 0xa0 /* 5.00 Internal Error */);
+        oscore_msg_protected_trim_payload(out, 0);
+        return;
+    }
+
+    size_t blocksize;
+    while (true) {
+        blocksize = 1 << (state.szx + 4);
+
+        if (blocksize > payload_length) {
+            assert(state.szx >= 1); // because such small a buffer is never allocated
+            state.szx --;
+            state.num <<= 1;
+        } else {
+            break;
+        }
+    }
+    size_t start = blocksize * state.num;
+    size_t end = start + blocksize;
+
+    uint8_t *data = (uint8_t*)&message;
+    size_t data_length = strlen(message);
+
+    if (start > data_length) {
+        oscore_msg_protected_set_code(out, 0x80 /* 4.00 Bad Request */);
+        // FIXME: Remove Block option
+        oscore_msg_protected_trim_payload(out, 0);
+        return;
+    }
+
+    size_t actual_size = data_length - start;
+    if (actual_size > blocksize)
+        actual_size = blocksize;
+
+    memcpy(payload, &data[start], actual_size);
+    oscore_msg_protected_trim_payload(out, actual_size);
+
+    bool m = end < data_length;
+    uint32_t block2 = state.szx | (m << 3) | (state.num << 4);
+    network_uint32_t buf = byteorder_htonl(block2);
+    err = oscore_msg_protected_update_option(out, 23 /* Block2 */, 0, buf.u8, 4);
+
+    // Very elaborate constant propagation could remove this.
+    if (oscore_msgerr_protected_is_error(err)) {
+        oscore_msg_protected_set_code(out, 0xa0 /* 5.00 Internal Error */);
+        oscore_msg_protected_trim_payload(out, 0);
+    }
+}
+
 /** End of demo application */
 
 
