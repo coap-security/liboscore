@@ -4,3 +4,9 @@ RESOURCE(hello3, 3, PATH("oscore", "hello", "3"), hello3_parse, hello3_build, st
 RESOURCE(hello6, 3, PATH("oscore", "hello", "6"), hello6_parse, hello6_build, struct hello_state)
 RESOURCE(hello7, 3, PATH("oscore", "hello", "7"), hello7_parse, hello7_build, struct hello_state)
 RESOURCE(delete, 2, PATH("oscore", "test"), delete_parse, delete_build, struct hello_state)
+
+/** Will be the demo application */
+
+RESOURCE(light, 1, PATH("light"), light_parse, light_build, uint16_t)
+
+/** End of demo application */

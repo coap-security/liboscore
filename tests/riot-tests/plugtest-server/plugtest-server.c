@@ -327,6 +327,85 @@ static void delete_build(oscore_msg_protected_t *out, const void *vstate)
     oscore_msg_protected_trim_payload(out, 0);
 }
 
+/** Will be the demo application */
+
+#include <led.h>
+
+static bool ledstate = false;
+
+static void light_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    uint16_t *responsecode = vstate;
+
+    // This application is sloppily ignoring any set critical options, as well
+    // as Content-Format and that like. A diligent application would go through
+    // the options if those checks are not provided by the framework. As this
+    // is both a demo of a simple framework (the minimal intermediate
+    // integration) and a simple application (the blinking demo), those checks
+    // are ignored.
+
+    switch (oscore_msg_protected_get_code(in)) {
+        case 1 /* GET */:
+            *responsecode = 0x45 /* 2.05 Content */;
+            break;
+        case 3 /* PUT */:
+            {
+            uint8_t *payload;
+            size_t payload_length;
+            oscore_msgerr_protected_t err = oscore_msg_protected_map_payload(in, &payload, &payload_length);
+            if (oscore_msgerr_protected_is_error(err)) {
+                *responsecode = 0x80 /* 4.00 Bad Request */; // probably an option encoding error
+                return;
+            }
+            if (payload_length == 2 && payload[1] == '\n') {
+                // Allow trailing newline
+                payload_length --;
+            }
+            if (payload_length == 1 && '0' <= payload[0] && payload[0] <= '1') {
+                if (payload[0] == '1') {
+                    LED_ON(0);
+                    ledstate = true;
+                } else {
+                    LED_OFF(0);
+                    ledstate = false;
+                }
+                *responsecode = 0x44 /* 2.04 Changed */;
+            } else {
+                *responsecode = 0x80 /* 4.00 Bad Request */; // application level bad request
+            }
+            }
+            break;
+        default:
+            *responsecode = 0x85 /* 4.05 Method Not Allowed */;
+            break;
+    }
+}
+
+static void light_build(oscore_msg_protected_t *out, const void *vstate)
+{
+    const uint16_t *responsecode = vstate;
+
+    oscore_msg_protected_set_code(out, *responsecode);
+
+    if (*responsecode == 0x45 /* 2.05 Content */) {
+        uint8_t *payload;
+        size_t payload_length;
+        oscore_msgerr_protected_t err = oscore_msg_protected_map_payload(out, &payload, &payload_length);
+        if (oscore_msgerr_protected_is_error(err)) {
+            oscore_msg_protected_set_code(out, 0xa0 /* 5.00 Internal Error */);
+            oscore_msg_protected_trim_payload(out, 0);
+            return;
+        }
+        payload[0] = '0' + ledstate;
+        oscore_msg_protected_trim_payload(out, 1);
+    } else {
+        oscore_msg_protected_trim_payload(out, 0);
+    }
+}
+
+/** End of demo application */
+
+
 struct dispatcher_choice {
     /** Number of entries in path */
     size_t path_items;
