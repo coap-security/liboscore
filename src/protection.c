@@ -7,7 +7,7 @@
 #define OPTNUM_MAX 0xffff
 
 /** Take the Partial IV from the OSCORE option and populate @ref
- * oscore_request_t from it. Return true if successful, or false if there was
+ * oscore_requestid_t from it. Return true if successful, or false if there was
  * no PartIV in the option.
  *
  * This leaves request unmodified if no PartIV was present in the option. */
@@ -566,12 +566,20 @@ enum oscore_finish_result oscore_encrypt_message(
         oscore_msg_native_t *protected
         )
 {
-    bool use_request_iv = unprotected->request_id.is_first_use;
     const oscore_context_t *secctx = unprotected->secctx;
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
     size_t tag_length = unprotected->tag_length;
 
     enum oscore_context_role requester_role = unprotected->is_request ? OSCORE_ROLE_SENDER : OSCORE_ROLE_RECIPIENT;
+    enum oscore_context_role nonceprovider_role = unprotected->is_request ?
+                    OSCORE_ROLE_SENDER : (
+                        unprotected->request_id.is_first_use ?
+                        OSCORE_ROLE_RECIPIENT :
+                        OSCORE_ROLE_SENDER
+                    );
+    oscore_requestid_t *nonce_piv = unprotected->request_id.is_first_use ?
+                    &unprotected->request_id :
+                    &unprotected->partial_iv;
 
     // Make result available before the first error return
     *protected = unprotected->backend;
@@ -606,11 +614,7 @@ enum oscore_finish_result oscore_encrypt_message(
     struct aad_sizes aad_sizes = predict_aad_size(secctx, requester_role, &unprotected->request_id, aeadalg, unprotected->backend);
 
     uint8_t encrypt_iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
-    if (use_request_iv) {
-        build_iv(encrypt_iv, &unprotected->request_id, secctx, OSCORE_ROLE_RECIPIENT);
-    } else {
-        build_iv(encrypt_iv, &unprotected->partial_iv, secctx, OSCORE_ROLE_SENDER);
-    }
+    build_iv(encrypt_iv, nonce_piv, secctx, nonceprovider_role);
 
     oscore_crypto_aead_encryptstate_t enc;
     oscore_cryptoerr_t err = oscore_crypto_aead_encrypt_start(
