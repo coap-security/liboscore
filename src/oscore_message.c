@@ -748,8 +748,6 @@ oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
     }
 
     oscore_msgerr_native_t err = oscore_msg_native_trim_payload(msg->backend,
-            // outer payload marker
-            1 +
             // code
             1 +
             // class-E options
