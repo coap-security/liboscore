@@ -108,7 +108,11 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
     if (optnum <= msg->autooption_written) {
         return OK;
     }
-    if (msg->autooption_written < 9 && optnum >= 9) {
+    uint16_t previously_written = msg->autooption_written;
+    // Prevent recursion
+    msg->autooption_written = optnum;
+
+    if (previously_written < 9 && optnum >= 9) {
         // Write OSCORE option
 
         uint8_t optionbuffer[1 + PIV_BYTES + 1 + OSCORE_KEYIDCONTEXT_MAXLEN + OSCORE_KEYID_MAXLEN];
@@ -156,7 +160,6 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         if (oscore_msgerr_native_is_error(err))
             return NATIVE_ERROR;
     }
-    msg->autooption_written = optnum;
 
     return OK;
 }
@@ -378,6 +381,11 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
         size_t value_len
         )
 {
+    oscore_msgerr_protected_t flusherr = flush_autooptions_until(msg, option_number);
+    if (flusherr != OK) {
+        return flusherr;
+    }
+
     enum option_behavior behavior = get_option_behaviour(option_number);
     if (behavior == PRIMARILY_U) {
         oscore_msgerr_native_t err = oscore_msg_native_append_option(
