@@ -293,6 +293,71 @@ void oscore_requestid_clone(oscore_requestid_t *dest, oscore_requestid_t *src)
     dest->is_first_use = false;
 }
 
+/** Do all the decryption preparation common to @ref oscore_prepare_response
+ * and @ref oscore_prepare_request
+ *
+ * This returns true if decryption was successful.
+ */
+bool _decrypt(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        )
+{
+    oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
+    size_t tag_length = oscore_crypto_aead_get_taglength(aeadalg);
+    size_t minimum_ciphertext_length = 1 + tag_length;
+
+    uint8_t *ciphertext;
+    size_t ciphertext_length;
+    oscore_msg_native_map_payload(protected, &ciphertext, &ciphertext_length);
+    if (ciphertext_length < minimum_ciphertext_length) {
+        // Ciphertext too short
+        return false;
+    }
+    size_t plaintext_length = ciphertext_length - tag_length; // >= 1
+
+    struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
+
+    uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
+    build_iv(iv, request_id, secctx, OSCORE_ROLE_RECIPIENT);
+
+    oscore_cryptoerr_t err;
+    oscore_crypto_aead_decryptstate_t dec;
+    err = oscore_crypto_aead_decrypt_start(
+            &dec,
+            aeadalg,
+            aad_sizes.aad_length,
+            plaintext_length,
+            iv,
+            oscore_context_get_key(secctx, OSCORE_ROLE_RECIPIENT)
+            );
+    if (!oscore_cryptoerr_is_error(err)) {
+        err = feed_aad(&dec, aad_sizes, secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
+    }
+    if (!oscore_cryptoerr_is_error(err)) {
+        err = oscore_crypto_aead_decrypt_inplace(
+                &dec,
+                ciphertext,
+                ciphertext_length);
+    }
+
+    if (oscore_cryptoerr_is_error(err)) {
+        return false;
+    }
+
+    oscore_context_strikeout_requestid(secctx, request_id);
+
+    // FIXME all of that needs to be initialized
+    unprotected->backend = protected;
+    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_NONE;
+    unprotected->tag_length = tag_length;
+    unprotected->payload_offset = 0;
+
+    return true;
+}
+
 enum oscore_unprotect_request_result oscore_unprotect_request(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
@@ -321,60 +386,15 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
      *   upheld.
      */
 
-    oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
-    size_t tag_length = oscore_crypto_aead_get_taglength(aeadalg);
-    size_t minimum_ciphertext_length = 1 + tag_length;
-
-    uint8_t *ciphertext;
-    size_t ciphertext_length;
-    oscore_msg_native_map_payload(protected, &ciphertext, &ciphertext_length);
-    if (ciphertext_length < minimum_ciphertext_length) {
-        // Ciphertext too short
-        return OSCORE_UNPROTECT_REQUEST_INVALID;
-    }
-    size_t plaintext_length = ciphertext_length - tag_length; // >= 1
-
     bool has_request_id = extract_requestid(&header, request_id);
     if (!has_request_id) {
         return OSCORE_UNPROTECT_REQUEST_INVALID;
     }
 
-    struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
+    bool success = _decrypt(protected, unprotected, secctx, request_id);
 
-    uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
-    build_iv(iv, request_id, secctx, OSCORE_ROLE_RECIPIENT);
-
-    oscore_cryptoerr_t err;
-    oscore_crypto_aead_decryptstate_t dec;
-    err = oscore_crypto_aead_decrypt_start(
-            &dec,
-            aeadalg,
-            aad_sizes.aad_length,
-            plaintext_length,
-            iv,
-            oscore_context_get_key(secctx, OSCORE_ROLE_RECIPIENT)
-            );
-    if (!oscore_cryptoerr_is_error(err)) {
-        err = feed_aad(&dec, aad_sizes, secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
-    }
-    if (!oscore_cryptoerr_is_error(err)) {
-        err = oscore_crypto_aead_decrypt_inplace(
-                &dec,
-                ciphertext,
-                ciphertext_length);
-    }
-
-    if (oscore_cryptoerr_is_error(err)) {
+    if (!success)
         return OSCORE_UNPROTECT_REQUEST_INVALID;
-    }
-
-    oscore_context_strikeout_requestid(secctx, request_id);
-
-    // FIXME all of that needs to be initialized
-    unprotected->backend = protected;
-    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_NONE;
-    unprotected->tag_length = tag_length;
-    unprotected->payload_offset = 0;
 
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }
