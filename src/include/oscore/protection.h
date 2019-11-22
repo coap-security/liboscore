@@ -303,8 +303,6 @@ enum oscore_prepare_result oscore_prepare_request(
 enum oscore_finish_result {
     /** Encryption successful */
     OSCORE_FINISH_OK,
-    /** Additional options had to be inserted before encryption, and that operation failed */
-    OSCORE_FINISH_ERROR_OPTIONS,
     /** The space allocated for the message was insufficient for adding the
      * AEAD tag. This error showing indicaes a programming error in one of the
      * previously executed OSCORE message manipulation functions, as those
@@ -322,8 +320,11 @@ enum oscore_finish_result {
 /** @brief Encrypt a previously prepared and populated message
  *
  * This encrypts a that has been initiallized by @ref oscore_prepare_request or
- * @ref oscore_prepare_response. It may execute additional steps like flushing out
- * pending option writes, especially of the OSCORE option.
+ * @ref oscore_prepare_response. The @ref oscore_msg_protected_trim_payload
+ * function must be called on the message before it is encrypted (which needs
+ * to happen anyway because the allocated message size in practically all cases
+ * exceeds the required number of bytes on the wire, eg. because the length of
+ * the OSCORE option depends on the sequence number).
  *
  * @param[inout] unprotected The message that has been built. This is described as "inout" because while the struct is coming in initialized, it should be considered uninitialized after this function. It is a usage error (that is caught unless assertions are disabled) to use the same struct for anything else that assumes that it is initialized.
  * @param[out] protected The native message that was passed in in the protection step, which now contains the ciphertext.
