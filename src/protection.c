@@ -359,6 +359,12 @@ bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input,
     return true;
 }
 
+void oscore_requestid_clone(oscore_requestid_t *dest, oscore_requestid_t *src)
+{
+    memcpy(dest, src, sizeof(oscore_requestid_t));
+    dest->is_first_use = false;
+}
+
 enum oscore_unprotect_request_result oscore_unprotect_request(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
@@ -518,13 +524,34 @@ enum oscore_prepare_result oscore_prepare_response(
 
     unprotected->is_request = false;
 
-    enum oscore_prepare_result ret = _prepare_encrypt(protected, unprotected, secctx);
+    oscore_msg_native_set_code(protected, 0x45); // 2.05 Content
 
-    if (ret == OSCORE_PREPARE_OK) {
-        oscore_msg_native_set_code(protected, 0x45); // 2.05 Content
+    return _prepare_encrypt(protected, unprotected, secctx);
+}
+
+enum oscore_prepare_result oscore_prepare_request(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        )
+{
+    bool ok = oscore_context_take_seqno(secctx, &unprotected->request_id);
+    if (!ok) {
+        return OSCORE_PREPARE_SECCTX_UNAVAILABLE;
     }
 
-    return ret;
+    // Caller gets the copy with the "can not reuse" setting
+    oscore_requestid_clone(request_id, &unprotected->request_id);
+
+    // This allows us not to initialize partial_iv at all
+    assert(unprotected->request_id.is_first_use);
+
+    unprotected->is_request = true;
+
+    oscore_msg_native_set_code(protected, 0x2); // POST
+
+    return _prepare_encrypt(protected, unprotected, secctx);
 }
 
 enum oscore_finish_result oscore_encrypt_message(
@@ -594,7 +621,7 @@ enum oscore_finish_result oscore_encrypt_message(
                 aad_sizes,
                 secctx,
                 unprotected->is_request ? OSCORE_ROLE_SENDER : OSCORE_ROLE_RECIPIENT,
-                unprotected->is_request ? &unprotected->partial_iv : &unprotected->request_id,
+                &unprotected->request_id,
                 aeadalg,
                 unprotected->backend
                 );

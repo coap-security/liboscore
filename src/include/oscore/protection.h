@@ -270,6 +270,31 @@ enum oscore_prepare_result oscore_prepare_response(
         oscore_requestid_t *request_id
         );
 
+/** @brief Request message preparation
+ *
+ * Start building a message for encryption with a given security context.
+ *
+ * @param[in] protected An allocated message into which the operations on @p unprotected can write
+ * @param[in] unprotected A pre-allocated, uninititialized @ref oscore_msg_protected_t that the message can be written to
+ * @param[inout] secctx A security context used to protect the message, which a sequence number will be taken from on demand
+ * @param[out] request_id The request ID created in the process for this exchange, and is later used to unprotect the response.
+ *
+ * @return OSCORE_PREPARE_OK if all information is available to continue, or
+ * any other if not.
+ *
+ * @attention The @p secctx passed in here may only be used to protect and
+ * unprotect other messages (and not altered in any other way) until the
+ * subsequent @ref oscore_encrypt_message function has been called.
+ * See @ref design_thread for more details.
+ */
+OSCORE_NONNULL
+enum oscore_prepare_result oscore_prepare_request(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        );
+
 /** @brief Results of message encryption
  *
  * Users of the library should never check for identity to unsuccessful values,
@@ -297,7 +322,7 @@ enum oscore_finish_result {
 /** @brief Encrypt a previously prepared and populated message
  *
  * This encrypts a that has been initiallized by @ref oscore_prepare_request or
- * oscore_prepare_response. It may execute additional steps like flushing out
+ * @ref oscore_prepare_response. It may execute additional steps like flushing out
  * pending option writes, especially of the OSCORE option.
  *
  * @param[inout] unprotected The message that has been built. This is described as "inout" because while the struct is coming in initialized, it should be considered uninitialized after this function. It is a usage error (that is caught unless assertions are disabled) to use the same struct for anything else that assumes that it is initialized.
