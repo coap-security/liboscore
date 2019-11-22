@@ -452,11 +452,18 @@ oscore_msg_native_t oscore_release_unprotected(
     return unprotected->backend;
 }
 
-enum oscore_prepare_result oscore_prepare_response(
+/** Do all the encryption preparation required for @ref oscore_prepare_response
+ * and @ref oscore_prepare_request, except
+ *
+ * * initialization of the request_id and partial_iv fields
+ * * initialization of the is_request field
+ * * any modifications to the passed request_id (it's not even forwarded)
+ * * setting the outer code
+ */
+enum oscore_prepare_result _prepare_encrypt(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_context_t *secctx,
-        oscore_requestid_t *request_id
+        oscore_context_t *secctx
         )
 {
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
@@ -469,11 +476,31 @@ enum oscore_prepare_result oscore_prepare_response(
     // length will be removed from the usable payload or not).
 
 
+    // Initialize everything except the previously initialized partial_iv and
+    // request_id
+
+    unprotected->backend = protected;
+    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_WRITABLE;
+    unprotected->tag_length = tag_length;
+    unprotected->payload_offset = 0;
+    unprotected->secctx = secctx;
+    unprotected->autooption_written = 0;
+    unprotected->class_e.cursor = 0;
+    unprotected->class_e.option_number = 0;
+
+    return OSCORE_PREPARE_OK;
+}
+
+enum oscore_prepare_result oscore_prepare_response(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        )
+{
     // FIXME: Should we take the native message's code and set it as inner?
     // Users from libraries that set a code on creation may expect that, but
     // for others it's needless memory shoving.
-
-    oscore_msg_native_set_code(protected, 0x45); // 2.05 Content
 
     // memcpy legitimate (otherwise see oscore_requestid_clone) as the input
     // request ID's flag is cleared
@@ -489,20 +516,15 @@ enum oscore_prepare_result oscore_prepare_response(
         unprotected->partial_iv.is_first_use = false;
     }
 
-    // Initialize everything except the previously initialized partial_iv and
-    // request_id
-
-    unprotected->backend = protected;
-    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_WRITABLE;
-    unprotected->tag_length = tag_length;
-    unprotected->payload_offset = 0;
     unprotected->is_request = false;
-    unprotected->secctx = secctx;
-    unprotected->autooption_written = 0;
-    unprotected->class_e.cursor = 0;
-    unprotected->class_e.option_number = 0;
 
-    return OSCORE_PREPARE_OK;
+    enum oscore_prepare_result ret = _prepare_encrypt(protected, unprotected, secctx);
+
+    if (ret == OSCORE_PREPARE_OK) {
+        oscore_msg_native_set_code(protected, 0x45); // 2.05 Content
+    }
+
+    return ret;
 }
 
 enum oscore_finish_result oscore_encrypt_message(
