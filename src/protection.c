@@ -571,6 +571,8 @@ enum oscore_finish_result oscore_encrypt_message(
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
     size_t tag_length = unprotected->tag_length;
 
+    enum oscore_context_role requester_role = unprotected->is_request ? OSCORE_ROLE_SENDER : OSCORE_ROLE_RECIPIENT;
+
     // Make result available before the first error return
     *protected = unprotected->backend;
 
@@ -601,7 +603,7 @@ enum oscore_finish_result oscore_encrypt_message(
     size_t plaintext_length = ciphertext_length - tag_length; // >= 1
 
     // FIXME optimize this to happen while the message is being built
-    struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, &unprotected->request_id, aeadalg, unprotected->backend);
+    struct aad_sizes aad_sizes = predict_aad_size(secctx, requester_role, &unprotected->request_id, aeadalg, unprotected->backend);
 
     uint8_t encrypt_iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
     if (use_request_iv) {
@@ -627,7 +629,7 @@ enum oscore_finish_result oscore_encrypt_message(
                 &enc,
                 aad_sizes,
                 secctx,
-                unprotected->is_request ? OSCORE_ROLE_SENDER : OSCORE_ROLE_RECIPIENT,
+                requester_role,
                 &unprotected->request_id,
                 aeadalg,
                 unprotected->backend
