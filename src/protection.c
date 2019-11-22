@@ -160,7 +160,14 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         uint8_t optionbuffer[1 + PIV_BYTES + 1 + OSCORE_KEYIDCONTEXT_MAXLEN + OSCORE_KEYID_MAXLEN];
         size_t optionlength = 0;
 
-        uint8_t n = msg->request_id.is_first_use ? 0 : msg->partial_iv.used_bytes;
+        uint8_t n;
+        oscore_requestid_t *piv_source;
+        if (msg->request_id.is_first_use && !msg->is_request) {
+            n = 0;
+        } else {
+            piv_source = msg->request_id.is_first_use ? &msg->request_id : &msg->partial_iv;
+            n = piv_source->used_bytes;
+        }
         // In multicast responses, that'd be set as well.
         // FIXME any other situation? probably context dependent -- ask context?
         bool k = msg->is_request;
@@ -171,7 +178,7 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         optionbuffer[0] = n | (k << 3) | (h << 4);
         optionlength = 1;
         if (n != 0) {
-            memcpy(&optionbuffer[optionlength], &msg->partial_iv.partial_iv[PIV_BYTES - n], n);
+            memcpy(&optionbuffer[optionlength], &piv_source->partial_iv[PIV_BYTES - n], n);
             optionlength += n;
         }
 

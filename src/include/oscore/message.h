@@ -143,7 +143,7 @@ typedef struct {
      *
      * As an extra security against double encryption of a message, the
      * is_first_use flag is set to true in those cases until encryption is
-     * performed. (Thus, the is_first_use flag is always initialized).
+     * performed.
      *
      * @private
      */
