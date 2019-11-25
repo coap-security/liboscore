@@ -70,7 +70,7 @@ static mutex_t secctx_d_usage = MUTEX_INIT;
 static struct oscore_context_primitive primitive_u;
 static oscore_context_t secctx_u = {
     .type = OSCORE_CONTEXT_PRIMITIVE,
-    .data = NULL,
+    .data = (void*)(&primitive_u),
 };
 static bool secctx_u_good = false;
 static mutex_t secctx_u_usage = MUTEX_INIT;
@@ -1109,10 +1109,99 @@ static int cmdline_target(int argc, char **argv) {
     return 0;
 }
 
+static bool parse_singlehex(char hex, uint8_t *target) {
+    if ('0' <= hex && hex <= '9') {
+        *target = hex - '0';
+        return true;
+    }
+    if ('a' <= hex && hex <= 'f') {
+        *target = hex - 'a' + 10;
+        return true;
+    }
+    if ('A' <= hex && hex <= 'F') {
+        *target = hex - 'A' + 10;
+        return true;
+    }
+    return false;
+}
+
+/*** Expect len bytes of hex data at the null-terminated hex string, parse them
+ * into data and return true on success
+ *
+ * A single trailing '-' is accepted as to make the entry of '-' for a
+ * zero-byte string easier.
+ * */
+static bool parse_hex(char *hex, size_t len, uint8_t *data) {
+    uint8_t acc;
+    while (len) {
+        if (!parse_singlehex(*hex++, &acc))
+            return false;
+        *data = acc << 4;
+        if (!parse_singlehex(*hex++, &acc))
+            return false;
+        *data |= acc;
+        len --;
+        data ++;
+    }
+    if (len == 0 && *hex == '-')
+        hex ++;
+    return *hex == 0;
+}
+
+static int cmdline_userctx(int argc, char **argv) {
+    if (argc != 6)
+        return printf("Usage: userctx sender-id recipient-id common-iv sender-key recipient-key\nAll keys and IDs in contiguous hex\n");
+
+    int ret = 0;
+
+    if (mutex_trylock(&secctx_u_usage) != 1)
+        return printf("Can't change user context while the context is in active use.\n");
+    if (secctx_u_change != 0)  {
+        printf("Can't change user context while request_ids are in flight.\n");
+        mutex_unlock(&secctx_u_usage);
+        return 1;
+    }
+
+    secctx_u_good = false;
+
+    primitive_u.aeadalg = 24;
+    primitive_u.sender_id_len = strlen(argv[1]) / 2;
+    if (primitive_u.sender_id_len > OSCORE_KEYID_MAXLEN)
+        ret = printf("Sender ID too long\n");
+    if (!parse_hex(argv[1], primitive_u.sender_id_len, primitive_u.sender_id))
+        ret = printf("Invalid Sender ID\n");
+
+    primitive_u.recipient_id_len = strlen(argv[2]) / 2;
+    if (primitive_u.recipient_id_len > OSCORE_KEYID_MAXLEN)
+        ret = printf("Recipient ID too long\n");
+    if (!parse_hex(argv[2], primitive_u.recipient_id_len, primitive_u.recipient_id))
+        ret = printf("Invalid Recipient ID\n");
+
+    if (!parse_hex(argv[3], oscore_crypto_aead_get_ivlength(primitive_u.aeadalg), primitive_u.common_iv))
+        ret = printf("Invalid Commmon IV\n");
+
+    if (!parse_hex(argv[4], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.sender_key))
+        ret = printf("Invalid Sender Key'\n");
+
+    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.recipient_key))
+        ret = printf("Invalid Recipient Key\n");
+
+    primitive_u.sender_sequence_number = 0;
+    primitive_u.replay_window_left_edge = 0;
+    primitive_u.replay_window = 0;
+
+    if (ret == 0)
+        secctx_u_good = true;
+
+    mutex_unlock(&secctx_u_usage);
+    return ret;
+}
+
 static const shell_command_t shell_commands[] = {
     { "on", "Set the configured OSCORE remote resource to 1", cmdline_on },
     { "off", "Set the configured OSCORE remote resource to 0", cmdline_off },
     {"target", "Set the IP and port to which to send on and off requests", cmdline_target },
+    {"userctx", "Reset the user context with new key material", cmdline_userctx },
     { NULL, NULL, NULL }
 };
 
@@ -1121,10 +1210,11 @@ int main(void)
     gcoap_register_listener(&_listener);
 
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-    char line_buf[SHELL_DEFAULT_BUFSIZE];
+    // larger than usual to accomodate key entry
+    char line_buf[512];
 
     puts("Running OSCORE plugtest server");
-    shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+    shell_run(shell_commands, line_buf, sizeof(line_buf));
 
     return 0;
 }
