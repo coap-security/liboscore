@@ -73,6 +73,13 @@ size_t oscore_crypto_aead_get_taglength(oscore_crypto_aeadalg_t alg);
  */
 size_t oscore_crypto_aead_get_ivlength(oscore_crypto_aeadalg_t alg);
 
+/** @brief Get the key length that is used for a particular algorithm
+ *
+ * @param[in] alg An AEAD algorithm
+ * @return the length of the algorithm's keys, in bytes
+ */
+size_t oscore_crypto_aead_get_keylength(oscore_crypto_aeadalg_t alg);
+
 
 /** @brief Start an AEAD encryption operation
  *

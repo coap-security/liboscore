@@ -30,6 +30,16 @@ size_t oscore_crypto_aead_get_taglength(oscore_crypto_aeadalg_t alg)
     }
 }
 
+size_t oscore_crypto_aead_get_keylength(oscore_crypto_aeadalg_t alg)
+{
+    switch (alg) {
+        case COSE_ALGO_CHACHA20POLY1305:
+            return COSE_CRYPTO_AEAD_CHACHA20POLY1305_KEYBYTES;
+        default:
+            return SIZE_MAX;
+    }
+}
+
 size_t oscore_crypto_aead_get_ivlength(oscore_crypto_aeadalg_t alg)
 {
     switch (alg) {
