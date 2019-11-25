@@ -847,6 +847,8 @@ struct static_request_data {
     oscore_requestid_t request_id;
 };
 
+sock_udp_ep_t static_request_target = { .port = 0 };
+
 static void handle_static_response(const struct gcoap_request_memo *memo, coap_pkt_t *pdu, const sock_udp_ep_t *remote)
 {
     struct static_request_data *request_data = memo->context;
@@ -911,6 +913,11 @@ static void send_static_request(char value) {
 
     struct static_request_data request_data = { .done = MUTEX_INIT_LOCKED };
 
+    if (static_request_target.port == 0) {
+        printf("No remote configured\n");
+        return;
+    }
+
     // Can't pre-set a path, the request must be empty at protection time
     int err;
     err = gcoap_req_init(&pdu, buf, sizeof(buf), 0x02 /* POST */, NULL);
@@ -968,16 +975,8 @@ static void send_static_request(char value) {
     }
 
     // PDU is usable now again and can be sent
-    
-    ipv6_addr_t addr;
-    sock_udp_ep_t remote;
-    remote.family = AF_INET6;
-    remote.netif = 6; // tap interface
-    ipv6_addr_from_str(&addr, "fe80::176b:fd74:a58f:ff97"); // development host
-    memcpy(&remote.addr.ipv6[0], &addr.u8[0], sizeof(addr.u8));
-    remote.port = 5683;
 
-    int bytes_sent = gcoap_req_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &remote, handle_static_response, &request_data);
+    int bytes_sent = gcoap_req_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &static_request_target, handle_static_response, &request_data);
     if (bytes_sent <= 0) {
         printf("Error sending\n");
     }
@@ -1013,9 +1012,38 @@ static int cmdline_off(int argc, char **argv) {
     return 0;
 }
 
+static int cmdline_target(int argc, char **argv) {
+    if (argc != 4) {
+        printf("Usage: target IP ZONE PORT\n");
+        return 1;
+    }
+
+    ipv6_addr_t addr;
+
+    static_request_target.netif = atoi(argv[2]);
+    if (!ipv6_addr_from_str(&addr, argv[1])) {
+        printf("IP address invalid\n");
+        static_request_target.port = 0;
+        return 1;
+    }
+    memcpy(&static_request_target.addr.ipv6[0], &addr.u8[0], sizeof(addr.u8));
+    static_request_target.port = atoi(argv[3]);
+
+    static_request_target.family = AF_INET6;
+
+    if (gnrc_netif_get_by_pid(static_request_target.netif) == NULL) {
+        printf("Zone identifier invalid\n");
+        static_request_target.port = 0;
+        return 1;
+    }
+
+    return 0;
+}
+
 static const shell_command_t shell_commands[] = {
     { "on", "Set the configured OSCORE remote resource to 1", cmdline_on },
     { "off", "Set the configured OSCORE remote resource to 0", cmdline_off },
+    {"target", "Set the IP and port to which to send on and off requests", cmdline_target },
     { NULL, NULL, NULL }
 };
 
@@ -1025,9 +1053,6 @@ int main(void)
 
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     char line_buf[SHELL_DEFAULT_BUFSIZE];
-
-    puts("Sending single request");
-    send_static_request('1');
 
     puts("Running OSCORE plugtest server");
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
