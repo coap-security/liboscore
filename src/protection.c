@@ -307,7 +307,8 @@ bool _decrypt(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
         oscore_context_t *secctx,
-        enum oscore_context_role piv_kid
+        enum oscore_context_role piv_kid,
+        enum oscore_context_role request_kid
         )
 {
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
@@ -323,7 +324,7 @@ bool _decrypt(
     }
     size_t plaintext_length = ciphertext_length - tag_length; // >= 1
 
-    struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, &unprotected->request_id, aeadalg, protected);
+    struct aad_sizes aad_sizes = predict_aad_size(secctx, request_kid, &unprotected->request_id, aeadalg, protected);
 
     uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
     build_iv(iv, &unprotected->partial_iv, secctx, piv_kid);
@@ -339,7 +340,7 @@ bool _decrypt(
             oscore_context_get_key(secctx, OSCORE_ROLE_RECIPIENT)
             );
     if (!oscore_cryptoerr_is_error(err)) {
-        err = feed_aad(&dec, aad_sizes, secctx, OSCORE_ROLE_RECIPIENT, &unprotected->request_id, aeadalg, protected);
+        err = feed_aad(&dec, aad_sizes, secctx, request_kid, &unprotected->request_id, aeadalg, protected);
     }
     if (!oscore_cryptoerr_is_error(err)) {
         err = oscore_crypto_aead_decrypt_inplace(
@@ -400,7 +401,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
     oscore_requestid_clone(&unprotected->request_id, request_id);
     oscore_requestid_clone(&unprotected->partial_iv, request_id);
 
-    bool success = _decrypt(protected, unprotected, secctx, OSCORE_ROLE_RECIPIENT);
+    bool success = _decrypt(protected, unprotected, secctx, OSCORE_ROLE_RECIPIENT, OSCORE_ROLE_RECIPIENT);
 
     if (!success)
         return OSCORE_UNPROTECT_REQUEST_INVALID;
@@ -433,8 +434,9 @@ enum oscore_unprotect_response_result oscore_unprotect_response(
         // nonce originally.
         piv_kid = OSCORE_ROLE_SENDER;
     }
+    oscore_requestid_clone(&unprotected->request_id, request_id);
 
-    bool success = _decrypt(protected, unprotected, secctx, piv_kid);
+    bool success = _decrypt(protected, unprotected, secctx, piv_kid, OSCORE_ROLE_SENDER);
 
     if (!success)
         return OSCORE_UNPROTECT_RESPONSE_INVALID;
