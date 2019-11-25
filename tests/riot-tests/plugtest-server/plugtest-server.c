@@ -29,7 +29,8 @@ static ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 #define D_RECIPIENT_KEY {173, 139, 170, 28, 148, 232, 23, 226, 149, 11, 247, 99, 61, 79, 20, 148, 10, 6, 12, 149, 135, 5, 18, 168, 164, 11, 216, 42, 13, 221, 69, 39}
 #define D_COMMON_IV {199, 178, 145, 95, 47, 133, 49, 117, 132, 37, 73, 212}
 
-// Having those static is OK here because the gcoap thread will only process messages one at a time
+// Having _b and _d static is OK here because the gcoap thread will only process messages one at a time
+// Context B: as specified in plug test description (therefore hard-coded; outside the plug tests, this must only be done only when one of the recovery mechanisms of the OSCORE specification appendix B or equivalent are used).
 static struct oscore_context_primitive primitive_b = {
     .aeadalg = 24,
     .common_iv = B_COMMON_IV,
@@ -47,6 +48,7 @@ static oscore_context_t secctx_b = {
 };
 static mutex_t secctx_b_usage = MUTEX_INIT;
 
+// Context D: as specified in plug test description (see B)
 static struct oscore_context_primitive primitive_d = {
     .aeadalg = 24,
     .common_iv = D_COMMON_IV,
@@ -63,6 +65,16 @@ static oscore_context_t secctx_d = {
     .data = (void*)(&primitive_d),
 };
 static mutex_t secctx_d_usage = MUTEX_INIT;
+
+// User context: configurable from command-line, used in outgoing requests and also available at the server
+static struct oscore_context_primitive primitive_u;
+static oscore_context_t secctx_u = {
+    .type = OSCORE_CONTEXT_PRIMITIVE,
+    .data = NULL,
+};
+static bool secctx_u_good = false;
+static mutex_t secctx_u_usage = MUTEX_INIT;
+int16_t secctx_u_change = 0; // RW lock count, only to be changed while secctx_u_usage is kept. The variable keeps track of the number of readers (readers in RW-lock terminology; here it's "request_id objects out there"). A writer may change the context as a whole while keeping secctx_u_usage locked and secctx_u_change is 0.
 
 struct handler {
     void (*parse)(/* not const because of memoization */ oscore_msg_protected_t *in, void *state);
@@ -511,6 +523,9 @@ static void sensordata_build(oscore_msg_protected_t *out, const void *vstate)
 
     oscore_msgerr_protected_t err;
     // Will be overwritten later, but needs to be allocated now
+    //
+    // Could be optimized by reducing the size to whatever the block number
+    // reduced to the lowest plausible buffer size needs to fit
     err = oscore_msg_protected_append_option(out, 23 /* Block 2 */, (uint8_t*)"XXXX", 4);
 
     uint8_t *payload;
@@ -736,6 +751,19 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     {
         secctx = &secctx_b;
         secctx_lock = &secctx_b_usage;
+    } else if (
+            // Strictly speaking this is racing against changesin he context
+            // protected by secctx_u_change, but only until it's locked (or
+            // denied) a few lines later -- what could possibly go wrong?
+            // (FIXME as always after these words)
+            secctx_u_good &&
+            header.kid != NULL &&
+            header.kid_len == primitive_u.recipient_id_len &&
+            memcmp(header.kid, &primitive_u.recipient_id, primitive_u.recipient_id_len) == 0
+            )
+    {
+        secctx = &secctx_u;
+        secctx_lock = &secctx_u_usage;
     } else {
         errormessage = "No security context found";
         errorcode = COAP_CODE_UNAUTHORIZED;
@@ -746,7 +774,12 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         errormessage = "Security context in use";
         // FIXME add Max-Age: 0
         errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
+        secctx_lock = NULL; // Don't unlock secctx_u_change in the error path
         goto error;
+    }
+
+    if (secctx_lock == &secctx_u_usage) {
+        secctx_u_change += 1;
     }
 
     oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
@@ -777,11 +810,25 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     enum oscore_prepare_result oscerr2;
     oscore_msg_native_t pdu_write = { .pkt = pdu };
     oscore_msg_protected_t outgoing_plaintext;
-    oscerr2 = oscore_prepare_response(pdu_write, &outgoing_plaintext, secctx, &request_id);
-    if (oscerr2 != OSCORE_PREPARE_OK) {
-        errormessage = "Context not ready";
+    if (mutex_trylock(secctx_lock) != 1) {
+        errormessage = "Context not available for response";
         goto error;
     }
+    if (mutex_trylock(secctx_lock) != 1) {
+        errormessage = "Security context in use";
+        errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
+        goto error;
+    }
+    oscerr2 = oscore_prepare_response(pdu_write, &outgoing_plaintext, secctx, &request_id);
+    secctx_u_change -= 1;
+    mutex_unlock(secctx_lock);
+    if (oscerr2 != OSCORE_PREPARE_OK) {
+        errormessage = "Context not usable";
+        errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
+        goto error;
+    }
+
+    secctx_lock = NULL; // Don't unlock secctx_u_change in the error path
 
     // Deferring to the dispatcher again for actual response building
     dispatcher_build(&outgoing_plaintext, &plugtest_config);
@@ -791,6 +838,7 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscerr4 = oscore_encrypt_message(&outgoing_plaintext, &pdu_write_out);
     if (oscerr4 != OSCORE_FINISH_OK) {
         errormessage = "Error finishing";
+        // FIXME verify that this truncates the response
         goto error;
     }
     assert(pdu == pdu_write_out.pkt);
@@ -799,6 +847,12 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     return (pdu->payload - buf) + pdu->payload_len;
 
 error:
+    if (secctx_lock == &secctx_u_usage) {
+        // Rather block the Gcoap thread than making secctx_u unchangable for good
+        mutex_lock(&secctx_u_usage);
+        secctx_u_change -= 1;
+        mutex_unlock(&secctx_u_usage);
+    }
     printf("Error: %s\n", errormessage);
     return gcoap_response(pdu, buf, len, errorcode);
 }
@@ -851,6 +905,12 @@ sock_udp_ep_t static_request_target = { .port = 0 };
 
 static void handle_static_response(const struct gcoap_request_memo *memo, coap_pkt_t *pdu, const sock_udp_ep_t *remote)
 {
+    // Early returns here do keep secctx_u_change locked -- that is with
+    // reason, and a thing that full applications need to be well aware of:
+    // While your requests are out, and especially while they're waiting for
+    // negative responses (even until possible infinity), no writes to the
+    // context properties are possible.
+
     struct static_request_data *request_data = memo->context;
     // don't care, didn't send multicast
     (void)remote;
@@ -883,12 +943,14 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
 
     oscore_msg_protected_t msg;
 
-    if (mutex_trylock(&secctx_b_usage) != 1)  {
+    if (mutex_trylock(&secctx_u_usage) != 1)  {
         // Could just as well block, but I prefer this for its clearer error behavior
         printf("Can't unprotect response, security context in use\n");
+        return;
     }
-    enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, header, &secctx_b, &request_data->request_id);
-    mutex_unlock(&secctx_b_usage);
+    enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, header, &secctx_u, &request_data->request_id);
+    secctx_u_change -= 1;
+    mutex_unlock(&secctx_u_usage);
 
     if (success == OSCORE_UNPROTECT_RESPONSE_OK) {
         uint8_t code = oscore_msg_protected_get_code(&msg);
@@ -918,6 +980,11 @@ static void send_static_request(char value) {
         return;
     }
 
+    if (!secctx_u_good) {
+        printf("No security context configured\n");
+        return;
+    }
+
     // Can't pre-set a path, the request must be empty at protection time
     int err;
     err = gcoap_req_init(&pdu, buf, sizeof(buf), 0x02 /* POST */, NULL);
@@ -933,16 +1000,18 @@ static void send_static_request(char value) {
     // FIXME use conversion
     oscore_msg_native_t native = { .pkt = &pdu };
 
-    if (mutex_trylock(&secctx_b_usage) != 1)  {
+    if (mutex_trylock(&secctx_u_usage) != 1)  {
         // Could just as well block, but I prefer this for its clearer error behavior
         printf("Can't send request, security context in use\n");
+        return;
     }
-    if (oscore_prepare_request(native, &oscmsg, &secctx_b, &request_data.request_id) != OSCORE_PREPARE_OK) {
-        mutex_unlock(&secctx_b_usage);
+    secctx_u_change += 1;
+    if (oscore_prepare_request(native, &oscmsg, &secctx_u, &request_data.request_id) != OSCORE_PREPARE_OK) {
+        mutex_unlock(&secctx_u_usage);
         printf("Failed to prepare request encryption\n");
         return;
     }
-    mutex_unlock(&secctx_b_usage);
+    mutex_unlock(&secctx_u_usage);
 
     oscore_msg_protected_set_code(&oscmsg, 0x03 /* PUT */);
     
