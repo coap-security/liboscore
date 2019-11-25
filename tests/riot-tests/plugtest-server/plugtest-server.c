@@ -1,4 +1,5 @@
 #include <net/gcoap.h>
+#include <periph/gpio.h>
 #include <oscore_native/message.h>
 #include <oscore/message.h>
 #include <oscore/contextpair.h>
@@ -1197,11 +1198,33 @@ static int cmdline_userctx(int argc, char **argv) {
     return ret;
 }
 
+static int cmdline_interactive(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+#ifdef BTN0_PIN
+    bool old = false;
+    int remaining = 10;
+    while (remaining) {
+        bool new = !gpio_read(BTN0_PIN);
+        if (new != old) {
+            send_static_request('0' + new);
+            remaining --;
+        };
+        old = new;
+    }
+    return 0;
+#else
+    printf("Can't execute interactive demo for lack of hardware button\n");
+    return 1;
+#endif
+}
+
 static const shell_command_t shell_commands[] = {
     { "on", "Set the configured OSCORE remote resource to 1", cmdline_on },
     { "off", "Set the configured OSCORE remote resource to 0", cmdline_off },
     {"target", "Set the IP and port to which to send on and off requests", cmdline_target },
     {"userctx", "Reset the user context with new key material", cmdline_userctx },
+    { "interactive", "Poll the first hardware button to send 10 on/off commands via OSCORE when pressed", cmdline_interactive },
     { NULL, NULL, NULL }
 };
 
