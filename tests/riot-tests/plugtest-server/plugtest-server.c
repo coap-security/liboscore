@@ -45,6 +45,7 @@ static oscore_context_t secctx_b = {
     .type = OSCORE_CONTEXT_PRIMITIVE,
     .data = (void*)(&primitive_b),
 };
+static mutex_t secctx_b_usage = MUTEX_INIT;
 
 static struct oscore_context_primitive primitive_d = {
     .aeadalg = 24,
@@ -61,6 +62,7 @@ static oscore_context_t secctx_d = {
     .type = OSCORE_CONTEXT_PRIMITIVE,
     .data = (void*)(&primitive_d),
 };
+static mutex_t secctx_d_usage = MUTEX_INIT;
 
 struct handler {
     void (*parse)(/* not const because of memoization */ oscore_msg_protected_t *in, void *state);
@@ -688,6 +690,7 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscore_requestid_t request_id;
     const char *errormessage;
     uint8_t errorcode = COAP_CODE_INTERNAL_SERVER_ERROR;
+    mutex_t *secctx_lock = NULL;
 
     // This is nanocoap's shortcut (compare to unprotect-demo, where we iterate through the outer options)
     uint8_t *header_data;
@@ -723,6 +726,7 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
             )
     {
         secctx = &secctx_d;
+        secctx_lock = &secctx_d_usage;
     } else if (
             header.kid_context == NULL &&
             header.kid != NULL &&
@@ -731,12 +735,22 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
             )
     {
         secctx = &secctx_b;
+        secctx_lock = &secctx_b_usage;
     } else {
         errormessage = "No security context found";
         errorcode = COAP_CODE_UNAUTHORIZED;
         goto error;
     }
+
+    if (mutex_trylock(secctx_lock) != 1) {
+        errormessage = "Security context in use";
+        // FIXME add Max-Age: 0
+        errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
+        goto error;
+    }
+
     oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
+    mutex_unlock(secctx_lock);
 
     if (oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
         if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
@@ -867,8 +881,13 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
 
     oscore_msg_protected_t msg;
 
-    // FIXME: This use of secctx is racy
+    if (mutex_trylock(&secctx_b_usage) != 1)  {
+        // Could just as well block, but I prefer this for its clearer error behavior
+        printf("Can't unprotect response, security context in use\n");
+    }
     enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, header, &secctx_b, &request_data->request_id);
+    mutex_unlock(&secctx_b_usage);
+
     if (success == OSCORE_UNPROTECT_RESPONSE_OK) {
         uint8_t code = oscore_msg_protected_get_code(&msg);
         if (code == 0x44 /* 2.04 Changed */)
@@ -907,12 +926,16 @@ static void send_static_request(char value) {
     // FIXME use conversion
     oscore_msg_native_t native = { .pkt = &pdu };
 
-    // FIXME: This use of secctx is racy, wrap it in a mutex and return once
-    // preparation is through
+    if (mutex_trylock(&secctx_b_usage) != 1)  {
+        // Could just as well block, but I prefer this for its clearer error behavior
+        printf("Can't send request, security context in use\n");
+    }
     if (oscore_prepare_request(native, &oscmsg, &secctx_b, &request_data.request_id) != OSCORE_PREPARE_OK) {
+        mutex_unlock(&secctx_b_usage);
         printf("Failed to prepare request encryption\n");
         return;
     }
+    mutex_unlock(&secctx_b_usage);
 
     oscore_msg_protected_set_code(&oscmsg, 0x03 /* PUT */);
     
