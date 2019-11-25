@@ -5,8 +5,8 @@
 #include <oscore_native/crypto.h>
 
 /** Take the Partial IV from the OSCORE option and populate @ref
- * oscore_requestid_t from it. Return true if successful, or false if there was
- * no PartIV in the option.
+ * oscore_requestid_t from it (with is_first_use=false). Return true if
+ * successful, or false if there was no PartIV in the option.
  *
  * This leaves request unmodified if no PartIV was present in the option. */
 bool extract_requestid(const oscore_oscoreoption_t *option, oscore_requestid_t *request)
@@ -24,9 +24,9 @@ bool extract_requestid(const oscore_oscoreoption_t *option, oscore_requestid_t *
     request->used_bytes = n;
     // I trust the compiler will zero out the whole struct if that is more
     // efficient as it can see that the rest is overwritten later
-    memset(request->partial_iv, 0, PIV_BYTES - n);
+    memset(request->bytes, 0, PIV_BYTES - n);
     request->is_first_use = false;
-    uint8_t *dest = &request->partial_iv[PIV_BYTES - n];
+    uint8_t *dest = &request->bytes[PIV_BYTES - n];
     memcpy(dest, option->partial_iv, n);
 
     return true;
@@ -181,7 +181,7 @@ oscore_cryptoerr_t feed_aad(
     // Request PIV
     err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(request->used_bytes, intbuf, 0x40));
     if (oscore_cryptoerr_is_error(err)) { return err; }
-    err = oscore_crypto_aead_decrypt_feed_aad(state, &request->partial_iv[PIV_BYTES - request->used_bytes], request->used_bytes);
+    err = oscore_crypto_aead_decrypt_feed_aad(state, &request->bytes[PIV_BYTES - request->used_bytes], request->used_bytes);
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Class I options
@@ -226,7 +226,7 @@ void build_iv(
     size_t pad1_len = iv_len - 6 - id_piv_len;
     memset(&iv[1], 0, pad1_len);
     memcpy(&iv[1 + pad1_len], id_piv, id_piv_len);
-    memcpy(&iv[iv_len - PIV_BYTES], requestid->partial_iv, PIV_BYTES);
+    memcpy(&iv[iv_len - PIV_BYTES], requestid->bytes, PIV_BYTES);
 
     for (size_t i = 0; i < iv_len; i++) {
         iv[i] ^= common_iv[i];
@@ -301,8 +301,7 @@ void oscore_requestid_clone(oscore_requestid_t *dest, oscore_requestid_t *src)
 bool _decrypt(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_context_t *secctx,
-        oscore_requestid_t *request_id
+        oscore_context_t *secctx
         )
 {
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
@@ -318,10 +317,10 @@ bool _decrypt(
     }
     size_t plaintext_length = ciphertext_length - tag_length; // >= 1
 
-    struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
+    struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, &unprotected->request_id, aeadalg, protected);
 
     uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
-    build_iv(iv, request_id, secctx, OSCORE_ROLE_RECIPIENT);
+    build_iv(iv, &unprotected->partial_iv, secctx, OSCORE_ROLE_RECIPIENT);
 
     oscore_cryptoerr_t err;
     oscore_crypto_aead_decryptstate_t dec;
@@ -334,7 +333,7 @@ bool _decrypt(
             oscore_context_get_key(secctx, OSCORE_ROLE_RECIPIENT)
             );
     if (!oscore_cryptoerr_is_error(err)) {
-        err = feed_aad(&dec, aad_sizes, secctx, OSCORE_ROLE_RECIPIENT, request_id, aeadalg, protected);
+        err = feed_aad(&dec, aad_sizes, secctx, OSCORE_ROLE_RECIPIENT, &unprotected->request_id, aeadalg, protected);
     }
     if (!oscore_cryptoerr_is_error(err)) {
         err = oscore_crypto_aead_decrypt_inplace(
@@ -346,8 +345,6 @@ bool _decrypt(
     if (oscore_cryptoerr_is_error(err)) {
         return false;
     }
-
-    oscore_context_strikeout_requestid(secctx, request_id);
 
     // FIXME all of that needs to be initialized
     unprotected->backend = protected;
@@ -391,10 +388,18 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
         return OSCORE_UNPROTECT_REQUEST_INVALID;
     }
 
-    bool success = _decrypt(protected, unprotected, secctx, request_id);
+    // Some optimization was originally in place to avoid copying around the
+    // request ID twice, but it turned out that the complexity of tracking
+    // which to use was worse than a 6-byte copy one-byte-clear operation.
+    oscore_requestid_clone(&unprotected->request_id, request_id);
+    oscore_requestid_clone(&unprotected->partial_iv, request_id);
+
+    bool success = _decrypt(protected, unprotected, secctx);
 
     if (!success)
         return OSCORE_UNPROTECT_REQUEST_INVALID;
+
+    oscore_context_strikeout_requestid(secctx, request_id);
 
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
 }
@@ -467,8 +472,10 @@ enum oscore_prepare_result oscore_prepare_response(
             return OSCORE_PREPARE_SECCTX_UNAVAILABLE;
         }
     } else {
-        unprotected->partial_iv.is_first_use = false;
+        oscore_requestid_clone(&unprotected->partial_iv, &unprotected->request_id);
     }
+    // OK because it has special semantics in a oscore_msg_protected_t.partial_iv
+    unprotected->partial_iv.is_first_use = true;
 
     unprotected->is_request = false;
 
@@ -492,8 +499,9 @@ enum oscore_prepare_result oscore_prepare_request(
     // Caller gets the copy with the "can not reuse" setting
     oscore_requestid_clone(request_id, &unprotected->request_id);
 
-    // This allows us not to initialize partial_iv at all
-    assert(unprotected->request_id.is_first_use);
+    oscore_requestid_clone(&unprotected->partial_iv, &unprotected->request_id);
+    // OK because it has special semantics in a oscore_msg_protected_t.partial_iv
+    unprotected->partial_iv.is_first_use = true;
 
     unprotected->is_request = true;
 
@@ -518,9 +526,6 @@ enum oscore_finish_result oscore_encrypt_message(
                         OSCORE_ROLE_RECIPIENT :
                         OSCORE_ROLE_SENDER
                     );
-    oscore_requestid_t *nonce_piv = unprotected->request_id.is_first_use ?
-                    &unprotected->request_id :
-                    &unprotected->partial_iv;
 
     // Make result available before the first error return
     *protected = unprotected->backend;
@@ -528,8 +533,7 @@ enum oscore_finish_result oscore_encrypt_message(
     // Checking for this allows some programming errors on the side of the
     // library user to be caught (in particular, using the unprotected message
     // again even though it is left uninitialized after this function).
-    assert(unprotected->request_id.is_first_use || unprotected->partial_iv.is_first_use);
-    unprotected->request_id.is_first_use = false;
+    assert(unprotected->partial_iv.is_first_use);
     unprotected->partial_iv.is_first_use = false;
 
     uint8_t *ciphertext;
@@ -546,7 +550,7 @@ enum oscore_finish_result oscore_encrypt_message(
     struct aad_sizes aad_sizes = predict_aad_size(secctx, requester_role, &unprotected->request_id, aeadalg, unprotected->backend);
 
     uint8_t encrypt_iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
-    build_iv(encrypt_iv, nonce_piv, secctx, nonceprovider_role);
+    build_iv(encrypt_iv, &unprotected->partial_iv, secctx, nonceprovider_role);
 
     oscore_crypto_aead_encryptstate_t enc;
     oscore_cryptoerr_t err = oscore_crypto_aead_encrypt_start(

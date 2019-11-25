@@ -86,15 +86,15 @@ bool oscore_context_take_seqno(
                 return false;
             }
             request_id->is_first_use = true;
-            request_id->partial_iv[0] = (seqno >> 32) & 0xff;
-            request_id->partial_iv[1] = (seqno >> 24) & 0xff;
-            request_id->partial_iv[2] = (seqno >> 16) & 0xff;
-            request_id->partial_iv[3] = (seqno >> 8) & 0xff;
-            request_id->partial_iv[4] = seqno & 0xff;
-            request_id->used_bytes = request_id->partial_iv[0] != 0 ? 5 :
-                                     request_id->partial_iv[1] != 0 ? 4 :
-                                     request_id->partial_iv[2] != 0 ? 3 :
-                                     request_id->partial_iv[3] != 0 ? 2 :
+            request_id->bytes[0] = (seqno >> 32) & 0xff;
+            request_id->bytes[1] = (seqno >> 24) & 0xff;
+            request_id->bytes[2] = (seqno >> 16) & 0xff;
+            request_id->bytes[3] = (seqno >> 8) & 0xff;
+            request_id->bytes[4] = seqno & 0xff;
+            request_id->used_bytes = request_id->bytes[0] != 0 ? 5 :
+                                     request_id->bytes[1] != 0 ? 4 :
+                                     request_id->bytes[2] != 0 ? 3 :
+                                     request_id->bytes[3] != 0 ? 2 :
                                      1; // The 0th sequence number explicitly has length 1 as well.
             return true;
         }
@@ -148,11 +148,11 @@ void oscore_context_strikeout_requestid(
         {
             struct oscore_context_primitive *primitive = secctx->data;
             // request_id->partial_iv is documented to always be zero-padded
-            int64_t numeric = request_id->partial_iv[4] + \
-                              request_id->partial_iv[3] * ((int64_t)1 << 8) + \
-                              request_id->partial_iv[2] * ((int64_t)1 << 16) + \
-                              request_id->partial_iv[1] * ((int64_t)1 << 24) + \
-                              request_id->partial_iv[0] * ((int64_t)1 << 32);
+            int64_t numeric = request_id->bytes[4] + \
+                              request_id->bytes[3] * ((int64_t)1 << 8) + \
+                              request_id->bytes[2] * ((int64_t)1 << 16) + \
+                              request_id->bytes[1] * ((int64_t)1 << 24) + \
+                              request_id->bytes[0] * ((int64_t)1 << 32);
 
             // We can keep comparing here as all is signed and the possible
             // input magnitudes come nowhere near over-/underflowing

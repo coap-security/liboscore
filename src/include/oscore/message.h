@@ -138,12 +138,8 @@ typedef struct {
 
     /** @brief Partial IV assigned to this message
      *
-     * This is only fully initialized on messages that can not reuse the
-     * request_id.
-     *
      * As an extra security against double encryption of a message, the
-     * is_first_use flag is set to true in those cases until encryption is
-     * performed.
+     * is_first_use flag is set to true until encryption is performed.
      *
      * @private
      */
@@ -152,10 +148,7 @@ typedef struct {
     /** @brief Identification of the request
      *
      * In requests, this is identical to the partial_iv in its bytes (but not
-     * in its is_first_use flag).
-     *
-     * Its is_first_use flag is set while the request ID can be used as an
-     * implicit partial IV in a response, and never in a request.
+     * in its is_first_use flag), which is practically always false.
      *
      * @private
      */

@@ -65,10 +65,10 @@ typedef struct {
     /* it may be a good idea to instead reference the security context, and
      * optionally handle all context locking here and not in the message */
 
-    /** @private The number of bytes in partial_iv */
+    /** @private The number of bytes in bytes */
     uint8_t used_bytes;
     /** @private The Partial IV, left-padded with zeros. */
-    uint8_t partial_iv[PIV_BYTES];
+    uint8_t bytes[PIV_BYTES];
 
     /** @private Whether a number was removed from the receive sequence window
      * for this particular IV */

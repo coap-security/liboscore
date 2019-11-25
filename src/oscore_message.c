@@ -136,7 +136,7 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         optionbuffer[0] = n | (k << 3) | (h << 4);
         optionlength = 1;
         if (n != 0) {
-            memcpy(&optionbuffer[optionlength], &piv_source->partial_iv[PIV_BYTES - n], n);
+            memcpy(&optionbuffer[optionlength], &piv_source->bytes[PIV_BYTES - n], n);
             optionlength += n;
         }
 
