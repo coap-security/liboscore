@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+
+"""Ad-hoc tool to use aiocoap for OSCORE key derivation and dump out
+the derived keys.
+
+As with all operations on shared keys, it is up to the user to never
+enter the same combination of key and sender ID into any OSCORE
+processing more than once, for otherwise messages will reuse nonces
+and the keys can be leaked."""
+
+import argparse
+
+from aiocoap.oscore import FilesystemSecurityContext
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("keydir", help="aiocoap Key directory to load")
+    p.add_argument("role", help="Role identifier inside the key directory ('server' or 'client')")
+    p.add_argument("--format", help="whether to produce 'hex', C 'header' data or a 'RIOT' command line (default)", default='header')
+    args = p.parse_args()
+
+    secctx = FilesystemSecurityContext(args.keydir, args.role)
+
+    if args.format == 'header':
+        def array_init(b):
+            return "{%s}" % repr(list(b))[1:-1]
+        print("#define SENDER_KEY %s" % array_init(secctx.sender_key))
+        print("#define RECIPIENT_KEY %s" % array_init(secctx.recipient_key))
+        print("#define COMMON_IV %s" % array_init(secctx.common_iv))
+    elif args.format == 'hex':
+        print("sender key: %s" % (secctx.sender_key.hex()))
+        print("recipient key: %s" % (secctx.recipient_key.hex()))
+        print("common iv:  %s" % (secctx.common_iv.hex()))
+    elif args.format == 'RIOT':
+        print("userctx %s %s %s %s %s" % (
+            secctx.sender_id.hex() or '-',
+            secctx.recipient_id.hex() or '-',
+            secctx.common_iv.hex(),
+            secctx.sender_key.hex(),
+            secctx.recipient_key.hex(),
+            ))
+    else:
+        p.error("Unknown format")
+
+if __name__ == "__main__":
+    main()
