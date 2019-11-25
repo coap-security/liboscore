@@ -282,6 +282,11 @@ bool oscore_oscoreoption_parse(oscore_oscoreoption_t *out, const uint8_t *input,
 
             out->kid = NULL;
         }
+    } else {
+        out->partial_iv_len = 0;
+        out->partial_iv = NULL;
+        out->kid_context = NULL;
+        out->kid = NULL;
     }
 
     return true;
