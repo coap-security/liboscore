@@ -812,15 +812,13 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     oscore_msg_protected_t outgoing_plaintext;
     if (mutex_trylock(secctx_lock) != 1) {
         errormessage = "Context not available for response";
-        goto error;
-    }
-    if (mutex_trylock(secctx_lock) != 1) {
-        errormessage = "Security context in use";
         errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
         goto error;
     }
     oscerr2 = oscore_prepare_response(pdu_write, &outgoing_plaintext, secctx, &request_id);
-    secctx_u_change -= 1;
+    if (secctx_lock == &secctx_u_usage) {
+        secctx_u_change -= 1;
+    }
     mutex_unlock(secctx_lock);
     if (oscerr2 != OSCORE_PREPARE_OK) {
         errormessage = "Context not usable";
@@ -905,12 +903,6 @@ sock_udp_ep_t static_request_target = { .port = 0 };
 
 static void handle_static_response(const struct gcoap_request_memo *memo, coap_pkt_t *pdu, const sock_udp_ep_t *remote)
 {
-    // Early returns here do keep secctx_u_change locked -- that is with
-    // reason, and a thing that full applications need to be well aware of:
-    // While your requests are out, and especially while they're waiting for
-    // negative responses (even until possible infinity), no writes to the
-    // context properties are possible.
-
     struct static_request_data *request_data = memo->context;
     // don't care, didn't send multicast
     (void)remote;
@@ -927,12 +919,12 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
     ssize_t header_size = coap_opt_get_opaque(pdu, 9, &header_data);
     if (header_size < 0) {
         printf("No OSCORE option in response!\n");
-        return;
+        goto error;
     }
     bool parsed = oscore_oscoreoption_parse(&header, header_data, header_size);
     if (!parsed) {
         printf("OSCORE option unparsable\n");
-        return;
+        goto error;
     }
 
     // FIXME: this should be in a dedicated parsed_pdu_to_oscore_msg_native_t process
@@ -946,7 +938,7 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
     if (mutex_trylock(&secctx_u_usage) != 1)  {
         // Could just as well block, but I prefer this for its clearer error behavior
         printf("Can't unprotect response, security context in use\n");
-        return;
+        goto error;
     }
     enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, header, &secctx_u, &request_data->request_id);
     secctx_u_change -= 1;
@@ -962,6 +954,14 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
         printf("Error unprotecting response\n");
     }
 
+    mutex_unlock(&request_data->done);
+    return;
+
+error:
+    // Can't postpone locking here, need to block in order to keep state required for clean-up
+    mutex_lock(&secctx_u_usage);
+    secctx_u_change -= 1;
+    mutex_unlock(&secctx_u_usage);
     mutex_unlock(&request_data->done);
 }
 
