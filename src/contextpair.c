@@ -85,6 +85,7 @@ bool oscore_context_take_seqno(
             if (seqno >= SEQNO_MAX) {
                 return false;
             }
+            primitive->sender_sequence_number = seqno + 1;
             request_id->is_first_use = true;
             request_id->bytes[0] = (seqno >> 32) & 0xff;
             request_id->bytes[1] = (seqno >> 24) & 0xff;
