@@ -822,6 +822,154 @@ static gcoap_listener_t _listener = {
     NULL
 };
 
+/** Data allocated by send_static_request that needs to be available during
+ * response processing */
+struct static_request_data {
+    /** Mutex that's released by the response handler as the last action,
+     * indicating that send_static_request may terminate and thus free the
+     * static_request_data from the stack */
+    mutex_t done;
+    /** Correlation data with which to verify the AEAD */
+    oscore_requestid_t request_id;
+};
+
+static void handle_static_response(const struct gcoap_request_memo *memo, coap_pkt_t *pdu, const sock_udp_ep_t *remote)
+{
+    struct static_request_data *request_data = memo->context;
+    // don't care, didn't send multicast
+    (void)remote;
+
+    if (memo->state != GCOAP_MEMO_RESP) {
+        printf("Request returned without a response\n");
+        return;
+    }
+
+    oscore_oscoreoption_t header;
+
+    // This is nanocoap's shortcut (compare to unprotect-demo, where we iterate through the outer options)
+    uint8_t *header_data;
+    ssize_t header_size = coap_opt_get_opaque(pdu, 9, &header_data);
+    if (header_size < 0) {
+        printf("No OSCORE option in response!\n");
+        return;
+    }
+    bool parsed = oscore_oscoreoption_parse(&header, header_data, header_size);
+    if (!parsed) {
+        printf("OSCORE option unparsable\n");
+        return;
+    }
+
+    // FIXME: this should be in a dedicated parsed_pdu_to_oscore_msg_native_t process
+    // (and possibly foolishly assuming that there is a payload marker)
+    pdu->payload --;
+    pdu->payload_len ++;
+    oscore_msg_native_t pdu_read = { .pkt = pdu };
+
+    oscore_msg_protected_t msg;
+
+    // FIXME: This use of secctx is racy
+    enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, header, &secctx_b, &request_data->request_id);
+    if (success == OSCORE_UNPROTECT_RESPONSE_OK) {
+        uint8_t code = oscore_msg_protected_get_code(&msg);
+        if (code == 0x44 /* 2.04 Changed */)
+            printf("Result: Changed\n");
+        else
+            printf("Unknown code in result: %d.%d\n", code >> 5, code & 0x1f);
+    } else {
+        printf("Error unprotecting response\n");
+    }
+
+    mutex_unlock(&request_data->done);
+}
+
+/** Blockingly send @p value to the configured remote resource */
+static void send_static_request(char value) {
+    // This is largely inspired by the gcoap_cli_cmd example code
+
+    uint8_t buf[GCOAP_PDU_BUF_SIZE];
+    coap_pkt_t pdu;
+    oscore_msg_protected_t oscmsg;
+
+    struct static_request_data request_data = { .done = MUTEX_INIT_LOCKED };
+
+    // Can't pre-set a path, the request must be empty at protection time
+    int err;
+    err = gcoap_req_init(&pdu, buf, sizeof(buf), 0x02 /* POST */, NULL);
+    if (err != 0) {
+        printf("Failed to initialize request\n");
+        return;
+    }
+    // Because we can, and because having CONs when used with a server that
+    // doesn't really do storing deduplication leads to test-worthy responses
+    // when the first ACK is lost
+    coap_hdr_set_type(pdu.hdr, COAP_TYPE_CON);
+
+    // FIXME use conversion
+    oscore_msg_native_t native = { .pkt = &pdu };
+
+    // FIXME: This use of secctx is racy, wrap it in a mutex and return once
+    // preparation is through
+    if (oscore_prepare_request(native, &oscmsg, &secctx_b, &request_data.request_id) != OSCORE_PREPARE_OK) {
+        printf("Failed to prepare request encryption\n");
+        return;
+    }
+
+    oscore_msg_protected_set_code(&oscmsg, 0x03 /* PUT */);
+    
+    oscore_msgerr_protected_t oscerr;
+    oscerr = oscore_msg_protected_append_option(&oscmsg, 11 /* Uri-Path */, (uint8_t*)"light", 5);
+    if (oscore_msgerr_protected_is_error(oscerr)) {
+        printf("Failed to add option\n");
+        goto error;
+    }
+
+    uint8_t *payload;
+    size_t payload_length;
+    oscerr = oscore_msg_protected_map_payload(&oscmsg, &payload, &payload_length);
+    if (oscore_msgerr_protected_is_error(oscerr)) {
+        printf("Failed to map payload\n");
+        goto error;
+    }
+    *payload = value;
+
+    oscerr = oscore_msg_protected_trim_payload(&oscmsg, 1);
+    if (oscore_msgerr_protected_is_error(oscerr)) {
+        printf("Failed to truncate payload\n");
+        goto error;
+    }
+
+    oscore_msg_native_t pdu_write_out;
+    if (oscore_encrypt_message(&oscmsg, &pdu_write_out) != OSCORE_FINISH_OK) {
+        // see FIXME in oscore_encrypt_message description
+        assert(false);
+    }
+
+    // PDU is usable now again and can be sent
+    
+    ipv6_addr_t addr;
+    sock_udp_ep_t remote;
+    remote.family = AF_INET6;
+    remote.netif = 6; // tap interface
+    ipv6_addr_from_str(&addr, "fe80::176b:fd74:a58f:ff97"); // development host
+    memcpy(&remote.addr.ipv6[0], &addr.u8[0], sizeof(addr.u8));
+    remote.port = 5683;
+
+    int bytes_sent = gcoap_req_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &remote, handle_static_response, &request_data);
+    if (bytes_sent <= 0) {
+        printf("Error sending\n");
+    }
+
+    // It was locked originally; waiting for the response handler to unlock it
+    // so that we may free the request_id
+    mutex_lock(&request_data.done);
+
+    return;
+
+error:
+    {}
+    // FIXME: abort encryption (but no PDU recovery and PDU freeing necessary on this backend as it's all stack allocated)
+}
+
 #include "shell.h"
 #define MAIN_QUEUE_SIZE (4)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -836,6 +984,9 @@ int main(void)
 
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     char line_buf[SHELL_DEFAULT_BUFSIZE];
+
+    puts("Sending single request");
+    send_static_request('1');
 
     puts("Running OSCORE plugtest server");
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
