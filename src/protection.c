@@ -306,7 +306,8 @@ void oscore_requestid_clone(oscore_requestid_t *dest, oscore_requestid_t *src)
 bool _decrypt(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_context_t *secctx
+        oscore_context_t *secctx,
+        enum oscore_context_role piv_kid
         )
 {
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
@@ -325,7 +326,7 @@ bool _decrypt(
     struct aad_sizes aad_sizes = predict_aad_size(secctx, OSCORE_ROLE_RECIPIENT, &unprotected->request_id, aeadalg, protected);
 
     uint8_t iv[OSCORE_CRYPTO_AEAD_IV_MAXLEN];
-    build_iv(iv, &unprotected->partial_iv, secctx, OSCORE_ROLE_RECIPIENT);
+    build_iv(iv, &unprotected->partial_iv, secctx, piv_kid);
 
     oscore_cryptoerr_t err;
     oscore_crypto_aead_decryptstate_t dec;
@@ -399,7 +400,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
     oscore_requestid_clone(&unprotected->request_id, request_id);
     oscore_requestid_clone(&unprotected->partial_iv, request_id);
 
-    bool success = _decrypt(protected, unprotected, secctx);
+    bool success = _decrypt(protected, unprotected, secctx, OSCORE_ROLE_RECIPIENT);
 
     if (!success)
         return OSCORE_UNPROTECT_REQUEST_INVALID;
@@ -407,6 +408,38 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
     oscore_context_strikeout_requestid(secctx, request_id);
 
     return request_id->is_first_use ? OSCORE_UNPROTECT_REQUEST_OK : OSCORE_UNPROTECT_REQUEST_DUPLICATE;
+}
+
+enum oscore_unprotect_response_result oscore_unprotect_response(
+        oscore_msg_native_t protected,
+        oscore_msg_protected_t *unprotected,
+        oscore_oscoreoption_t header,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        )
+{
+    bool has_piv = extract_requestid(&header, &unprotected->partial_iv);
+    // Maybe in the partial_iv it'd make sense to union the is_request with the role
+    enum oscore_context_role piv_kid;
+    if (has_piv) {
+        // This may be a bit confusing here: With a PIV attached, this means we
+        // build the nonce in our role as recipient (using our recipient ID) --
+        // but the PIV was created by the message's sender.
+        piv_kid = OSCORE_ROLE_RECIPIENT;
+    } else {
+        oscore_requestid_clone(&unprotected->partial_iv, request_id);
+        // Vice versa to above, here we're using our sender ID to build the
+        // nonce -- but the recipient of the current message, us, created that
+        // nonce originally.
+        piv_kid = OSCORE_ROLE_SENDER;
+    }
+
+    bool success = _decrypt(protected, unprotected, secctx, piv_kid);
+
+    if (!success)
+        return OSCORE_UNPROTECT_RESPONSE_INVALID;
+
+    return OSCORE_UNPROTECT_RESPONSE_OK;
 }
 
 oscore_msg_native_t oscore_release_unprotected(
