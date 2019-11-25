@@ -997,7 +997,25 @@ error:
 #define MAIN_QUEUE_SIZE (4)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
+static int cmdline_on(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
+    send_static_request('1');
+    return 0;
+}
+
+static int cmdline_off(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
+    send_static_request('0');
+    return 0;
+}
+
 static const shell_command_t shell_commands[] = {
+    { "on", "Set the configured OSCORE remote resource to 1", cmdline_on },
+    { "off", "Set the configured OSCORE remote resource to 0", cmdline_off },
     { NULL, NULL, NULL }
 };
 
