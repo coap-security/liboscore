@@ -16,7 +16,7 @@ static oscore_requestid_t requestid_from_u64(uint64_t seqno)
     oscore_requestid_t result = {
         .used_bytes = 42,
         .is_first_use = false,
-        .partial_iv = {(seqno >> 32) & 0xff, (seqno >> 24) & 0xff, (seqno >> 16) & 0xff, (seqno >> 8) & 0xff, seqno & 0xff},
+        .bytes = {(seqno >> 32) & 0xff, (seqno >> 24) & 0xff, (seqno >> 16) & 0xff, (seqno >> 8) & 0xff, seqno & 0xff},
     };
     return result;
 }
