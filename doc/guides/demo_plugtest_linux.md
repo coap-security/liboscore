@@ -29,17 +29,17 @@ please ensure to have all prerequisites installed as described on @ref demo_comm
 
 * In the RIOT prompt, run `ifconfig`, which should result in output like this:
 
-    > ifconfig
-    ifconfig
-    Iface  6  HWaddr: 3E:63:BE:85:CA:96 
-              L2-PDU:1500 MTU:1500  HL:64  Source address length: 6
-              Link type: wired
-              inet6 addr: fe80::3c63:beff:fe85:ca96  scope: link  VAL
-              inet6 group: ff02::1
-              inet6 group: ff02::1:ff85:ca96
+      > ifconfig
+      ifconfig
+      Iface  6  HWaddr: 3E:63:BE:85:CA:96
+                L2-PDU:1500 MTU:1500  HL:64  Source address length: 6
+                Link type: wired
+                inet6 addr: fe80::3c63:beff:fe85:ca96  scope: link  VAL
+                inet6 group: ff02::1
+                inet6 group: ff02::1:ff85:ca96
 
-    This indicaes the virtual device's link-local address in the `inet6 addr` line.
-    Try it out by using `ping fe80::3c63:beff:fe85:ca96%tapbr0` (with the right address substituted in) from the host!
+  This indicaes the virtual device's link-local address in the `inet6 addr` line.
+  Try it out by using `ping fe80::3c63:beff:fe85:ca96%tapbr0` (with the right address substituted in) from the host!
 
 The server side is now prepared and ready; leave that running and switch over to your aiocoap check-out.
 
@@ -85,3 +85,9 @@ The server side is now prepared and ready; leave that running and switch over to
     (that the same resource tree is available with and without OSCORE,
     but that opportunistic encryption is inacceptable)
     that is not aligned with the intermediate integration model of the plugtest server.
+
+
+From here, you can explore the remaining demos.
+As the plug test firmware also hosts the remaining demo code,
+you can adapt the other demos to run on the native board as well.
+The conveniently set up TAP bridge `tapbr0` will assist in connecting two concurrent executions of the program.
