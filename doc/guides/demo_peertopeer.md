@@ -78,15 +78,15 @@ That branch is kept sufficiently close to the version used in here.
 
   secret.json: `{"secret_ascii": "correct horse battery staple"}`
 
-  settings.json: `{ "algorithm": "ChaCha20/Poly1305", "server-sender-id_hex": "03", "client-sender-id_hex": "02" }`
+  settings.json: `{ "algorithm": "ChaCha20/Poly1305", "sender-id_hex": "03", "recipient-id_hex": "02" }`
 
   These follow the security context description format of aiocoap, which is used to shape the keys into an easy-to-enter form,
   and to derive the keys until the HKDF steps of the currently used libcose are available.
 
   Run the key derivation script twice like this:
 
-      $ tests/riot-tests/plugtest-server/oscore-key-derivation /tmp/p2p-context client --format RIOT
-      $ tests/riot-tests/plugtest-server/oscore-key-derivation /tmp/p2p-context server --format RIOT
+      $ tests/riot-tests/plugtest-server/oscore-key-derivation /tmp/p2p-context --format RIOT
+      $ tests/riot-tests/plugtest-server/oscore-key-derivation /tmp/p2p-context --format RIOT --flip
 
   and copy the respective outputs to the two terminals.
 
