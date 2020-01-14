@@ -8,10 +8,6 @@ CRYPTOSRC += $(SRC_DIR)/crypt/tinydtls.c
 CFLAGS_CRYPTO += -Ilibs/tinydtls
 # I hope most of the DTLS objects will not even be used after dead function elimination
 TINYDTLS_OBJS = tinydtls.o crypto.o ccm.o rijndael.o hmac.o ccm.o sha2.o netq.o
-# not that we'd need *that* code, but if neither ECC nro PSK is defined, there's empty unions and such
-$(TINYDTLS_OBJS): CFLAGS += -DDTLS_PSK
-# required to make (at least strict) builds happy
-$(TINYDTLS_OBJS): CFLAGS += -DHAVE_ASSERT_H -DWITH_SHA256
 # dtls_crit("can not allocate a handshake struct\n") / ISO C99 requires at least one argument for the "..." in a variadic macro
 $(TINYDTLS_OBJS): CFLAGS += -std=gnu11
 vpath %.c libs/tinydtls/

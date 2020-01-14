@@ -3,6 +3,7 @@ include ../cases/Makefile.include
 OPTFLAGS ?= -O0
 
 CPPFLAGS += -I../../src/include/
+CPPFLAGS += -Ilibconfigs/
 CFLAGS += -Wall -Werror -Wpedantic -std=c11
 CFLAGS += -g3
 CFLAGS += -MD
