@@ -1150,8 +1150,8 @@ static bool parse_hex(char *hex, size_t len, uint8_t *data) {
 }
 
 static int cmdline_userctx(int argc, char **argv) {
-    if (argc != 6)
-        return printf("Usage: userctx sender-id recipient-id common-iv sender-key recipient-key\nAll keys and IDs in contiguous hex\n");
+    if (argc != 7)
+        return printf("Usage: userctx alg sender-id recipient-id common-iv sender-key recipient-key\nAll keys and IDs in contiguous hex\n");
 
     int ret = 0;
 
@@ -1166,25 +1166,31 @@ static int cmdline_userctx(int argc, char **argv) {
     secctx_u_good = false;
 
     primitive_u.aeadalg = 24;
-    primitive_u.sender_id_len = strlen(argv[1]) / 2;
+    uint8_t aeadalgbuf;
+    if (!parse_hex(argv[1], 1, &aeadalgbuf))
+        ret = printf("Algorithm number was not a single-byte (two-nibble) hex number\n");
+    if (oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&primitive_u.aeadalg, aeadalgbuf)))
+        ret = printf("Algorithm is not a known AEAD algorithm\n");
+
+    primitive_u.sender_id_len = strlen(argv[2]) / 2;
     if (primitive_u.sender_id_len > OSCORE_KEYID_MAXLEN)
         ret = printf("Sender ID too long\n");
-    if (!parse_hex(argv[1], primitive_u.sender_id_len, primitive_u.sender_id))
+    if (!parse_hex(argv[2], primitive_u.sender_id_len, primitive_u.sender_id))
         ret = printf("Invalid Sender ID\n");
 
-    primitive_u.recipient_id_len = strlen(argv[2]) / 2;
+    primitive_u.recipient_id_len = strlen(argv[3]) / 2;
     if (primitive_u.recipient_id_len > OSCORE_KEYID_MAXLEN)
         ret = printf("Recipient ID too long\n");
-    if (!parse_hex(argv[2], primitive_u.recipient_id_len, primitive_u.recipient_id))
+    if (!parse_hex(argv[3], primitive_u.recipient_id_len, primitive_u.recipient_id))
         ret = printf("Invalid Recipient ID\n");
 
-    if (!parse_hex(argv[3], oscore_crypto_aead_get_ivlength(primitive_u.aeadalg), primitive_u.common_iv))
+    if (!parse_hex(argv[4], oscore_crypto_aead_get_ivlength(primitive_u.aeadalg), primitive_u.common_iv))
         ret = printf("Invalid Commmon IV\n");
 
-    if (!parse_hex(argv[4], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.sender_key))
+    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.sender_key))
         ret = printf("Invalid Sender Key'\n");
 
-    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.recipient_key))
+    if (!parse_hex(argv[6], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.recipient_key))
         ret = printf("Invalid Recipient Key\n");
 
     primitive_u.sender_sequence_number = 0;
