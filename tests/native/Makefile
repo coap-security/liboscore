@@ -50,7 +50,7 @@ libs:
 	# library fashion on the long run
 	cd libs && git clone https://github.com/chrysn-pull-requests/libcose -b tinydtls
 	cd libs && git clone https://github.com/bergzand/NanoCBOR nanocbor
-	cd libs && git clone https://github.com/eclipse/tinydtls
+	cd libs && git clone https://github.com/eclipse/tinydtls -b develop
 
 clean:
 	rm -f standalone-demo
