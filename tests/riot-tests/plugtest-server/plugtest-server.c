@@ -788,9 +788,14 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     }
 
     oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
+
+    bool respond_401echo = oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE && \
+            secctx_lock == &secctx_u_usage && \
+            oscore_context_b1_replay_is_uninitialized(&context_u);
+
     mutex_unlock(secctx_lock);
 
-    if (oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
+    if (!respond_401echo && oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
         if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
             errormessage = "Unprotect failed, it's a duplicate";
             errorcode = COAP_CODE_UNAUTHORIZED;
@@ -802,7 +807,8 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     }
 
     // Deferring to the dispatcher for actual resource handling
-    dispatcher_parse(&incoming_decrypted, &plugtest_config);
+    if (!respond_401echo)
+        dispatcher_parse(&incoming_decrypted, &plugtest_config);
 
     // Anything we were trying to learn from the incoming message needs to be
     // copied to the stack by now.
@@ -819,6 +825,19 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         errormessage = "Context not available for response";
         errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
         goto error;
+    }
+    if (respond_401echo) {
+        if (oscore_context_b1_build_401echo(
+                    pdu_write,
+                    secctx,
+                    &request_id)) {
+            mutex_unlock(secctx_lock);
+            return (pdu->payload - buf) + pdu->payload_len;
+        } else {
+            errormessage = "Failed to build 4.01 response";
+            errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
+            goto error;
+        }
     }
     oscerr2 = oscore_prepare_response(pdu_write, &outgoing_plaintext, secctx, &request_id);
     if (secctx_lock == &secctx_u_usage) {

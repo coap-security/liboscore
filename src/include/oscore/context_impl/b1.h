@@ -2,6 +2,7 @@
 #define OSCORE_CONTEXT_B1_H
 
 #include <oscore/context_impl/primitive.h>
+#include <oscore_native/message.h>
 
 /** @file */
 
@@ -79,12 +80,13 @@
  *   * A server whose replay window was not initialized will report the first
  *     received message as @ref OSCORE_UNPROTECT_REQUEST_DUPLICATE. Rather than
  *     erring out with an unprotected 4.01 Unauthorized message, the server can
- *     use @ref @@@_build_401echo to create a suitable response (which is a
- *     protected 4.01 with Echo option).
+ *     use @ref oscore_context_b1_build_401echo to create a suitable response
+ *     (which is a protected 4.01 with Echo option) if indicated by
+ *     @ref oscore_context_b1_replay_is_uninitialized.
  *
  *     Alternatively, it may build its own response (which may be a 4.01, or
  *     even an actual result in case of safe requests) and include the echo
- *     value reported by @ref @@@_get_echo in it.
+ *     value reported by @ref oscore_context_b1_get_echo in it.
  *
  *   * A client that receives a 4.01 response with an Echo option needs to
  *     resubmit the request, and use any Echo value found in the response in
@@ -135,7 +137,15 @@ struct oscore_context_b1 {
      * it needs to be used then that response already pulled out a sequence
      * number.
      */
-    uint64_t echo_value;
+    uint8_t echo_value[PIV_BYTES];
+    /** @private
+     *
+     * @brief Indicator of how many bytes of Echo value are populated
+     *
+     * If the echo_value has not been intialized, it is 0. (Given that the echo
+     * value is a Partial IV, it never has zero length).
+     */
+    uint8_t echo_value_populated;
 };
 
 /** @brief Persistable replay data of a B.1 context
@@ -219,8 +229,6 @@ uint64_t oscore_context_b1_get_wanted(
         struct oscore_context_b1 *secctx
         );
 
-/** @} */
-
 /** @brief Take the replay data of a security context for persistence
  *
  * @param[inout] secctx B.1 security context to shut down. This is marked inout
@@ -240,5 +248,72 @@ void oscore_context_b1_replay_extract(
     struct oscore_context_b1 *secctx,
     struct oscore_context_b1_replaydata *replaydata
     );
+
+/** @brief Test whether a context's replay window is uninitialized
+ *
+ * If this returns true, using @ref oscore_context_b1_build_401echo could be
+ * used on the response.
+ */
+OSCORE_NONNULL
+bool oscore_context_b1_replay_is_uninitialized(
+        struct oscore_context_b1 *secctx
+        );
+
+/** @brief Find the Echo value used by a B.1 context for recovery
+ *
+ * This function provides access to the Echo value that is used (sent in
+ * responses, and recognized in requests) when a server is trying to run B.1.2
+ * replay window recovery.
+ *
+ * The obtained Echo value is valid until secctx is used again, and stable as
+ * long as the context is only used (but not changed).
+ *
+ * It should only be called when the replay window is uninitialized, and
+ * sequence numbers are available (as it takes one of its own to make the
+ * implenetation easier); calling it under other circumstances has no lasting
+ * side effects, but may result in the indication of a zero-length slice (which
+ * does no harm security-wise as that value is not recognized later, worst case
+ * it makes the first request fail) - but those preconditions are typically
+ * satisfied when used.
+ *
+ * This must only be called on a B.1 backed security context.
+ *
+ */
+OSCORE_NONNULL
+void oscore_context_b1_get_echo(
+        oscore_context_t *secctx,
+        size_t *value_length,
+        uint8_t **value
+        );
+
+/** @brief Build a 4.01 Unauthorized with Echo response
+ *
+ * This convenience function builds a protected 4.01 Unauthorized response with
+ * a suitable Echo option into a native message that is sent in response to a
+ * request that is rejected by the duplicate detection.
+ *
+ * It must only be used on security contexts backed by a B.1 context (or will
+ * crash), and only if @ref oscore_context_b1_replay_is_uninitialized returned
+ * true (or might send client and server into an endless exchange without
+ * results).
+ *
+ * @param[inout] message Native message into which the response is written
+ * @param[inout] secctx Security context to be used
+ * @param[inout] requestid ID of the request that is responded to. This is
+ *     formally inout as the protection process reserves the right to update
+ *     the request ID, but is practically in only because the function is only
+ *     called in situations when the request ID's first use flag is clear
+ *     anyway.
+ * @return true on success; the native message must be cleared by the
+ *     application if it is to be sent, or must not be sent at all.
+ */
+OSCORE_NONNULL
+bool oscore_context_b1_build_401echo(
+        oscore_msg_native_t message,
+        oscore_context_t *secctx,
+        oscore_requestid_t *request_id
+        );
+
+/** @} */
 
 #endif
