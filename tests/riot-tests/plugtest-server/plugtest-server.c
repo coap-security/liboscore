@@ -1308,8 +1308,13 @@ static int cmdline_userctx_shutdown(int argc, char **argv) {
     struct oscore_context_b1_replaydata replaydata;
     oscore_context_b1_replay_extract(&context_u, &replaydata);
 
-    printf(" %llu %llu", context_u.primitive.sender_sequence_number, replaydata.left_edge);
-    print_hex(4, (uint8_t*)&replaydata.window);
+    printf(" %llu", context_u.primitive.sender_sequence_number);
+    if (replaydata.left_edge != OSCORE_SEQNO_MAX) {
+        // Could be persisted, but the command line interface will refuse
+        // loading seqno_max and expect it to be absent
+        printf(" %llu", replaydata.left_edge);
+        print_hex(4, (uint8_t*)&replaydata.window);
+    }
 
     printf("\n\nOnce you entered that, you must not enter it again, but only enter what the running process's output tells you to.\n");
 
