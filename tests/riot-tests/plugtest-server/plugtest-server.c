@@ -83,6 +83,9 @@ struct handler {
     void (*build)(oscore_msg_protected_t *in, const void *state);
 };
 
+static void userctx_maybe_persist(void);
+static uint64_t userctx_last_persisted;
+
 /** Write @p text into @p msg and return true on success */
 static bool set_message(oscore_msg_protected_t *out, const char *text)
 {
@@ -1173,6 +1176,7 @@ static int cmdline_userctx(int argc, char **argv) {
     }
 
     secctx_u_good = false;
+    userctx_last_persisted = -1;
 
     int64_t aeadalgbuf;
     if (!parse_i64(argv[1], &aeadalgbuf))
@@ -1227,11 +1231,67 @@ static int cmdline_userctx(int argc, char **argv) {
 
     oscore_context_b1_initialize(&context_u, seqno_start, replaydata_given ? &replaydata : NULL);
 
-    if (ret == 0)
+    if (ret == 0) {
         secctx_u_good = true;
+        userctx_maybe_persist();
+    }
 
     mutex_unlock(&secctx_u_usage);
     return ret;
+}
+
+/** Print the @p n bytes from @p data in hex, preceded by a blank, such that it
+ * can be copy-pasted to parse_hex */
+static void print_hex(size_t n, uint8_t *data) {
+    printf(" ");
+    if (n == 0) {
+        printf("-");
+        return;
+    }
+    while (n > 0) {
+        printf("%02x", *data);
+        n --;
+        data ++;
+    }
+}
+
+static int cmdline_userctx_shutdown(int argc, char **argv) {
+    (void)argv;
+    if (argc != 1)
+        return printf("Usage: userctx\n");
+
+    if (mutex_trylock(&secctx_u_usage) != 1)
+        return printf("Can't change user context while the context is in active use.\n");
+    if (secctx_u_change != 0)  {
+        printf("Can't change user context while request_ids are in flight.\n");
+        mutex_unlock(&secctx_u_usage);
+        return 1;
+    }
+
+    if (!secctx_u_good)
+        return printf("User context is not in a valid state.\n");
+
+    secctx_u_good = false;
+
+    printf("User context is shut down.\n");
+    printf("You can resume it once with the following command:\n");
+    printf("userctx %d ", context_u.primitive.aeadalg);
+    print_hex(context_u.primitive.sender_id_len, context_u.primitive.sender_id);
+    print_hex(context_u.primitive.recipient_id_len, context_u.primitive.recipient_id);
+    print_hex(oscore_crypto_aead_get_ivlength(context_u.primitive.aeadalg), context_u.primitive.common_iv);
+    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.sender_key);
+    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.recipient_key);
+
+    struct oscore_context_b1_replaydata replaydata;
+    oscore_context_b1_replay_extract(&context_u, &replaydata);
+
+    printf(" %llu %llu", context_u.primitive.sender_sequence_number, replaydata.left_edge);
+    print_hex(4, (uint8_t*)&replaydata.window);
+
+    printf("\n\nOnce you entered that, you must not enter it again, but only enter what the running process's output tells you to.\n");
+
+    mutex_unlock(&secctx_u_usage);
+    return 0;
 }
 
 static int cmdline_interactive(int argc, char **argv) {
@@ -1255,11 +1315,33 @@ static int cmdline_interactive(int argc, char **argv) {
 #endif
 }
 
+/** Ask the user to persist some data. Call this while you hold the secctx_u lock. */
+static void userctx_maybe_persist(void) {
+    if (!secctx_u_good)
+        return;
+
+    uint64_t wanted = oscore_context_b1_get_wanted(&context_u);
+    if (wanted == userctx_last_persisted)
+        return;
+
+    printf("\nI trust you to forget any earlier knowledge about the user context, only recover it using this line:\n");
+    printf("userctx %d ", context_u.primitive.aeadalg);
+    print_hex(context_u.primitive.sender_id_len, context_u.primitive.sender_id);
+    print_hex(context_u.primitive.recipient_id_len, context_u.primitive.recipient_id);
+    print_hex(oscore_crypto_aead_get_ivlength(context_u.primitive.aeadalg), context_u.primitive.common_iv);
+    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.sender_key);
+    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.recipient_key);
+    printf(" %llu\n", wanted);
+
+    oscore_context_b1_allow_high(&context_u, wanted);
+}
+
 static const shell_command_t shell_commands[] = {
     { "on", "Set the configured OSCORE remote resource to 1", cmdline_on },
     { "off", "Set the configured OSCORE remote resource to 0", cmdline_off },
     {"target", "Set the IP and port to which to send on and off requests", cmdline_target },
     {"userctx", "Reset the user context with new key material", cmdline_userctx },
+    {"userctx-shutdown", "Switch off the user context but allow resuming it later", cmdline_userctx_shutdown },
     { "interactive", "Poll the first hardware button to send 10 on/off commands via OSCORE when pressed", cmdline_interactive },
     { NULL, NULL, NULL }
 };
