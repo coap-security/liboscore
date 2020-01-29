@@ -835,6 +835,7 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
                     pdu_write,
                     secctx,
                     &request_id)) {
+            secctx_u_change -= 1;
             mutex_unlock(secctx_lock);
             return (pdu->payload - buf) + pdu->payload_len;
         } else {
@@ -1193,7 +1194,7 @@ static int cmdline_userctx(int argc, char **argv) {
     if (mutex_trylock(&secctx_u_usage) != 1)
         return printf("Can't change user context while the context is in active use.\n");
     if (secctx_u_change != 0)  {
-        printf("Can't change user context while request_ids are in flight.\n");
+        printf("Can't change user context while %d request_ids are in flight.\n", secctx_u_change);
         mutex_unlock(&secctx_u_usage);
         return 1;
     }
@@ -1286,7 +1287,7 @@ static int cmdline_userctx_shutdown(int argc, char **argv) {
     if (mutex_trylock(&secctx_u_usage) != 1)
         return printf("Can't change user context while the context is in active use.\n");
     if (secctx_u_change != 0)  {
-        printf("Can't change user context while request_ids are in flight.\n");
+        printf("Can't change user context while %d request_ids are in flight.\n", secctx_u_change);
         mutex_unlock(&secctx_u_usage);
         return 1;
     }
