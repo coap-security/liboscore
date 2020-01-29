@@ -41,7 +41,7 @@ def main():
         print("sender id:    %s" % (sender_id.hex()))
         print("recipient id: %s" % (recipient_id.hex()))
     elif args.format == 'RIOT':
-        print("userctx %02x %s %s %s %s %s" % (
+        print("userctx %d %s %s %s %s %s" % (
             secctx.algorithm.value,
             secctx.sender_id.hex() or '-',
             secctx.recipient_id.hex() or '-',

@@ -4,6 +4,7 @@
 #include <oscore/message.h>
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/primitive.h>
+#include <oscore/context_impl/b1.h>
 #include <oscore/protection.h>
 
 static ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
@@ -68,10 +69,10 @@ static oscore_context_t secctx_d = {
 static mutex_t secctx_d_usage = MUTEX_INIT;
 
 // User context: configurable from command-line, used in outgoing requests and also available at the server
-static struct oscore_context_primitive primitive_u;
+static struct oscore_context_b1 context_u;
 static oscore_context_t secctx_u = {
-    .type = OSCORE_CONTEXT_PRIMITIVE,
-    .data = (void*)(&primitive_u),
+    .type = OSCORE_CONTEXT_B1,
+    .data = (void*)(&context_u),
 };
 static bool secctx_u_good = false;
 static mutex_t secctx_u_usage = MUTEX_INIT;
@@ -759,8 +760,8 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
             // (FIXME as always after these words)
             secctx_u_good &&
             header.kid != NULL &&
-            header.kid_len == primitive_u.recipient_id_len &&
-            memcmp(header.kid, &primitive_u.recipient_id, primitive_u.recipient_id_len) == 0
+            header.kid_len == context_u.primitive.recipient_id_len &&
+            memcmp(header.kid, &context_u.primitive.recipient_id, context_u.primitive.recipient_id_len) == 0
             )
     {
         secctx = &secctx_u;
@@ -1149,9 +1150,17 @@ static bool parse_hex(char *hex, size_t len, uint8_t *data) {
     return *hex == 0;
 }
 
+static bool parse_i64(char *chars, int64_t *out) {
+    char *end = NULL;
+    *out = strtoll(chars, &end, 10);
+    if (*end != ' ' && *end != '\0' && *end != '\n')
+        return false;
+    return true;
+}
+
 static int cmdline_userctx(int argc, char **argv) {
-    if (argc != 7)
-        return printf("Usage: userctx alg sender-id recipient-id common-iv sender-key recipient-key\nAll keys and IDs in contiguous hex\n");
+    if (argc < 7 || argc == 9 || argc > 10)
+        return printf("Usage: userctx alg sender-id recipient-id common-iv sender-key recipient-key [seqno [replay-left replay-window]]\nAll keys and IDs in contiguous hex; alg, seqno and replay-left are decimal.\n");
 
     int ret = 0;
 
@@ -1165,37 +1174,58 @@ static int cmdline_userctx(int argc, char **argv) {
 
     secctx_u_good = false;
 
-    primitive_u.aeadalg = 24;
-    uint8_t aeadalgbuf;
-    if (!parse_hex(argv[1], 1, &aeadalgbuf))
-        ret = printf("Algorithm number was not a single-byte (two-nibble) hex number\n");
-    if (oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&primitive_u.aeadalg, aeadalgbuf)))
+    int64_t aeadalgbuf;
+    if (!parse_i64(argv[1], &aeadalgbuf))
+        ret = printf("Algorithm number was not a number\n");
+    if (oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&context_u.primitive.aeadalg, aeadalgbuf)))
         ret = printf("Algorithm is not a known AEAD algorithm\n");
 
-    primitive_u.sender_id_len = strlen(argv[2]) / 2;
-    if (primitive_u.sender_id_len > OSCORE_KEYID_MAXLEN)
+    context_u.primitive.sender_id_len = strlen(argv[2]) / 2;
+    if (context_u.primitive.sender_id_len > OSCORE_KEYID_MAXLEN)
         ret = printf("Sender ID too long\n");
-    if (!parse_hex(argv[2], primitive_u.sender_id_len, primitive_u.sender_id))
+    if (!parse_hex(argv[2], context_u.primitive.sender_id_len, context_u.primitive.sender_id))
         ret = printf("Invalid Sender ID\n");
 
-    primitive_u.recipient_id_len = strlen(argv[3]) / 2;
-    if (primitive_u.recipient_id_len > OSCORE_KEYID_MAXLEN)
+    context_u.primitive.recipient_id_len = strlen(argv[3]) / 2;
+    if (context_u.primitive.recipient_id_len > OSCORE_KEYID_MAXLEN)
         ret = printf("Recipient ID too long\n");
-    if (!parse_hex(argv[3], primitive_u.recipient_id_len, primitive_u.recipient_id))
+    if (!parse_hex(argv[3], context_u.primitive.recipient_id_len, context_u.primitive.recipient_id))
         ret = printf("Invalid Recipient ID\n");
 
-    if (!parse_hex(argv[4], oscore_crypto_aead_get_ivlength(primitive_u.aeadalg), primitive_u.common_iv))
+    if (!parse_hex(argv[4], oscore_crypto_aead_get_ivlength(context_u.primitive.aeadalg), context_u.primitive.common_iv))
         ret = printf("Invalid Commmon IV\n");
 
-    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.sender_key))
+    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.sender_key))
         ret = printf("Invalid Sender Key'\n");
 
-    if (!parse_hex(argv[6], oscore_crypto_aead_get_keylength(primitive_u.aeadalg), primitive_u.recipient_key))
+    if (!parse_hex(argv[6], oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.recipient_key))
         ret = printf("Invalid Recipient Key\n");
 
-    primitive_u.sender_sequence_number = 0;
-    primitive_u.replay_window_left_edge = 0;
-    primitive_u.replay_window = 0;
+    int64_t seqno_start;
+    if (argc > 7) {
+        if (!parse_i64(argv[7], &seqno_start) || seqno_start < 0 || seqno_start >= OSCORE_SEQNO_MAX)
+            ret = printf("Invalid sequence number\n");
+    } else {
+        seqno_start = 0;
+    }
+
+    struct oscore_context_b1_replaydata replaydata;
+    bool replaydata_given = false;
+    if (argc > 8) {
+        int64_t edgebuffer;
+        replaydata_given = true;
+        if (!parse_i64(argv[8], &edgebuffer) || edgebuffer < 0 || edgebuffer >= OSCORE_SEQNO_MAX) {
+            ret = printf("Invalid replay left edge\n");
+            replaydata_given = false;
+        }
+        replaydata.left_edge = edgebuffer;
+        if (!parse_hex(argv[9], 4, (void*)&replaydata.window)) {
+            ret = printf("Invalid replay window\n");
+            replaydata_given = false;
+        }
+    }
+
+    oscore_context_b1_initialize(&context_u, seqno_start, replaydata_given ? &replaydata : NULL);
 
     if (ret == 0)
         secctx_u_good = true;
