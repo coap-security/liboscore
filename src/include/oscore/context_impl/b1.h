@@ -3,6 +3,7 @@
 
 #include <oscore/context_impl/primitive.h>
 #include <oscore_native/message.h>
+#include <oscore/protection.h>
 
 /** @file */
 
@@ -77,16 +78,20 @@
  *   messages on its own. It does, however, assist the application author in
  *   sending the right messages:
  *
- *   * A server whose replay window was not initialized will report the first
+ *   * A server whose replay window was not initialized will see the first
  *     received message as @ref OSCORE_UNPROTECT_REQUEST_DUPLICATE. Rather than
  *     erring out with an unprotected 4.01 Unauthorized message, the server can
  *     use @ref oscore_context_b1_build_401echo to create a suitable response
  *     (which is a protected 4.01 with Echo option) if indicated by
- *     @ref oscore_context_b1_replay_is_uninitialized.
+ *     @ref oscore_context_b1_process_request.
  *
  *     Alternatively, it may build its own response (which may be a 4.01, or
  *     even an actual result in case of safe requests) and include the echo
  *     value reported by @ref oscore_context_b1_get_echo in it.
+ *
+ *     The call to @ref oscore_context_b1_process_request also serves to
+ *     recognize any incoming Echo options and thus initialize the replay
+ *     state.
  *
  *   * A client that receives a 4.01 response with an Echo option needs to
  *     resubmit the request, and use any Echo value found in the response in
@@ -94,12 +99,6 @@
  *
  *     Providing additional helpers here is [being considered](https://gitlab.com/oscore/liboscore/issues/47),
  *     and would profit from user feedback.
- *
- *   Some steps are automated inside libOSCORE and do not need assistance from
- *   the application: When a replay window needs initialization, incoming
- *   messages are scanned for their Echo value. On a match, the replay window
- *   is initialized and the unprotect operation declared @ref
- *   OSCORE_UNPROTECT_REQUEST_OK (ie. not a duplicate).
  *
  * @{
  */
@@ -249,16 +248,6 @@ void oscore_context_b1_replay_extract(
     struct oscore_context_b1_replaydata *replaydata
     );
 
-/** @brief Test whether a context's replay window is uninitialized
- *
- * If this returns true, using @ref oscore_context_b1_build_401echo could be
- * used on the response.
- */
-OSCORE_NONNULL
-bool oscore_context_b1_replay_is_uninitialized(
-        struct oscore_context_b1 *secctx
-        );
-
 /** @brief Find the Echo value used by a B.1 context for recovery
  *
  * This function provides access to the Echo value that is used (sent in
@@ -284,6 +273,41 @@ void oscore_context_b1_get_echo(
         oscore_context_t *secctx,
         size_t *value_length,
         uint8_t **value
+        );
+
+/** @brief Helper function for processing incoming requests in B.1 contexts
+ *
+ * This function performs two tasks:
+ *
+ * * It checks whether it'd make sense to send an Echo value with the response
+ *   to recover the replay window, returning the result.
+ *
+ * * It tries to recover the replay window using data from the incoming
+ *   request. When it does, the request can be considered fresh in the sense of
+ *   certainly not being a replay, and the request's unprotection status is
+ *   upgraded from OSCORE_UNPROTECT_REQUEST_DUPLICATE to
+ *   OSCORE_UNPROTECT_REQUEST_OK.
+ *
+ *   At the same time, the request ID's is-first-use flag is set.
+ *
+ * It is best run after unprotecting a request and before any further
+ * processing. It is usually very cheap as it returns early on seeing the
+ * security context's initialized state. If it returns true, a good next step
+ * is building a response using @ref oscore_context_b1_build_401echo.
+ *
+ * @param[in] secctx The B.1 security context used with this request
+ * @param[in] request A received request message
+ * @param[inout] unprotectresult The result of the message's unprotect operation
+ * @param[inout] requestid The request ID of he unprotected message
+ * @return true if responding with an Echo option would help recover the replay window
+ *
+ */
+OSCORE_NONNULL
+bool oscore_context_b1_process_request(
+        oscore_context_t *secctx,
+        oscore_msg_protected_t *request,
+        enum oscore_unprotect_request_result *unprotectresult,
+        oscore_requestid_t *request_id
         );
 
 /** @brief Build a 4.01 Unauthorized with Echo response

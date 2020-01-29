@@ -1,6 +1,5 @@
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/b1.h>
-#include <oscore/protection.h>
 
 #define K 100
 
@@ -51,13 +50,6 @@ void oscore_context_b1_replay_extract(
     replaydata->window = secctx->primitive.replay_window;
 }
 
-bool oscore_context_b1_replay_is_uninitialized(
-        struct oscore_context_b1 *secctx
-        )
-{
-    return secctx->primitive.replay_window_left_edge == OSCORE_SEQNO_MAX;
-}
-
 
 void oscore_context_b1_get_echo(
         oscore_context_t *secctx,
@@ -94,6 +86,64 @@ void oscore_context_b1_get_echo(
             *value_length = 0;
         }
     }
+}
+
+bool oscore_context_b1_process_request(
+        oscore_context_t *secctx,
+        oscore_msg_protected_t *request,
+        enum oscore_unprotect_request_result *unprotectresult,
+        oscore_requestid_t *request_id
+        )
+{
+    if (secctx->type != OSCORE_CONTEXT_B1) {
+        // This is a usage error.
+        // FIXME introduce optional usage error callback
+        return false;
+    }
+    struct oscore_context_b1 *b1 = secctx->data;
+    if (*unprotectresult != OSCORE_UNPROTECT_REQUEST_DUPLICATE ||
+            b1->primitive.replay_window_left_edge != OSCORE_SEQNO_MAX)
+        return false;
+
+    size_t echo_length;
+    uint8_t *echo_value;
+    oscore_context_b1_get_echo(secctx, &echo_length, &echo_value);
+    if (echo_length == 0) {
+        // Keep the lack of available sequence numbers from resulting in a
+        // request recognized as fresh
+        return true;
+    }
+
+    bool result = true;
+    oscore_msg_protected_optiter_t iter;
+    uint16_t opt_num;
+    const uint8_t *opt_val;
+    size_t opt_len;
+    oscore_msg_protected_optiter_init(request, &iter);
+    while (oscore_msg_protected_optiter_next(request, &iter, &opt_num, &opt_val, &opt_len)) {
+        if (opt_num == 540 /* Echo */ &&
+                opt_len == echo_length &&
+                memcmp(opt_val, echo_value, echo_length) == 0) {
+            // Matches, and replay window was previously checked to be uninitialized
+            b1->primitive.replay_window_left_edge = \
+                              request_id->bytes[4] + \
+                              request_id->bytes[3] * ((int64_t)1 << 8) + \
+                              request_id->bytes[2] * ((int64_t)1 << 16) + \
+                              request_id->bytes[1] * ((int64_t)1 << 24) + \
+                              request_id->bytes[0] * ((int64_t)1 << 32);
+            b1->primitive.replay_window = 0;
+            request_id->is_first_use = true;
+            *unprotectresult = OSCORE_UNPROTECT_REQUEST_OK;
+            result = false;
+            break;
+        }
+    }
+    // Ignoring the result -- if the Echo option was good, it's fine for here
+    // and whoever parses the rest of the message will deal with its garbled
+    // contents.
+    (void)oscore_msg_protected_optiter_finish(request, &iter);
+
+    return result;
 }
 
 bool oscore_context_b1_build_401echo(

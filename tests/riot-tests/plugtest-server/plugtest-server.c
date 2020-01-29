@@ -789,9 +789,13 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 
     oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
 
-    bool respond_401echo = oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE && \
-            secctx_lock == &secctx_u_usage && \
-            oscore_context_b1_replay_is_uninitialized(&context_u);
+    bool respond_401echo = secctx_lock == &secctx_u_usage && \
+            oscore_context_b1_process_request(
+                    secctx,
+                    &incoming_decrypted,
+                    &oscerr,
+                    &request_id
+                    );
 
     mutex_unlock(secctx_lock);
 
