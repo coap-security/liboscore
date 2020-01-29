@@ -1,14 +1,38 @@
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/primitive.h>
+#include <oscore/context_impl/b1.h>
 
-#define SEQNO_MAX INT64_C(0xffffffffff)
+/* Given a PRIMITIVE or B1 context, return a pointer to its actual primitive
+ * payload.
+ *
+ * From the construction of the B1 struct, this function has identical results
+ * for either case, but it lets the compiler prove that rather than relying on
+ * a developer to enforce it.
+ * */
+static struct oscore_context_primitive *find_primitive(const oscore_context_t *secctx) {
+    switch (secctx->type) {
+    case OSCORE_CONTEXT_PRIMITIVE:
+        {
+            struct oscore_context_primitive *primitive = secctx->data;
+            return primitive;
+        }
+    case OSCORE_CONTEXT_B1:
+        {
+            struct oscore_context_b1 *b1 = secctx->data;
+            return &b1->primitive;
+        }
+    default:
+        abort();
+    }
+}
 
 oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secctx)
 {
     switch (secctx->type) {
     case OSCORE_CONTEXT_PRIMITIVE:
+    case OSCORE_CONTEXT_B1:
         {
-            struct oscore_context_primitive *primitive = secctx->data;
+            struct oscore_context_primitive *primitive = find_primitive(secctx);
             return primitive->aeadalg;
         }
     default:
@@ -25,8 +49,9 @@ void oscore_context_get_kid(
 {
     switch (secctx->type) {
     case OSCORE_CONTEXT_PRIMITIVE:
+    case OSCORE_CONTEXT_B1:
         {
-            struct oscore_context_primitive *primitive = secctx->data;
+            struct oscore_context_primitive *primitive = find_primitive(secctx);
             if (role == OSCORE_ROLE_RECIPIENT) {
                 *kid = primitive->recipient_id;
                 *kid_len = primitive->recipient_id_len;
@@ -45,8 +70,9 @@ const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx)
 {
     switch (secctx->type) {
     case OSCORE_CONTEXT_PRIMITIVE:
+    case OSCORE_CONTEXT_B1:
         {
-            struct oscore_context_primitive *primitive = secctx->data;
+            struct oscore_context_primitive *primitive = find_primitive(secctx);
             return primitive->common_iv;
         }
     default:
@@ -60,8 +86,9 @@ const uint8_t *oscore_context_get_key(
 {
     switch (secctx->type) {
     case OSCORE_CONTEXT_PRIMITIVE:
+    case OSCORE_CONTEXT_B1:
         {
-            struct oscore_context_primitive *primitive = secctx->data;
+            struct oscore_context_primitive *primitive = find_primitive(secctx);
             if (role == OSCORE_ROLE_RECIPIENT)
                 return primitive->recipient_key;
             else
@@ -79,11 +106,18 @@ bool oscore_context_take_seqno(
 {
     switch (secctx->type) {
     case OSCORE_CONTEXT_PRIMITIVE:
+    case OSCORE_CONTEXT_B1:
         {
-            struct oscore_context_primitive *primitive = secctx->data;
+            struct oscore_context_primitive *primitive = find_primitive(secctx);
             uint64_t seqno = primitive->sender_sequence_number;
-            if (seqno >= SEQNO_MAX) {
+            if (seqno >= OSCORE_SEQNO_MAX) {
                 return false;
+            }
+            if (secctx->type == OSCORE_CONTEXT_B1) {
+                struct oscore_context_b1 *b1 = secctx->data;
+                if (seqno >= b1->high_sequence_number) {
+                    return false;
+                }
             }
             primitive->sender_sequence_number = seqno + 1;
             request_id->is_first_use = true;
@@ -146,8 +180,11 @@ void oscore_context_strikeout_requestid(
 {
     switch (secctx->type) {
     case OSCORE_CONTEXT_PRIMITIVE:
+    // Needs no special-casing as strike-out of an uninitialized context will
+    // always fail the first test.
+    case OSCORE_CONTEXT_B1:
         {
-            struct oscore_context_primitive *primitive = secctx->data;
+            struct oscore_context_primitive *primitive = find_primitive(secctx);
             // request_id->partial_iv is documented to always be zero-padded
             int64_t numeric = request_id->bytes[4] + \
                               request_id->bytes[3] * ((int64_t)1 << 8) + \

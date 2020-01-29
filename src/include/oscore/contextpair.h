@@ -28,6 +28,12 @@
  * @{
  */
 
+/** @brief Maximum value an OSCORE sequence number can have
+ *
+ * @private
+ */
+#define OSCORE_SEQNO_MAX INT64_C(0xffffffffff)
+
 /** @brief Disambiguator between the sender and the recipient part of a context pair.
  *
  * Operations on a security context that can work on both aspects (eg. @ref
@@ -44,6 +50,8 @@ enum oscore_context_role {
 enum oscore_context_type {
     /** A simple, RAM-only, fully pre-derived security context */
     OSCORE_CONTEXT_PRIMITIVE,
+    /** A security context that can be persisted, see @ref oscore_context_b1 */
+    OSCORE_CONTEXT_B1,
 };
 
 // FIXME
