@@ -4,7 +4,11 @@ OPTFLAGS ?= -O0
 
 CPPFLAGS += -I../../src/include/
 CPPFLAGS += -Ilibconfigs/
-CFLAGS += -Wall -Werror -Wpedantic -std=c11
+CFLAGS += -Werror -std=c11
+BE_PEDANTIC ?= yes
+ifeq (yes,${BE_PEDANTIC})
+    CFLAGS += -Wall -Wpedantic
+endif
 CFLAGS += -g3
 CFLAGS += -MD
 CFLAGS += ${OPTFLAGS}
@@ -31,7 +35,9 @@ test-all-versions:
 	${MAKE} clean
 	${MAKE} CC=gcc OPTFLAGS=-O3 test
 	${MAKE} clean
-	${MAKE} CC=clang test
+	${MAKE} CC=clang TESTS_USE_TINYDTLS=no test
+	${MAKE} clean
+	${MAKE} CC=clang BE_PEDANTIC=no test
 	${MAKE} clean
 
 include $(wildcard *.d)

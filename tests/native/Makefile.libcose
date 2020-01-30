@@ -2,17 +2,20 @@
 libs/libcose/makefiles/sodium.mk: libs
 include libs/libcose/makefiles/sodium.mk
 
-# Also trying a new tinydtls backend. That paragraph could become libs/libcose/makefiles/tinydtls.mk
-CFLAGS += -DCRYPTO_TINYDTLS
-CRYPTOSRC += $(SRC_DIR)/crypt/tinydtls.c
-CFLAGS_CRYPTO += -Ilibs/tinydtls
-# I hope most of the DTLS objects will not even be used after dead function elimination
-TINYDTLS_OBJS = tinydtls.o crypto.o ccm.o rijndael.o rijndael_wrap.o hmac.o ccm.o sha2.o netq.o
-# dtls_crit("can not allocate a handshake struct\n") / ISO C99 requires at least one argument for the "..." in a variadic macro
-$(TINYDTLS_OBJS): CFLAGS += -std=gnu11 -Wno-gnu-zero-variadic-macro-arguments
-vpath %.c libs/tinydtls/
-vpath %.c libs/tinydtls/sha2/
-vpath %.c libs/tinydtls/aes/
+TESTS_USE_TINYDTLS ?= yes
+ifeq (yes,${TESTS_USE_TINYDTLS})
+    # Also trying a new tinydtls backend. That paragraph could become libs/libcose/makefiles/tinydtls.mk
+    CFLAGS += -DCRYPTO_TINYDTLS
+    CRYPTOSRC += $(SRC_DIR)/crypt/tinydtls.c
+    CFLAGS_CRYPTO += -Ilibs/tinydtls
+    # I hope most of the DTLS objects will not even be used after dead function elimination
+    TINYDTLS_OBJS = tinydtls.o crypto.o ccm.o rijndael.o rijndael_wrap.o hmac.o ccm.o sha2.o netq.o
+    # dtls_crit("can not allocate a handshake struct\n") / ISO C99 requires at least one argument for the "..." in a variadic macro
+    $(TINYDTLS_OBJS): CFLAGS += -std=gnu11 -Wno-gnu-zero-variadic-macro-arguments
+    vpath %.c libs/tinydtls/
+    vpath %.c libs/tinydtls/sha2/
+    vpath %.c libs/tinydtls/aes/
+endif
 
 CPPFLAGS += -I../../backends/libcose/inc/
 CPPFLAGS += -Ilibs/libcose/include/
