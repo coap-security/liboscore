@@ -77,6 +77,8 @@ static oscore_context_t secctx_u = {
 static bool secctx_u_good = false;
 static mutex_t secctx_u_usage = MUTEX_INIT;
 int16_t secctx_u_change = 0; // RW lock count, only to be changed while secctx_u_usage is kept. The variable keeps track of the number of readers (readers in RW-lock terminology; here it's "request_id objects out there"). A writer may change the context as a whole while keeping secctx_u_usage locked and secctx_u_change is 0.
+uint8_t ctx_u_received_echo_data[32];
+ssize_t ctx_u_received_echo_size = -1;
 
 struct handler {
     void (*parse)(/* not const because of memoization */ oscore_msg_protected_t *in, void *state);
@@ -975,7 +977,22 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
 
     if (success == OSCORE_UNPROTECT_RESPONSE_OK) {
         uint8_t code = oscore_msg_protected_get_code(&msg);
-        if (code == 0x44 /* 2.04 Changed */)
+        if (code == 0x81 /* 4.01 Unauthorized */) {
+            oscore_msg_protected_optiter_t iter;
+            uint16_t opt_num;
+            const uint8_t *opt_val;
+            size_t opt_len;
+            oscore_msg_protected_optiter_init(&msg, &iter);
+            while (oscore_msg_protected_optiter_next(&msg, &iter, &opt_num, &opt_val, &opt_len)) {
+                if (opt_num == 540 /* Echo */ && opt_len < sizeof(ctx_u_received_echo_data)) {
+                    memcpy(ctx_u_received_echo_data, opt_val, opt_len);
+                    ctx_u_received_echo_size = opt_len;
+                    printf("Stored %d bytes of Echo option for the next attempt\n", opt_len);
+                }
+            };
+            (void)oscore_msg_protected_optiter_finish(&msg, &iter);
+            printf("Result: 4.01 Unauthorized\n");
+        } else if (code == 0x44 /* 2.04 Changed */)
             printf("Result: Changed\n");
         else
             printf("Unknown code in result: %d.%d\n", code >> 5, code & 0x1f);
@@ -1049,6 +1066,16 @@ static void send_static_request(char value) {
     if (oscore_msgerr_protected_is_error(oscerr)) {
         printf("Failed to add option\n");
         goto error;
+    }
+
+    if (ctx_u_received_echo_size != -1) {
+        oscerr = oscore_msg_protected_append_option(&oscmsg, 540 /* Echo */, ctx_u_received_echo_data, ctx_u_received_echo_size);
+        if (oscore_msgerr_protected_is_error(oscerr)) {
+            printf("Failed to add option\n");
+            goto error;
+        }
+        // Don't try more often than once
+        ctx_u_received_echo_size = -1;
     }
 
     uint8_t *payload;
@@ -1257,6 +1284,7 @@ static int cmdline_userctx(int argc, char **argv) {
 
     if (ret == 0) {
         secctx_u_good = true;
+        ctx_u_received_echo_size = -1;
         userctx_maybe_persist();
     }
 
