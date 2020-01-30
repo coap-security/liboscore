@@ -47,19 +47,14 @@ Two aspects of this sequence may vary depending on the underlying CoAP library:
   On less constrained devices, the response preparation can be started earlier,
   and both messages are available at the same time.
 
-* Prepare encryption before populating the message before populating:
+* Prepare encryption before populating the message:
 
-  This sequence is used in the common case when the underlying CoAP library expects options to be added sequentially,
+  This sequence is used in the common case when the underlying CoAP library expects options to be added sequentially
   and the application puts in the options in ascending sequence.
-  When applications are allowed to enter options in arbitrary sequence
-  (which is more common on platforms with dynamic allocations,
-  as well as in CoAP libraries whose limited set and size of options comes pre-allocated in the message),
-  the sequence is inverted: The message is populated first,
-  then the encryption process is started,
-  and then the pre-populated options are moved out of the message one by one
-  and fed back the message,
-  at which time it is decided where exactly the option is placed.
-  Alternatively, encryption can be delayed to serialization time for those cases.
+
+  For applications with struct-based messages,
+  the message is populated first, and encryption is only prepared just before the CoAP library serializes the message;
+  see @ref structbased_integration for details.
 
 @FIXME This part of the documentation is incomplete.
 

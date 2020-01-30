@@ -8,6 +8,7 @@ The to-be implemented functions purely deal with the manipulation of CoAP messag
 No API for the creating, receiving, sending or finalizing CoAP messages is asked for;
 these operations will be performed by the application in accordance with the idioms of the library.
 The guide @ref message_api explains some of the background behind that API.
+On a full-featured CoAP API, this level of integration should be possible without the need to change the underlying CoAP library.
 
 (There exists a module for creating and finalizing (but not sending or receiving) CoAP messages
 called @ref coap_native_test.

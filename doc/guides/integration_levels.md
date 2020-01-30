@@ -7,6 +7,13 @@ several patterns of usage are available.
 Those patterns of usage are described as integration levels here,
 and are called "light integration", "intermediate integration" and "full integration" here.
 
+These levels primarily apply to CoAP libraries that build and read their messages from linear memory,
+like nanocoap or libcoap do.
+(You can usually recognize these libraries by the requirement that options be set in ascending sequence).
+Libraries that provide CoAP messages in a struct-like format, like Erbium
+(with provide arbitrary-sequence access to options, and have options available as integers or booleans rather sequences of octets)
+are easier to integrate at their serialization stage, as described in @ref structbased_integration.
+
 Light integration
 -----------------
 
