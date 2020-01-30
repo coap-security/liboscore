@@ -13,6 +13,11 @@ The instructions are generic on Linux distributions, but also contain specific i
 If you have yet to make a choice on which operating system to run the demos,
 [Debian 10 (Buster) or newer](https://www.debian.org/distrib/netinst) is recommended.
 
+Some demos use [Particle Xenon boards](https://docs.particle.io/xenon/) for hands-on experience.
+The board has been [deprecated by its vendor](https://blog.particle.io/2020/01/28/mesh-deprecation/),
+but its usability with RIOT-OS is not expecetd to suffer from that.
+They can generally be replaced with any other network capable [RIOT board](https://riot-os.org/api/group__boards.html);
+for flashing instructions and any installation prerequisites, follow the board's description.
 
 * Ensure that `git` is installed
 * Clone the libOSCORE repository:
