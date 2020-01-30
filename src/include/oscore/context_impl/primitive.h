@@ -24,7 +24,7 @@
  * @{
  */
 
-/** @bief Primitive security context data
+/** @brief Primitive security context data
  *
  * Data of a simple security context with a 32 long sliding replay window and
  * pre-derived kyes.

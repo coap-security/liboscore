@@ -143,7 +143,7 @@ static bool options_are_as_expected(oscore_msg_protected_t *msg, uint64_t expect
             seen |= 1 << opt_num;
         }
     }
-    return seen == expected_options;
+    return !oscore_msgerr_protected_is_error(oscore_msg_protected_optiter_finish(msg, &iter)) && seen == expected_options;
 }
 
 struct hello_state {
@@ -995,7 +995,7 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
         } else if (code == 0x44 /* 2.04 Changed */)
             printf("Result: Changed\n");
         else
-            printf("Unknown code in result: %d.%d\n", code >> 5, code & 0x1f);
+            printf("Unknown code in result: %d.%02d\n", code >> 5, code & 0x1f);
     } else {
         printf("Error unprotecting response\n");
     }

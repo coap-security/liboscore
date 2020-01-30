@@ -64,6 +64,7 @@ void oscore_context_b1_get_echo(
         // we don't want to report an error (as really nothing else can go
         // wrong), and that's the only value we have at hand and know to be
         // good for dereferencing a zero-size slice from.
+        // FIXME introduce optional usage error callback
         *value = (void*)secctx;
     }
 

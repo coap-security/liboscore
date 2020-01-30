@@ -339,6 +339,8 @@ enum oscore_finish_result {
  * because of the risks of whole-program optimizing compilers reinstating
  * turning that undefined behavior into the present behavior (without the
  * benefit of this warning to the user).
+ *
+ * @FIXME Describe how to recover from failure
  */
 OSCORE_NONNULL
 enum oscore_finish_result oscore_encrypt_message(
