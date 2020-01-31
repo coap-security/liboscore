@@ -64,6 +64,12 @@ oscore_msgerr_native_t oscore_msg_native_append_option(
  *
  * This may return unsuccessfully if there was no such option, or if the
  * @p value_len given is not equal to that option's length.
+ *
+ * If applications on a given platform do not update options (and especially if
+ * the native CoAP library does not support such updates), this function can be
+ * left unimplemented; libOSCORE will not call it on its own. This is typically
+ * the case when integrating with struct-based CoAP libraries as described in
+ * @ref structbased_integration.
  */
 oscore_msgerr_native_t oscore_msg_native_update_option(
         oscore_msg_native_t msg,

@@ -33,7 +33,8 @@ Typically, a light integration backend contains two or three files:
   This file needs to be available to libOSCORE for inclusion under this path and name the when it gets built.
 
 * `mycoaplibrary_oscore_msg.c`:
-  This file contains implementations of all functions described in @ref oscore_native_msg.
+  This file contains implementations of all functions described in @ref oscore_native_msg
+  (unless otherwise noted there).
 
   The resulting symbols must be made available to libOSCORE at link time.
 
