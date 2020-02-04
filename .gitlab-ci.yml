@@ -11,6 +11,14 @@ test:
     - make libs
     - make test-all-versions
 
+    # Build test using RIOT
+    # Run the build process for the IoT-LAB demo
+    # wget, unzip not really expected to be used -- but RIOT's build system just expects them to be there.
+    - apt-get -y install gcc-arm-none-eabi binutils-multiarch python3 wget unzip
+    - git submodule init && git submodule update
+    - cd ../riot-tests/plugtest-server
+    - make BOARD=iotlab-m3 all
+
 pages:
   script:
     - apt-get update && apt-get -y install doxygen graphviz
