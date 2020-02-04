@@ -1,9 +1,2 @@
 USEMODULE += nanocoap
 USEPKG += libcose
-# Pick a backend; without, no algorithms are available
-USEMODULE += libcose_crypt_hacl
-USEMODULE += libcose_crypt_tinydtls
-
-# workarounds for https://github.com/RIOT-OS/RIOT/issues/13121
-USEMODULE += gnrc_sock
-USEMODULE += gnrc_ipv6
