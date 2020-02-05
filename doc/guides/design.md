@@ -5,8 +5,7 @@ They are good-to-know general information for library users
 (for when they are essential to know, they are linked to explicitly (@FIXME but not yet everywhere)),
 and essential to understand for contributors.
 
-Stack allocation sizes
-----------------------
+@section stack_allocation_sizes Stack allocation sizes
 
 This library occasionally asks the application to carry around data in fixed-size structs
 rather than giving the minimum size required for this particular case.
@@ -51,8 +50,8 @@ In practice, that does not change a lot, because the preparation is always follo
 but is required explicitly anyway as a warning incompatible schemes of swapping around keys inside the same security context,
 and as a warning against freeing up a security context before all writable messages that use it are finalized.
 
-Asserts
--------
+
+@section assert Asserts
 
 Any `assert` calls are used to verify internal invariants, and to help find the
 issue if any such invariant is not upheld. Internal invariants here include the
@@ -81,8 +80,8 @@ liboscore itself or the backend).
 (Using a dedicated `OSCORE_ASSERT` macro for easier overriding is being
 considered).
 
-Pointers
---------
+
+@section pointers Pointers
 
 The @ref OSCORE_NONNULL macro (expanding to `__attribute__((nonnull))` on GCC)
 is used throughout the library to indicate when NULL pointers are inacceptable as arguments.
