@@ -39,8 +39,7 @@ which changes their encoded lengths).
 
 Applications that use them can be classified in a similar fashion to write
 
-* *arbitrarily*,
-* *in-sequence*,
+* *arbitrarily* and
 * *in-sequence*
 
 Additionally, as options in OSCORE are not written in the same sequence as in regular CoAP,
@@ -58,7 +57,7 @@ and allows the following combinations
 
 .                    |  lax      | strict-options-lax-payload    | strict
 -------------------- | --------- | ----------------------------- | ----------------
-arbitrary            | manual[1] | no                            | no
+arbitrary            | yes[1]    | no                            | no
 in-sequence          | yes       | yes[2]                        | no
 in-oscore-sequence   | yes       | yes                           | yes
 
@@ -68,8 +67,8 @@ when a server tries to add options out of order on a server that does not suppor
 the backend's error will occur just as if the application had itself entered options in the wrong sequence.
 
 [1]: On arbitrary-sequence platforms, the unprotected messages are typically built before the encryption step starts,
-and then fed into the OSCORE encryption in the right sequence;
-see [issue 35](https://gitlab.com/oscore/liboscore/issues/35) for library extension ideas that would make those more convenient to work with.
+and then fed into the OSCORE encryption in the right sequence.
+The chapter on @ref structbased_integration shows how lax libraries are hooked into.
 
 [2]: Even on a *strict-options-lax-payload* backend, the OSCORE-wrapped message behaves in a *strict-options* fashion.
 No currently known applications other than OSCORE itself have a strong need utilizing the lax-payload aspect;
@@ -87,9 +86,8 @@ but are expected to be trivial to provide and simplify libOSCORE's work quite a 
   must stay valid for as long as the message is not modifed.
   (The usual requirement is that it is valid until the next item is pulled from the iterator).
 
-  This is trivially fulfilled for backends that store options in their serialized form.
-  Backends that store option values in their semantic form may, in general, use a per-iterator buffer to serialize the semantic into the binary form.
-  As such a backend's semantic form is anyway determined by the OSCORE library used,
-  this library demands that the form be as an opaque string, into which a pointer can be returned.
+  This is only relied on by examples and some integrations, and only for the OSCORE option.
+  It allows passing the option value obtained in iteration to @ref oscore_oscoreoption_parse,
+  and it to retain pointers into that option.
 
 * Introducing a requirement to allow and preserve writes to the first byte of the payload even in the strict case is being considered (but currently not required).
