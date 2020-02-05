@@ -25,6 +25,8 @@ rather than needing to be dispatched whenever an application adds an option.
 
 With this, the sequence of @ref light_integration_usage is enacted differently:
 
+<!-- When editing here, also keep light_integration_usage in sync -->
+
 * Receive a request message
 * Resolve any preprocessing outside OSCORE (eg. reassemble a block-wise request, if supported)
 * Identify its OSCORE header
@@ -34,7 +36,7 @@ With this, the sequence of @ref light_integration_usage is enacted differently:
 * Discard the received message *buffer*
 * Read the message *struct*
 * Populate a response message *struct*
-* Start composing a response *buffer*
+* Allocate a response *buffer*
 * Prepare encryption of the message
 * *Serialize the message into libOSCORE, which in term writes it into the buffer*
 * Finish encryption
