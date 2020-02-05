@@ -170,9 +170,10 @@ enum oscore_unprotect_request_result {
  * decryption/authentication failed.
  *
  * The OK and DUPLICATE results both count as successful in terms of
- * initialization: A message will be available in `unprotected`, but must only
- * be processed further if it is safe (in the CoAP/REST sense, ie. side effect
- * free; currently that's GET and FETCH requests).
+ * initialization: A message will be available in `unprotected`, but in the
+ * duplicate case must only be processed further if it is safe (in the
+ * CoAP/REST sense, ie. side effect free; currently that's GET and FETCH
+ * requests).
  *
  * @note The result enum is used to reduce the risk of API users inadvertedly
  * processing replays. The information about whether a request was (possibly) a
@@ -239,7 +240,7 @@ enum oscore_unprotect_response_result oscore_unprotect_response(
  *
  * This function's counterpart in protect operations is @ref oscore_encrypt_message.
  *
- * The result @ref oscore_protection_finish "may be ignored".
+ * The result @ref oscore_protection_finish "may be discarded".
  *
  */
 oscore_msg_native_t oscore_release_unprotected(
@@ -359,9 +360,10 @@ enum oscore_finish_result {
  * message is returned in @p protected and can be freed. Likewise, either way,
  * the @p unprotected can not be used after this call any more.
  *
- * The value returned in @p protected @ref oscore_protection_finish "may
- * be ignored" as it's the same originally passed in (but still needs to be a
- * valid pointer).
+ * The value returned in @p protected
+ * @ref oscore_protection_finish "may be discarded"
+ * as it's the same originally passed in (but still needs to be a valid
+ * pointer).
  */
 OSCORE_NONNULL
 enum oscore_finish_result oscore_encrypt_message(

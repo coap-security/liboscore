@@ -94,7 +94,7 @@ careless `append_option(msg, NULL, 0);` could otherwise introduce undefined
 behavior).
 
 Functions tolerant of NULL slices are not declared `OSCORE_NONNULL`
-(as that would allow the compiler to introduce undefiend behavior when a NULL *is* passswd in),
+(as that would allow the compiler to introduce undefiend behavior when a NULL *is* passewd in),
 but still expect other arguments not to be NULL.
 
 @FIXME The addition of an `OSCORE_NONNULL_OPTIN` decorator that makes even those functions nonnull is being considered,
