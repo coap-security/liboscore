@@ -12,7 +12,7 @@ like nanocoap or libcoap do.
 (You can usually recognize these libraries by the requirement that options be set in ascending sequence).
 Libraries that provide CoAP messages in a struct-like format, like Erbium
 (with provide arbitrary-sequence access to options, and have options available as integers or booleans rather sequences of octets)
-are easier to integrate at their serialization stage, as described in @ref structbased_integration.
+are easier to integrate at their serialization stage, as described in @subpage structbased_integration.
 
 Light integration
 -----------------
@@ -38,8 +38,8 @@ and depend both on a particular underlying CoAP library and libOSCORE in their c
 
 ### Further documentation
 
-* To implement light integration for an existing CoAP library, see the @ref light_integration.
-* To write an application based on light integration, carefully read @ref light_integration_usage
+* To implement light integration for an existing CoAP library, see the @subpage light_integration.
+* To write an application based on light integration, carefully read @subpage light_integration_usage
 
 Full integration
 ----------------
@@ -67,7 +67,7 @@ on platforms that have a powerful and stable CoAP library.
 
 ### Further documentation
 
-* To implement full integration into an existing CoAP library, see the @ref full_integration.
+* To implement full integration into an existing CoAP library, see the @subpage full_integration.
 * To use a fully integrated library, follow documentation provided with the library. (@FIXME There is none yet, for lack of a fully integrated library)
 
 Intermediate integration
