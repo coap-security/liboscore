@@ -51,7 +51,7 @@ but is required explicitly anyway as a warning incompatible schemes of swapping 
 and as a warning against freeing up a security context before all writable messages that use it are finalized.
 
 
-@section assert Asserts
+@section assert Assertions and Aborts
 
 Any `assert` calls are used to verify internal invariants, and to help find the
 issue if any such invariant is not upheld. Internal invariants here include the
@@ -79,6 +79,12 @@ liboscore itself or the backend).
 
 (Using a dedicated `OSCORE_ASSERT` macro for easier overriding is being
 considered).
+
+In code that dispatches on enums,
+`abort` is occasionally used when a return value would need to be produced.
+The same is true for functions that are formally called on a generic security context,
+but (in their documentation) require the context to be of a particular type.
+Both uses are still under consideration for better variants.
 
 
 @section pointers Pointers

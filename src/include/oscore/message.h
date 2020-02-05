@@ -378,9 +378,15 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
  * @param[inout] msg Message whose payload is accessed
  * @param[in] payload_len Size of writable payload
  *
- * Reduce the payload length of the message to the given size. This must only
- * be called after @ref oscore_msg_protected_map_payload invocations, and the
- * given size must be at most the @p payload_len obtained in that call.
+ * Reduce the payload length of the message to the given size. After this, no
+ * further @ref oscore_msg_protected_append_option calls are possible, as this
+ * also flushes out any automatically inserted options (like the OSCORE
+ * option), and then trims the underlying native message.
+ *
+ * The given size must be at most the @p payload_len obtained in a
+ * @ref oscore_msg_protected_map_payload call; zero may be passed in even
+ * without having called that.
+ *
  */
 OSCORE_NONNULL
 oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
