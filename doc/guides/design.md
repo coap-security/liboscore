@@ -32,15 +32,24 @@ Still, there is no requirement for those functions to happen in the same context
 as long as the group's sequence requirements
 and the above requirement on simultaneous calls with identical arguments are met.
 
-Messages that are being built are an important exception:
-They do store a reference to the immutable parts of their security context.
-While a messge is being built (eg. between @ref oscore_prepare_response and @ref oscore_encrypt_message),
-its security context may be used to protect and unprotect other messages,
-but not otherwise altered.
+In particular -- and with an extension --, this applies to messages:
 
-If an application wants to modify (free or replace) a security context,
-it needs to ensure that no writable messages are left around using that context.
+In the chain of @ref oscore_unprotect_request, @ref oscore_prepare_response and @ref oscore_encrypt_message,
+as well as from @ref oscore_prepare_request to @ref oscore_encrypt_message,
+the context passed in must not have been modified.
+Both chains tolerate other protect and unprotect operations to be interleaved with them
+(provided, as always, that no two calls use the context concurrently):
+This will result in sequence numbers being changed inside the context,
+but not in changes to the key material.
 
+**Additionally**,
+the security context's key material needs to stay unmodified available during any writing message operation on the @ref oscore_msg_protected_t.
+This is because those invariant parts are read from even when options or payload are written inside the message
+(which contains a pointer to the security context).
+In practice, that does not change a lot, because the preparation is always followed up by an encryption step
+(which again needs the original unmodified security context),
+but is required explicitly anyway as a warning incompatible schemes of swapping around keys inside the same security context,
+and as a warning against freeing up a security context before all writable messages that use it are finalized.
 
 Asserts
 -------

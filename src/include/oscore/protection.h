@@ -180,6 +180,10 @@ enum oscore_unprotect_request_result {
  * duplicate or not is also encoded in request_id's "is first use" property,
  * but having a dedicated return value forces users to take a conscious
  * decision.
+ *
+ * When this function is followed up by a @ref oscore_prepare_response (as it
+ * usually is), the same @ref design_thread "unmodified security context" and
+ * @p request_id must be used in that subsequent call.
  */
 OSCORE_NONNULL
 enum oscore_unprotect_request_result oscore_unprotect_request(
@@ -273,10 +277,11 @@ enum oscore_prepare_result {
  * @return OSCORE_PREPARE_OK if all information is available to continue, or
  * any other if not.
  *
- * @attention The @p secctx passed in here may only be used to protect and
+ * @attention The @p secctx passed in here must be the same as in the preceding
+ * @ref oscore_unprotect_request call, and may only be used to protect and
  * unprotect other messages (and not altered in any other way) until the
- * subsequent @ref oscore_encrypt_message function has been called.
- * See @ref design_thread for more details.
+ * subsequent @ref oscore_encrypt_message function has been called. See
+ * @ref design_thread for more details.
  */
 OSCORE_NONNULL
 enum oscore_prepare_result oscore_prepare_response(
