@@ -2,7 +2,7 @@
 
 This page explains some design choices taken in libOSCORE.
 They are good-to-know general information for library users
-(for when they are essential to know, they are linked to explicitly (@FIXME but not yet everywhere)),
+(for when they are essential to know, they are linked to explicitly),
 and essential to understand for contributors.
 
 @section stack_allocation_sizes Stack allocation sizes

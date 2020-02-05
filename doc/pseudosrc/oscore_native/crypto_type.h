@@ -22,7 +22,7 @@ typedef int32_t oscore_crypto_aeadalg_t;
  * It is recommended to make this a struct or pointer to a fixed-size
  * allocation that is sufficiently large for all supported ciphers. That helps
  * avoiding unpleasant surprises in low-memory application situations after a
- * cipher suite change.
+ * cipher suite change (see @ref stack_allocation_sizes).
  *
  * See @ref oscore_crypto_aead_encrypt_start for details and usage.
  *

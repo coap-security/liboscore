@@ -34,6 +34,10 @@
  * during or after it is persisted, and b) during loading (before it is
  * actually used), it is made sure that subsequent attempts to load it will
  * fail until it has been stored again.
+ *
+ * No attempt is made here to save size by shrinking this struct to the
+ * actually used key size (it can always accomodate the largest key usable with
+ * the crypto backend), see @ref stack_allocation_sizes for rationale.
  */
 struct oscore_context_primitive {
     /** AEAD algorithm used with this context */
