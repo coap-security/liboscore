@@ -101,5 +101,15 @@ It is recommended to employ link time optimization.
 Testing
 -------
 
-@FIXME The test cases described in `tests/cases/` can be run on any platform that has the @ref coap_native_test implemented.
-See `tests/riot-tests/` and `tests/native/` for examples of how they can be executed.
+During and after light integration, the several test cases can be executed.
+The test cases all reside inside `tests/cases/`.
+
+Backends that need elaborate platform setup
+can be tested by wrapping the cases in that platform's build setup,
+as shown in `tests/riot-tests/`.
+
+Backends that can be built using a more regular Makefile-based approach
+can be tested as show in `tests/native` (there by running `make test`).
+
+The tests shipped with libOSCORE are run regularly [inside GitLab's test runners](https://gitlab.com/oscore/liboscore/pipelines).
+New integrations added to the library are configured for running there in the shipped `.gitlab-ci.yml` file.
