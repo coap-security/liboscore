@@ -17,6 +17,13 @@
  * additional indicators for the mechanisms described in [Appendix B.1 of
  * RFC8613](https://tools.ietf.org/html/rfc8613#appendix-B.1).
  *
+ * Such a security context is superior to a primitive context as it can be used
+ * across reboots without the need to persist its state after any operation;
+ * it can recover lost state by skipping sequence numbers or asking for
+ * resubmission of the first request. A notable downside is that until the
+ * replay window is recovered, replays of old messages can be used to slowly
+ * exhaust own sequence numbers.
+ *
  * There are aspects to its use:
  *
  * * Peristence: Two aspects of the context can be persisted, the sequence

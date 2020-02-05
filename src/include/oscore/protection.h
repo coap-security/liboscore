@@ -24,6 +24,19 @@
  * can be written to it in the right places, and eventually encrypted before
  * transmission.
  *
+ * @anchor oscore_protection_finish
+ *
+ * @note
+ * Several functions that finish off a OSCORE message return the native message
+ * that was originally passed in.
+ *
+ * @note
+ * Those are returned for the benefit of applications that would not otherwise
+ * hold a reference to the encapsulated message. Applications may rely on those
+ * to to be the same (but, usually, internally modified) message that was
+ * passed in when the @ref oscore_msg_protected_t was created, and can thus
+ * ignore those return values.
+ *
  * @{
  */
 
@@ -224,8 +237,10 @@ enum oscore_unprotect_response_result oscore_unprotect_response(
  * practice, it will contain its outer options as well as a payload consisting
  * of the OSCORE plaintext).
  *
- * @todo Point to the equivalent option for protection, which returns a
- * ready-to-use protected native message
+ * This function's counterpart in protect operations is @ref oscore_encrypt_message.
+ *
+ * The result @ref oscore_protection_finish "may be ignored".
+ *
  */
 oscore_msg_native_t oscore_release_unprotected(
         oscore_msg_protected_t *unprotected
@@ -340,7 +355,13 @@ enum oscore_finish_result {
  * turning that undefined behavior into the present behavior (without the
  * benefit of this warning to the user).
  *
- * @FIXME Describe how to recover from failure
+ * Even when this function returns unsuccessfully, the underlying native
+ * message is returned in @p protected and can be freed. Likewise, either way,
+ * the @p unprotected can not be used after this call any more.
+ *
+ * The value returned in @p protected @ref oscore_protection_finish "may
+ * be ignored" as it's the same originally passed in (but still needs to be a
+ * valid pointer).
  */
 OSCORE_NONNULL
 enum oscore_finish_result oscore_encrypt_message(

@@ -14,6 +14,20 @@
  *  most of the functions by a large switch statement that dispatches
  *  encryption and decryption into the appropriate (eg. AES-CCM) functions.
  *
+ *  Some aspects of these calls are tailored towards AEAD with streaming AAD.
+ *  While there is no practical need for having the plain- and ciphertext
+ *  processed as they come in (because acting on them would have severe
+ *  security ramifications), AAD is unbounded when Class-I options are present,
+ *  and not otherwise needed present in a contiguous buffer.
+ *
+ *  Many backends (even the currently used libCOSE, though there are efforts to
+ *  change that) will not support that mode of operation. Those need to either
+ *  allocate memory dynamically at the start of the AEAD operation (based on
+ *  the known size of the AAD that is passed in), or set aside that memory in
+ *  their @ref oscore_crypto_aead_encryptstate_t. (The memory size is a
+ *  nonlinear function of the maximum key lengths and algorithms; 32 byte will
+ *  often suffice as long as no Class-I options are present).
+ *
  * @{
  */
 
