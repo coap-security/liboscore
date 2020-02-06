@@ -55,11 +55,11 @@ a structure like the one used by the nanocoap implementation is recommended:
     backends/nanocoap/
     ├── README.md
     ├── inc
-    │   ├── nanocoap_oscore_msg_conversion.c  # not actually present there
+    │   ├── nanocoap_oscore_msg_conversion.h  # not actually present there
     │   └── oscore_native
     │       └── msg_type.h
     └── src
-        ├── nanocoap_oscore_msg.c # @FIXME actually named oscore_msg.c
+        ├── oscore_msg_native.c
         └── oscore_test.c
 
 ### Cryptography backends
