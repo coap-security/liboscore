@@ -1391,6 +1391,7 @@ static void userctx_maybe_persist(void) {
     printf(" %llu\n", wanted);
 
     oscore_context_b1_allow_high(&context_u, wanted);
+    userctx_last_persisted = wanted;
 }
 
 static const shell_command_t shell_commands[] = {
