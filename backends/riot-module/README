@@ -1,6 +1,0 @@
-This is a directory that can be given as an `EXTERNAL_MODULE_DIRS=this` /
-`USEMODULE = oscore` line pair to a RIOT Makefile.
-
-It combines a set of backends (nanocoap; pulling in libcose) as well as the
-actual sources of the OSCORE module and makes it available in a light
-integration style for RIOT.
