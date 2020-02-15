@@ -43,7 +43,7 @@ oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secct
 void oscore_context_get_kid(
         const oscore_context_t *secctx,
         enum oscore_context_role role,
-        uint8_t **kid,
+        const uint8_t **kid,
         size_t *kid_len
         )
 {

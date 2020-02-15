@@ -144,7 +144,7 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         assert(h == 0); // set s and kid context here
 
         if (k) {
-            uint8_t *kid;
+            const uint8_t *kid;
             size_t kid_length;
             oscore_context_get_kid(msg->secctx, OSCORE_ROLE_SENDER, &kid, &kid_length);
             memcpy(&optionbuffer[optionlength], kid, kid_length);

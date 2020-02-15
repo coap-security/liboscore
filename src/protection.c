@@ -101,7 +101,7 @@ struct aad_sizes predict_aad_size(
         oscore_msg_native_t class_i_source
         )
 {
-    uint8_t *request_kid; // ignored, but get_kid still wants to write somewhere
+    const uint8_t *request_kid; // ignored, but get_kid still wants to write somewhere
     size_t request_kid_len;
     oscore_context_get_kid(secctx, requester_role, &request_kid, &request_kid_len);
 
@@ -169,7 +169,7 @@ oscore_cryptoerr_t feed_aad(
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request KID
-    uint8_t *request_kid;
+    const uint8_t *request_kid;
     size_t request_kid_len;
     oscore_context_get_kid(secctx, requester_role, &request_kid, &request_kid_len);
 
@@ -216,7 +216,7 @@ void build_iv(
     assert(iv_len >= 7);
     assert(iv_len <= OSCORE_CRYPTO_AEAD_IV_MAXLEN);
 
-    uint8_t *id_piv;
+    const uint8_t *id_piv;
     size_t id_piv_len;
     oscore_context_get_kid(secctx, piv_role, &id_piv, &id_piv_len);
 

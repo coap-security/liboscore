@@ -82,7 +82,7 @@ OSCORE_NONNULL
 void oscore_context_get_kid(
         const oscore_context_t *secctx,
         enum oscore_context_role role,
-        uint8_t **kid,
+        const uint8_t **kid,
         size_t *kid_len
         );
 

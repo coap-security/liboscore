@@ -87,7 +87,7 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
 
 oscore_cryptoerr_t oscore_crypto_aead_encrypt_feed_aad(
         oscore_crypto_aead_encryptstate_t *state,
-        uint8_t *aad_chunk,
+        const uint8_t *aad_chunk,
         size_t aad_chunk_len
         )
 {
@@ -146,7 +146,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
 
 oscore_cryptoerr_t oscore_crypto_aead_decrypt_feed_aad(
         oscore_crypto_aead_decryptstate_t *state,
-        uint8_t *aad_chunk,
+        const uint8_t *aad_chunk,
         size_t aad_chunk_len
         )
 {
