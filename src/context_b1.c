@@ -5,11 +5,14 @@
 
 void oscore_context_b1_initialize(
         struct oscore_context_b1 *secctx,
+        const struct oscore_context_primitive_immutables *immutables,
         uint64_t seqno,
         const struct oscore_context_b1_replaydata *replaydata
         )
 {
+    secctx->primitive.immutables = immutables;
     secctx->primitive.sender_sequence_number = seqno;
+    // ie. that would be the next, but it's not usable yet
     secctx->high_sequence_number = seqno;
 
     secctx->echo_value_populated = 0;

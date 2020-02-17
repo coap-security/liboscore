@@ -168,13 +168,12 @@ struct oscore_context_b1_replaydata {
 
 /** @brief Initialize a B.1 context
  *
- * This is the way to initialize a @ref oscore_context_b1 struct. As a
- * precondition, all the key properties have to be set in the context's
- * primitive part; replay window and sequence number could be left
- * uninitialized there.
+ * This is the way to initialize a @ref oscore_context_b1 struct.
  *
  * @param[inout] secctx B.1 security context to initialize; must not be NULL,
  *     and must be partially initialized.
+ * @param[in] immutables Primitive security context key material that will be
+ *     used throughout the life time of the security context.
  * @param[in] seqno The last (and highest) value that was ever passed to a @ref
  *     oscore_context_b1_allow_high call to this context, or 0 for brand-new
  *     contexts.
@@ -189,6 +188,7 @@ struct oscore_context_b1_replaydata {
  */
 void oscore_context_b1_initialize(
         struct oscore_context_b1 *secctx,
+        const struct oscore_context_primitive_immutables *immutables,
         uint64_t seqno,
         const struct oscore_context_b1_replaydata *replaydata
         );

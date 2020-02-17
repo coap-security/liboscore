@@ -33,7 +33,7 @@ static ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 
 // Having _b and _d static is OK here because the gcoap thread will only process messages one at a time
 // Context B: as specified in plug test description (therefore hard-coded; outside the plug tests, this must only be done only when one of the recovery mechanisms of the OSCORE specification appendix B or equivalent are used).
-static struct oscore_context_primitive primitive_b = {
+static const struct oscore_context_primitive_immutables immutables_b = {
     .aeadalg = 24,
     .common_iv = B_COMMON_IV,
 
@@ -44,6 +44,7 @@ static struct oscore_context_primitive primitive_b = {
     .sender_id = "\x01",
     .sender_key = B_SENDER_KEY,
 };
+static struct oscore_context_primitive primitive_b = { .immutables = &immutables_b };
 static oscore_context_t secctx_b = {
     .type = OSCORE_CONTEXT_PRIMITIVE,
     .data = (void*)(&primitive_b),
@@ -51,7 +52,7 @@ static oscore_context_t secctx_b = {
 static mutex_t secctx_b_usage = MUTEX_INIT;
 
 // Context D: as specified in plug test description (see B)
-static struct oscore_context_primitive primitive_d = {
+static const struct oscore_context_primitive_immutables immutables_d = {
     .aeadalg = 24,
     .common_iv = D_COMMON_IV,
 
@@ -62,6 +63,7 @@ static struct oscore_context_primitive primitive_d = {
     .sender_id = "\x01",
     .sender_key = D_SENDER_KEY,
 };
+static struct oscore_context_primitive primitive_d = { .immutables = &immutables_d };
 static oscore_context_t secctx_d = {
     .type = OSCORE_CONTEXT_PRIMITIVE,
     .data = (void*)(&primitive_d),

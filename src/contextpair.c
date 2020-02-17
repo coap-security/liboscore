@@ -33,7 +33,7 @@ oscore_crypto_aeadalg_t oscore_context_get_aeadalg(const oscore_context_t *secct
     case OSCORE_CONTEXT_B1:
         {
             struct oscore_context_primitive *primitive = find_primitive(secctx);
-            return primitive->aeadalg;
+            return primitive->immutables->aeadalg;
         }
     default:
         abort();
@@ -53,11 +53,11 @@ void oscore_context_get_kid(
         {
             struct oscore_context_primitive *primitive = find_primitive(secctx);
             if (role == OSCORE_ROLE_RECIPIENT) {
-                *kid = primitive->recipient_id;
-                *kid_len = primitive->recipient_id_len;
+                *kid = primitive->immutables->recipient_id;
+                *kid_len = primitive->immutables->recipient_id_len;
             } else {
-                *kid = primitive->sender_id;
-                *kid_len = primitive->sender_id_len;
+                *kid = primitive->immutables->sender_id;
+                *kid_len = primitive->immutables->sender_id_len;
             }
             return;
         }
@@ -73,7 +73,7 @@ const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx)
     case OSCORE_CONTEXT_B1:
         {
             struct oscore_context_primitive *primitive = find_primitive(secctx);
-            return primitive->common_iv;
+            return primitive->immutables->common_iv;
         }
     default:
         abort();
@@ -90,9 +90,9 @@ const uint8_t *oscore_context_get_key(
         {
             struct oscore_context_primitive *primitive = find_primitive(secctx);
             if (role == OSCORE_ROLE_RECIPIENT)
-                return primitive->recipient_key;
+                return primitive->immutables->recipient_key;
             else
-                return primitive->sender_key;
+                return primitive->immutables->sender_key;
         }
     default:
         abort();
