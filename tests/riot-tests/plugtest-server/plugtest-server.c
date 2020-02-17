@@ -7,6 +7,10 @@
 #include <oscore/context_impl/b1.h>
 #include <oscore/protection.h>
 
+#include "persistence.h"
+
+struct persisted_data *persist;
+
 static ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
     (void)ctx;
@@ -76,7 +80,6 @@ static oscore_context_t secctx_u = {
     .type = OSCORE_CONTEXT_B1,
     .data = (void*)(&context_u),
 };
-static bool secctx_u_good = false;
 static mutex_t secctx_u_usage = MUTEX_INIT;
 int16_t secctx_u_change = 0; // RW lock count, only to be changed while secctx_u_usage is kept. The variable keeps track of the number of readers (readers in RW-lock terminology; here it's "request_id objects out there"). A writer may change the context as a whole while keeping secctx_u_usage locked and secctx_u_change is 0.
 uint8_t ctx_u_received_echo_data[32];
@@ -765,10 +768,10 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
             // protected by secctx_u_change, but only until it's locked (or
             // denied) a few lines later -- what could possibly go wrong?
             // (FIXME as always after these words)
-            secctx_u_good &&
+            persist->key_good &&
             header.kid != NULL &&
-            header.kid_len == context_u.primitive.recipient_id_len &&
-            memcmp(header.kid, &context_u.primitive.recipient_id, context_u.primitive.recipient_id_len) == 0
+            header.kid_len == persist->key.recipient_id_len &&
+            memcmp(header.kid, &persist->key.recipient_id, persist->key.recipient_id_len) == 0
             )
     {
         secctx = &secctx_u;
@@ -932,8 +935,6 @@ struct static_request_data {
     oscore_requestid_t request_id;
 };
 
-sock_udp_ep_t static_request_target = { .port = 0 };
-
 static void handle_static_response(const struct gcoap_request_memo *memo, coap_pkt_t *pdu, const sock_udp_ep_t *remote)
 {
     struct static_request_data *request_data = memo->context;
@@ -1023,12 +1024,12 @@ static void send_static_request(char value) {
 
     struct static_request_data request_data = { .done = MUTEX_INIT_LOCKED };
 
-    if (static_request_target.port == 0) {
+    if (persist->target.port == 0) {
         printf("No remote configured\n");
         return;
     }
 
-    if (!secctx_u_good) {
+    if (!persist->key_good) {
         printf("No security context configured\n");
         return;
     }
@@ -1057,6 +1058,8 @@ static void send_static_request(char value) {
     if (oscore_prepare_request(native, &oscmsg, &secctx_u, &request_data.request_id) != OSCORE_PREPARE_OK) {
         mutex_unlock(&secctx_u_usage);
         printf("Failed to prepare request encryption\n");
+
+        userctx_maybe_persist();
         return;
     }
     mutex_unlock(&secctx_u_usage);
@@ -1103,7 +1106,7 @@ static void send_static_request(char value) {
 
     // PDU is usable now again and can be sent
 
-    int bytes_sent = gcoap_req_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &static_request_target, handle_static_response, &request_data);
+    int bytes_sent = gcoap_req_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &persist->target, handle_static_response, &request_data);
     if (bytes_sent <= 0) {
         printf("Error sending\n");
     }
@@ -1147,22 +1150,24 @@ static int cmdline_target(int argc, char **argv) {
 
     ipv6_addr_t addr;
 
-    static_request_target.netif = atoi(argv[2]);
+    persist->target.netif = atoi(argv[2]);
     if (!ipv6_addr_from_str(&addr, argv[1])) {
         printf("IP address invalid\n");
-        static_request_target.port = 0;
+        persist->target.port = 0;
         return 1;
     }
-    memcpy(&static_request_target.addr.ipv6[0], &addr.u8[0], sizeof(addr.u8));
-    static_request_target.port = atoi(argv[3]);
+    memcpy(&persist->target.addr.ipv6[0], &addr.u8[0], sizeof(addr.u8));
+    persist->target.port = atoi(argv[3]);
 
-    static_request_target.family = AF_INET6;
+    persist->target.family = AF_INET6;
 
-    if (gnrc_netif_get_by_pid(static_request_target.netif) == NULL) {
+    if (gnrc_netif_get_by_pid(persist->target.netif) == NULL) {
         printf("Zone identifier invalid\n");
-        static_request_target.port = 0;
+        persist->target.port = 0;
         return 1;
     }
+
+    persistence_commit();
 
     return 0;
 }
@@ -1228,34 +1233,34 @@ static int cmdline_userctx(int argc, char **argv) {
         return 1;
     }
 
-    secctx_u_good = false;
+    persist->key_good = false;
     userctx_last_persisted = -1;
 
     int64_t aeadalgbuf;
     if (!parse_i64(argv[1], &aeadalgbuf))
         ret = printf("Algorithm number was not a number\n");
-    if (oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&context_u.primitive.aeadalg, aeadalgbuf)))
+    if (oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&persist->key.aeadalg, aeadalgbuf)))
         ret = printf("Algorithm is not a known AEAD algorithm\n");
 
-    context_u.primitive.sender_id_len = strlen(argv[2]) / 2;
-    if (context_u.primitive.sender_id_len > OSCORE_KEYID_MAXLEN)
+    persist->key.sender_id_len = strlen(argv[2]) / 2;
+    if (persist->key.sender_id_len > OSCORE_KEYID_MAXLEN)
         ret = printf("Sender ID too long\n");
-    if (!parse_hex(argv[2], context_u.primitive.sender_id_len, context_u.primitive.sender_id))
+    if (!parse_hex(argv[2], persist->key.sender_id_len, persist->key.sender_id))
         ret = printf("Invalid Sender ID\n");
 
-    context_u.primitive.recipient_id_len = strlen(argv[3]) / 2;
-    if (context_u.primitive.recipient_id_len > OSCORE_KEYID_MAXLEN)
+    persist->key.recipient_id_len = strlen(argv[3]) / 2;
+    if (persist->key.recipient_id_len > OSCORE_KEYID_MAXLEN)
         ret = printf("Recipient ID too long\n");
-    if (!parse_hex(argv[3], context_u.primitive.recipient_id_len, context_u.primitive.recipient_id))
+    if (!parse_hex(argv[3], persist->key.recipient_id_len, persist->key.recipient_id))
         ret = printf("Invalid Recipient ID\n");
 
-    if (!parse_hex(argv[4], oscore_crypto_aead_get_ivlength(context_u.primitive.aeadalg), context_u.primitive.common_iv))
+    if (!parse_hex(argv[4], oscore_crypto_aead_get_ivlength(persist->key.aeadalg), persist->key.common_iv))
         ret = printf("Invalid Commmon IV\n");
 
-    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.sender_key))
+    if (!parse_hex(argv[5], oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.sender_key))
         ret = printf("Invalid Sender Key'\n");
 
-    if (!parse_hex(argv[6], oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.recipient_key))
+    if (!parse_hex(argv[6], oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.recipient_key))
         ret = printf("Invalid Recipient Key\n");
 
     int64_t seqno_start;
@@ -1282,10 +1287,10 @@ static int cmdline_userctx(int argc, char **argv) {
         }
     }
 
-    oscore_context_b1_initialize(&context_u, seqno_start, replaydata_given ? &replaydata : NULL);
+    oscore_context_b1_initialize(&context_u, &persist->key, seqno_start, replaydata_given ? &replaydata : NULL);
 
     if (ret == 0) {
-        secctx_u_good = true;
+        persist->key_good = true;
         ctx_u_received_echo_size = -1;
         userctx_maybe_persist();
     }
@@ -1322,19 +1327,19 @@ static int cmdline_userctx_shutdown(int argc, char **argv) {
         return 1;
     }
 
-    if (!secctx_u_good)
+    if (!persist->key_good)
         return printf("User context is not in a valid state.\n");
 
-    secctx_u_good = false;
+    persist->key_good = false;
 
     printf("User context is shut down.\n");
     printf("You can resume it once with the following command:\n");
-    printf("userctx %d ", context_u.primitive.aeadalg);
-    print_hex(context_u.primitive.sender_id_len, context_u.primitive.sender_id);
-    print_hex(context_u.primitive.recipient_id_len, context_u.primitive.recipient_id);
-    print_hex(oscore_crypto_aead_get_ivlength(context_u.primitive.aeadalg), context_u.primitive.common_iv);
-    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.sender_key);
-    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.recipient_key);
+    printf("userctx %d ", persist->key.aeadalg);
+    print_hex(persist->key.sender_id_len, persist->key.sender_id);
+    print_hex(persist->key.recipient_id_len, persist->key.recipient_id);
+    print_hex(oscore_crypto_aead_get_ivlength(persist->key.aeadalg), persist->key.common_iv);
+    print_hex(oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.sender_key);
+    print_hex(oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.recipient_key);
 
     struct oscore_context_b1_replaydata replaydata;
     oscore_context_b1_replay_extract(&context_u, &replaydata);
@@ -1376,20 +1381,22 @@ static int cmdline_interactive(int argc, char **argv) {
 
 /** Ask the user to persist some data. Call this while you hold the secctx_u lock. */
 static void userctx_maybe_persist(void) {
-    if (!secctx_u_good)
+    if (!persist->key_good)
         return;
 
     uint64_t wanted = oscore_context_b1_get_wanted(&context_u);
     if (wanted == userctx_last_persisted)
         return;
 
+    persist->stored_sequence_number = wanted;
+    persistence_commit();
+
     printf("\nI trust you to forget any earlier knowledge about the user context, only recover it using this line:\n");
-    printf("userctx %d ", context_u.primitive.aeadalg);
-    print_hex(context_u.primitive.sender_id_len, context_u.primitive.sender_id);
-    print_hex(context_u.primitive.recipient_id_len, context_u.primitive.recipient_id);
-    print_hex(oscore_crypto_aead_get_ivlength(context_u.primitive.aeadalg), context_u.primitive.common_iv);
-    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.sender_key);
-    print_hex(oscore_crypto_aead_get_keylength(context_u.primitive.aeadalg), context_u.primitive.recipient_key);
+    print_hex(persist->key.sender_id_len, persist->key.sender_id);
+    print_hex(persist->key.recipient_id_len, persist->key.recipient_id);
+    print_hex(oscore_crypto_aead_get_ivlength(persist->key.aeadalg), persist->key.common_iv);
+    print_hex(oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.sender_key);
+    print_hex(oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.recipient_key);
     printf(" %llu\n", wanted);
 
     oscore_context_b1_allow_high(&context_u, wanted);
@@ -1408,6 +1415,25 @@ static const shell_command_t shell_commands[] = {
 
 int main(void)
 {
+    bool flash_valid = persistence_init(&persist);
+
+    if (flash_valid) {
+        oscore_context_b1_initialize(&context_u, &persist->key, persist->stored_sequence_number, NULL);
+        printf("Loaded data from flash. Target is %s, keys are %s\n",
+                persist->target.port == 0 ? "unset" : "set",
+                persist->key_good ? "valid" : "invalid"
+              );
+        // FIXME: Not calling maybe_persist here; I'd like to see how the
+        // server responds when it has no sequence numbers to answer 4.01 Echo
+
+        // No need to unlock secctx_u_usage, we didn't grab it in the first
+        // place as this is startup code anyway
+    } else {
+        printf("No valid data loaded from flash\n");
+        persist->target.port = 0;
+        persist->key_good = false;
+    }
+
     gcoap_register_listener(&_listener);
 
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);

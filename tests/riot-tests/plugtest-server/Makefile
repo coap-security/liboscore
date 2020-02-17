@@ -12,9 +12,13 @@ CFLAGS += -DOSCORE_NANOCOAP_MEMMOVE_MODE
 
 BOARD ?= native
 
+FEATURES_OPTIONAL += periph_flashpage
+
 ifeq ($(BOARD),particle-xenon)
 # when using particle-xenon
 PARTICLE_MONOFIRMWARE = 1
+# Don't checksum the whole program, that'd render the whole program unbootable
+# once data is persisted
 CFLAGS += -DPARTICLE_MONOFIRMWARE_CHECKSUMLIMIT
 
 USEMODULE += auto_init_usbus
