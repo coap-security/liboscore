@@ -848,6 +848,7 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         } else {
             errormessage = "Failed to build 4.01 response";
             errorcode = COAP_CODE_SERVICE_UNAVAILABLE;
+            mutex_unlock(secctx_lock);
             goto error;
         }
     }
