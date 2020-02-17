@@ -792,6 +792,11 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 
     if (secctx_lock == &secctx_u_usage) {
         secctx_u_change += 1;
+
+        // Give the persistence layer a chance to allocate numbers that'll be
+        // needed for pulling an Echo number or responding with an own sequence
+        // number.
+        userctx_maybe_persist();
     }
 
     oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
@@ -805,6 +810,12 @@ static ssize_t _oscore(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
                     );
 
     mutex_unlock(secctx_lock);
+
+    // If we wanted to be absolutely sure that no operation fails, we could
+    // call userctx_maybe_persist here as well -- but because the
+    // implementation uses the default oscore_context_b1_get_wanted which
+    // ensures that there are K/2 numbers left, the above invocation suffices.
+    // if (secctx_lock == &secctx_u_usage) userctx_maybe_persist();
 
     if (!respond_401echo && oscerr != OSCORE_UNPROTECT_REQUEST_OK) {
         if (oscerr == OSCORE_UNPROTECT_REQUEST_DUPLICATE) {
@@ -1056,13 +1067,21 @@ static void send_static_request(char value) {
         return;
     }
     secctx_u_change += 1;
+
+    // Ensure we have sequence numbers for this. Placing it here is slightly
+    // sub-optimal (as it might block before transmission), but doing this in a
+    // more clever way (eg. by calling it before the both successful and
+    // unsuccessful returns, after sending, and possibly with some tweaking to
+    // be more eager to write to flash when there is time to spare) would make
+    // the demo code more complex.
+    userctx_maybe_persist();
+
     if (oscore_prepare_request(native, &oscmsg, &secctx_u, &request_data.request_id) != OSCORE_PREPARE_OK) {
         mutex_unlock(&secctx_u_usage);
         printf("Failed to prepare request encryption\n");
-
-        userctx_maybe_persist();
         return;
     }
+
     mutex_unlock(&secctx_u_usage);
 
     oscore_msg_protected_set_code(&oscmsg, 0x03 /* PUT */);
@@ -1293,6 +1312,9 @@ static int cmdline_userctx(int argc, char **argv) {
     if (ret == 0) {
         persist->key_good = true;
         ctx_u_received_echo_size = -1;
+        // Not "maybe": with userctx_last_persisted just set to -1, this will
+        // *for sure* take some numbers, and we want that because it'll get the
+        // new configuration actually commmitted to flash.
         userctx_maybe_persist();
     }
 
@@ -1380,7 +1402,16 @@ static int cmdline_interactive(int argc, char **argv) {
 #endif
 }
 
-/** Ask the user to persist some data. Call this while you hold the secctx_u lock. */
+/** Ask the user to persist some data. Call this while you hold the secctx_u lock.
+ *
+ * Ideally, this would be called in idle times after requests were sent, or in
+ * a mixture of time- and event-based calls. Failure to call this often enough
+ * results in encryption errors, as no sequence numbers are available.
+ *
+ * Note that due to the default oscore_context_b1_get_wanted function that is
+ * used, there is always some reserve in sequence numbers, so cases of actually
+ * running out are unlikely.
+ * */
 static void userctx_maybe_persist(void) {
     if (!persist->key_good)
         return;
@@ -1424,8 +1455,9 @@ int main(void)
                 persist->target.port == 0 ? "unset" : "set",
                 persist->key_good ? "valid" : "invalid"
               );
-        // FIXME: Not calling maybe_persist here; I'd like to see how the
-        // server responds when it has no sequence numbers to answer 4.01 Echo
+        // Not calling userctx_maybe_persist here, as that would result in a
+        // flash write right after power-up. There's no need for that -- when
+        // OSCORE traffic arrives or is sent, room will be made in the sequence numbers.
 
         // No need to unlock secctx_u_usage, we didn't grab it in the first
         // place as this is startup code anyway
