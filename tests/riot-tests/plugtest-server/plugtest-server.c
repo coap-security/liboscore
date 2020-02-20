@@ -1423,13 +1423,7 @@ static void userctx_maybe_persist(void) {
     persist->stored_sequence_number = wanted;
     persistence_commit();
 
-    printf("\nI trust you to forget any earlier knowledge about the user context, only recover it using this line:\n");
-    print_hex(persist->key.sender_id_len, persist->key.sender_id);
-    print_hex(persist->key.recipient_id_len, persist->key.recipient_id);
-    print_hex(oscore_crypto_aead_get_ivlength(persist->key.aeadalg), persist->key.common_iv);
-    print_hex(oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.sender_key);
-    print_hex(oscore_crypto_aead_get_keylength(persist->key.aeadalg), persist->key.recipient_key);
-    printf(" %llu\n", wanted);
+    printf("\nThe user context was persisted to flash memory, and will resume at sender sequence number %" PRIu64 ":\n", wanted);
 
     oscore_context_b1_allow_high(&context_u, wanted);
     userctx_last_persisted = wanted;

@@ -91,7 +91,7 @@ That branch is kept sufficiently close to the version used in here.
   and copy the respective outputs to the two terminals.
 
   Note that these contexts can not be used twice, as doing so results in nonce reuse and thus cryptographic doom.
-  If you restart any of the boards, please modify the secret and distribute the new security contexts.
+  Before you enter any of that again, please modify the secret and distribute the new security contexts.
 
 * In order to find a usable destination address,
   you'll need to tell the boards which LEDs to switch.
@@ -115,3 +115,17 @@ That branch is kept sufficiently close to the version used in here.
   which will send an "on" whenever the button is pushed and "off" whenever it is released
   for 10 button cycles,
   returning you to the prompt afterwards.
+
+Detached mode
+-------------
+
+Both the security context and the target address
+are persisted in the flash memory of the devices;
+the former using a @ref oscore_context_b1.
+
+When boards power up again, parts of their security contexts are not initialized or recovered,
+so it takes failing attempts to recover them.
+Real-world applications that try to get things done as quickly as possible
+would probably employ retransmission or initialize eagerly;
+in the demo, these mechanisms are left out for simplicity and for visibility.
+
