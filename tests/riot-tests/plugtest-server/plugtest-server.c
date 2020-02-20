@@ -1,5 +1,6 @@
 #include <net/gcoap.h>
 #include <periph/gpio.h>
+#include <thread.h>
 #include <oscore_native/message.h>
 #include <oscore/message.h>
 #include <oscore/contextpair.h>
@@ -1381,26 +1382,28 @@ static int cmdline_userctx_shutdown(int argc, char **argv) {
     return 0;
 }
 
-static int cmdline_interactive(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
+// This is a brutally inefficient task as it constantly polls the buttons --
+// but at the same time it is easily portable. Don't run any power measurements
+// while this is running.
+static void *interactive_thread(void *arg) {
+    (void)arg;
 #ifdef BTN0_PIN
     bool old = false;
-    int remaining = 10;
-    while (remaining) {
+    while (true) {
         bool new = !gpio_read(BTN0_PIN);
         if (new != old) {
             send_static_request('0' + new);
-            remaining --;
         };
         old = new;
     }
-    return 0;
+    return NULL;
 #else
     printf("Can't execute interactive demo for lack of hardware button\n");
-    return 1;
+    return NULL;
 #endif
 }
+
+char interactive_thread_stack[THREAD_STACKSIZE_MAIN];
 
 /** Ask the user to persist some data. Call this while you hold the secctx_u lock.
  *
@@ -1435,7 +1438,6 @@ static const shell_command_t shell_commands[] = {
     {"target", "Set the IP and port to which to send on and off requests", cmdline_target },
     {"userctx", "Reset the user context with new key material", cmdline_userctx },
     {"userctx-shutdown", "Switch off the user context but allow resuming it later", cmdline_userctx_shutdown },
-    { "interactive", "Poll the first hardware button to send 10 on/off commands via OSCORE when pressed", cmdline_interactive },
     { NULL, NULL, NULL }
 };
 
@@ -1462,6 +1464,10 @@ int main(void)
     }
 
     gcoap_register_listener(&_listener);
+
+    thread_create(interactive_thread_stack, sizeof(interactive_thread_stack),
+                            THREAD_PRIORITY_IDLE - 1, THREAD_CREATE_STACKTEST,
+                            interactive_thread, NULL, "interactive");
 
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     // larger than usual to accomodate key entry
