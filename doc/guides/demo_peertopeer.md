@@ -108,13 +108,9 @@ That branch is kept sufficiently close to the version used in here.
       > on
       > off
 
-* You can use the Mode button for greater effect by entering interactive mode using
-
-      > interactive
-
-  which will send an "on" whenever the button is pushed and "off" whenever it is released
-  for 10 button cycles,
-  returning you to the prompt afterwards.
+* At any time, you can also press the "MODE" button:
+  At the time it gets pressed, an "on" is sent;
+  when it is released, an "off" is sent.
 
 Detached mode
 -------------
@@ -123,9 +119,19 @@ Both the security context and the target address
 are persisted in the flash memory of the devices;
 the former using a @ref oscore_context_b1.
 
+This allows a board that is configured once to be shown off toggling the other board's LED
+from a battery attached to the battery connector
+or from a USB power supply.
+(Power banks are not ideal, as they often shut down when too little current is drawn).
+
+Beware that the demo uses reliable transmission,
+which can keep a device busy even when the state they are trying to transmit is not even current any more.
+This allows showing behaviors of retransmission,
+but is something to be aware of when doing live demos,
+especially when the receiving node is offline for long enough for retries to get more sparse.
+
 When boards power up again, parts of their security contexts are not initialized or recovered,
 so it takes failing attempts to recover them.
 Real-world applications that try to get things done as quickly as possible
 would probably employ retransmission or initialize eagerly;
 in the demo, these mechanisms are left out for simplicity and for visibility.
-
