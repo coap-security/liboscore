@@ -13,12 +13,15 @@ int testmain(int introduce_error)
 {
     oscore_msgerr_native_t msgerr;
 
-    struct oscore_context_primitive primitive = {
+    const static struct oscore_context_primitive_immutables key = {
         .aeadalg = 24,
         .common_iv = "d\xf0\xbd" "1MK\xe0<'\x0c+\x1c",
 
         .recipient_id_len = 0,
         .recipient_key = "\xd5" "0\x1e\xb1\x8d\x06xI\x95\x08\x93\xba*\xc8\x91" "A|\x89\xae\t\xdfJ8U\xaa\x00\n\xc9\xff\xf3\x87Q",
+    };
+    struct oscore_context_primitive primitive = {
+        .immutables = &key
     };
     oscore_context_t secctx = {
         .type = OSCORE_CONTEXT_PRIMITIVE,
