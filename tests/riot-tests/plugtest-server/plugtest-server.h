@@ -1,3 +1,14 @@
+/** @file
+ *
+ * Server side of an OSCORE plugtest server
+ *
+ * See https://github.com/EricssonResearch/OSCOAP for a description of the plug
+ * tests executable with this.
+ *
+ * For setup, this relies on the common setup code in demo.[hc].
+ *
+ */
+
 #ifndef PLUGTEST_SERVER_H
 #define PLUGTEST_SERVER_H
 
@@ -13,7 +24,7 @@
 #define D_RECIPIENT_KEY {173, 139, 170, 28, 148, 232, 23, 226, 149, 11, 247, 99, 61, 79, 20, 148, 10, 6, 12, 149, 135, 5, 18, 168, 164, 11, 216, 42, 13, 221, 69, 39}
 #define D_COMMON_IV {199, 178, 145, 95, 47, 133, 49, 117, 132, 37, 73, 212}
 
-ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
+ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
 
 struct hello_state {
     bool code_ok;

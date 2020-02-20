@@ -1,3 +1,17 @@
+/** @file
+ *
+ * Demo application, including plugtest server
+ *
+ * These files set up a RIOT application that runs both the plugtest server and
+ * a few demo resources (</light>, </sensordata>).
+ *
+ * It uses the RIOT shell for configuration, the small persistens abstraction
+ * from persistence.h to store confiugred options, and the
+ * intermediate-integration.h mechanisms to dispatch OSCORE requests.
+ * Furthermore, it contains commands to send CoAP messages to another
+ * endpoint's </light> resource.
+ */
+
 #ifndef DEMO_SERVER_H
 #define DEMO_SERVER_H
 

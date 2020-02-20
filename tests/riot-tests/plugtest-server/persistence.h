@@ -22,6 +22,10 @@
  * RIOT lacks a generic journaling configuration storage mechanism, actual
  * applications will have their own mechanisms for commissioning and
  * configuration anyway, which can then provide more elaborate persistence.
+ *
+ * On native RIOT boards, the behavior of flash memory is emulated by reading
+ * from and writing to a `persistence.flash` file, which is discarded when
+ * found to be older than the current executable itself.
  */
 
 /** Application-specific data that needs to persist through reboots */

@@ -1,7 +1,7 @@
 #include "plugtest-server.h"
 #include "intermediate-integration.h"
 
-ssize_t _hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
     (void)ctx;
 

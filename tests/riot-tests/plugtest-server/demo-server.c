@@ -321,11 +321,10 @@ static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 }
 
 static const coap_resource_t _resources[] = {
-    { "/", COAP_POST | COAP_FETCH, _oscore, NULL },
-    { "/oscore/hello/coap", COAP_GET, _hello, NULL },
+    { "/", COAP_POST | COAP_FETCH, oscore_handler, NULL },
+    { "/oscore/hello/coap", COAP_GET, plugtest_nonoscore_hello, NULL },
     { "/riot/board", COAP_GET, _riot_board_handler, NULL },
-    // FIXME: This creates an artefact entry in .well-known/core, and at the
-    // same time makes / unusable for anything else
+    // FIXME: This creates an artefact entry in .well-known/core
 };
 
 static gcoap_listener_t _listener = {

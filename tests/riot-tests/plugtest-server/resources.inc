@@ -1,6 +1,13 @@
 #include "plugtest-server.h"
 #include "demo-server.h"
 
+/** Resources used by the oscore_handler dispatcher
+ *
+ * As a `struct dispatcher_choice` is built from this, the items in here must
+ * follow its constraints; that is most easily achieved by sorting them by path
+ * (for an arbitrary order on strings).
+ */
+
 /* From the plug test */
 
 RESOURCE(hello, 3, PATH("oscore", "hello", "1"), hello_parse, hello_build, struct hello_state)
