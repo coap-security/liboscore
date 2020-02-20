@@ -118,7 +118,9 @@
  * initialized, it's just that most operations will fail).
  * */
 struct oscore_context_b1 {
-    /** @brief Underlying primitive context.
+    /** @private
+     *
+     * @brief Underlying primitive context.
      *
      * Having this as an inlined first struct member means that contextpair.h
      * cases that access a primitive context directly or through a B.1 context
