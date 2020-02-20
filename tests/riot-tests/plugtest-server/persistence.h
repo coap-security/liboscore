@@ -1,3 +1,6 @@
+#ifndef PERSISTENCE_H
+#define PERSISTENCE_H
+
 #include <stdbool.h>
 #include <oscore/context_impl/primitive.h>
 #include <net/gcoap.h>
@@ -43,3 +46,5 @@ bool persistence_init(struct persisted_data **data);
 /** Write the memory area previously returned by persistence_init to flash.
  * Only returns on success. */
 void persistence_commit(void);
+
+#endif
