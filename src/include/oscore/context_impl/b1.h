@@ -216,7 +216,7 @@ void oscore_context_b1_allow_high(
         uint64_t seqno
         );
 
-/*** @brief The next sequence number a B.1 context wants to be allowed to use
+/** @brief The next sequence number a B.1 context wants to be allowed to use
  *
  * @param[in] secctx B.1 security context to query
  *
