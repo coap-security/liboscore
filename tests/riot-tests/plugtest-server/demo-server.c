@@ -355,7 +355,7 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
 
     if (memo->state != GCOAP_MEMO_RESP) {
         printf("Request returned without a response\n");
-        return;
+        goto error;
     }
 
     oscore_oscoreoption_t header;
