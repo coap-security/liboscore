@@ -102,9 +102,11 @@ void light_parse(oscore_msg_protected_t *in, void *vstate)
             if (payload_length == 1 && '0' <= payload[0] && payload[0] <= '1') {
                 if (payload[0] == '1') {
                     LED_ON(0);
+                    printf("LED switched to ON\n");
                     ledstate = true;
                 } else {
                     LED_OFF(0);
+                    printf("LED switched to OFF\n");
                     ledstate = false;
                 }
                 *responsecode = 0x44 /* 2.04 Changed */;
