@@ -11,7 +11,7 @@ Until [12751](https://github.com/RIOT-OS/RIOT/pull/12751) is merged,
 please go to the RIOT checkout in `tests/riot-tests/RIOT` and run:
 
     $ git remote add chrysn https://github.com/chrysn-pull-requests/RIOT
-    $ git fetch
+    $ git fetch chrysn
     $ git checkout particle-xenon-native-bootloader2
 
 That branch is kept sufficiently close to the version used in here.

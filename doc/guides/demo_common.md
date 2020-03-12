@@ -56,7 +56,7 @@ for flashing instructions and any installation prerequisites, follow the board's
 
       $ git clone https://github.com/chrysn/aiocoap
       $ cd aiocoap
-      $ pip install --user --upgrade ".[linkheader,oscore,prettyprint]"
+      $ pip3 install --user --upgrade ".[linkheader,oscore,prettyprint]"
 
   This is using a local installation of aiocoap because it will allow running the plug tests that are only available in the source repository and not part of the library shipped via PyPI.
 
