@@ -35,11 +35,11 @@ for flashing instructions and any installation prerequisites, follow the board's
   * The GCC toolchain for ARM Cortex-M3 ([as per RIOT's instructions](https://github.com/RIOT-OS/RIOT/wiki/Family:-ARM))
   * The [`dfu-util` bootloader as described by Particle](https://docs.particle.io/support/particle-tools-faq/installing-dfu-util/#activating-dfu-mode-blinking-yellow-) bootloader
   * A native GCC toolchain
-  * Tools used in the build process: GNU Make, Python 3.
+  * Tools used in the build process: GNU Make, Python 3 and pyserial.
 
   Debian users can set all of this up by running
 
-      $ sudo apt install gcc make gcc-arm-none-eabi gdb-multiarch binutils-multiarch dfu-util
+      $ sudo apt install gcc make gcc-arm-none-eabi gdb-multiarch binutils-multiarch dfu-util python3-serial
       $ sudo -e /etc/udev/rules.d/50-particle.rules
 
   and entering there:
