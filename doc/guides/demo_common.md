@@ -12,6 +12,7 @@ the guides will assume Linux as the operating system, and a x86-based platform.
 The instructions are generic on Linux distributions, but also contain specific information relevant to Debian users.
 If you have yet to make a choice on which operating system to run the demos,
 [Debian 10 (Buster) or newer](https://www.debian.org/distrib/netinst) is recommended.
+Most will apply to Ubuntu just the same, but please note that the ARM GCC shipped with Ubuntu Bionic is [**not** supported in RIPT](https://github.com/RIOT-OS/RIOT/pull/10404); later versions work fine.
 
 Some demos use [Particle Xenon boards](https://docs.particle.io/xenon/) for hands-on experience.
 The board has been [deprecated by its vendor](https://blog.particle.io/2020/01/28/mesh-deprecation/),
