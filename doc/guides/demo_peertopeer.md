@@ -103,6 +103,14 @@ and are usually assigned by assigning the first currently unused one.
   Security contexts are written to ROM inside the device,
   and persist through reboots until reconfigured or the firmware is uploaded again.
 
+  @warning
+  There is currently an unresolved issue with the data being persisted
+  in a place where firmware checksumming is applied on the Particle Xenon board;
+  most other boards and programming methods should be fine.
+  With affected boards, any persisted data result in a failure to start up,
+  rendering the firmware inoperable after a reboot, and requiring a reflash.
+  This is tracked as https://gitlab.com/oscore/liboscore/-/issues/49.
+
 * In order to find a usable destination address,
   you'll need to tell the boards which LEDs to switch.
   This is done by entering
