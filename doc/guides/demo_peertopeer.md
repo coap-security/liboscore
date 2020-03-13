@@ -42,9 +42,11 @@ That branch is kept sufficiently close to the version used in here.
   after a few seconds,
   ModemManager will relinquish the device again.
 
-  If any error persists, unplug all boards and check whether a `/dev/ttyACM0` exists.
+  If you see errors like "Permission denied: '/dev/ttyACM0'", unplug all boards and check whether a `/dev/ttyACM0` exists.
   If so, watch the `/dev` directory as you plug in your boards,
   and substitute the device name accordingly.
+  In some operating systems, you may need to help yourself to permissons on those device files,
+  often by becoming member of the "plugdev" or "dialout" group.
 
   Eventually, the terminal program will indicate readiness by printing "Welcome to pyterm!".
   You may need to press return to flush out any remaining commands ModemManager tried to send,
@@ -53,6 +55,11 @@ That branch is kept sufficiently close to the version used in here.
   Try `help` and have a look around the system!
 
 * Repeat the first steps for the second board: enter the bootloader, flash, and open a terminal – this time at `/dev/ttyACM1`.
+
+Once your boards are flashed, you can unplug and replug them at any time
+without the need to flash them again.
+Beware that their TTY device names are not persistent,
+and are usually assigned by assigning the first currently unused one.
 
 * Run `ifconfig` on both devices.
 
@@ -93,6 +100,9 @@ That branch is kept sufficiently close to the version used in here.
   Note that these contexts can not be used twice, as doing so results in nonce reuse and thus cryptographic doom.
   Before you enter any of that again, please modify the secret and distribute the new security contexts.
 
+  Security contexts are written to ROM inside the device,
+  and persist through reboots until reconfigured or the firmware is uploaded again.
+
 * In order to find a usable destination address,
   you'll need to tell the boards which LEDs to switch.
   This is done by entering
@@ -102,6 +112,9 @@ That branch is kept sufficiently close to the version used in here.
   in the command prompt, where the IP address is the other board's and the zone identifier is the own as with the ping earlier.
   This will configure the "on" and "off" commands to act on that address,
   in particular its `/light` resource that will receive plain "0" and "1" values.
+
+  Like the security context,
+  the target address is persisted in ROM.
 
 * Showtime: Toggle the other device's LEDs with
 
