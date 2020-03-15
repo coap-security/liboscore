@@ -66,7 +66,7 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
         oscore_crypto_aead_encryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
         size_t aad_len,
-        uint8_t plaintext_len,
+        size_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
         )
@@ -136,7 +136,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
         oscore_crypto_aead_decryptstate_t *state,
         oscore_crypto_aeadalg_t alg,
         size_t aad_len,
-        uint8_t plaintext_len,
+        size_t plaintext_len,
         const uint8_t *iv,
         const uint8_t *key
         )
