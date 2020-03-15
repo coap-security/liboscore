@@ -228,7 +228,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_feed_aad(
  */
 OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
-        oscore_crypto_aead_encryptstate_t *state,
+        oscore_crypto_aead_decryptstate_t *state,
         uint8_t *buffer,
         size_t buffer_len
         );
