@@ -1,0 +1,16 @@
+[package]
+name = "liboscore-cryptobackend-aead"
+version = "0.1.0"
+authors = ["chrysn <chrysn@fsfe.org>"]
+edition = "2018"
+
+[dependencies]
+aead = { version = "0.2", default-features = false }
+typenum = "1"
+heapless = "0.5"
+# as expected by chacha
+generic-array = "0.12"
+
+chacha20poly1305 = { version = "0.4", optional = true, default-features = false, features=["chacha20"] }
+aes-ccm = { version = "0.4", default-features = false, optional = true }
+aes-gcm = { version = "0.4", default-features = false, optional = true, features = ["aes"] }

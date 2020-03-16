@@ -1,0 +1,11 @@
+[package]
+name = "liboscore-cryptobackend-aead-standalone"
+version = "0.1.0"
+authors = ["chrysn <chrysn@fsfe.org>"]
+edition = "2018"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+liboscore-cryptobackend-aead = { path = "../liboscore-cryptobackend-aead", features = ["chacha20poly1305", "aes-ccm", "aes-gcm"] }

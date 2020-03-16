@@ -1,0 +1,7 @@
+BACKEND_OBJS += ../../rust/liboscore-cryptobackend-aead-standalone/target/debug/libliboscore_cryptobackend_aead_standalone.a
+
+rustbuilthdr/oscore_native/crypto_type.h:
+	mkdir -p $$(dirname $@)
+	(cd ../../rust/liboscore-cryptobackend-aead/ && cbindgen --lang=C) > $@
+
+CFLAGS += -Irustbuilthdr/

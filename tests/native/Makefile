@@ -29,6 +29,7 @@ else
 # Makefile.libcose, but even some expansions run into errors
 $(warning "Before running anything else, run `make libs` to ensure all Makefile components are ready")
 endif
+include Makefile.rustaead
 
 BACKEND_OBJS += testwrapper.c
 
