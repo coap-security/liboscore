@@ -65,6 +65,31 @@ oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, 
 OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len);
 
+/** @brief Obtain the algorithms's numeric COSE identifier
+ *
+ * @param[in] alg Algorithm
+ * @param[out] number Memory address to be populated with the COSE identifier
+ *
+ * Returns an OK value if a numeric identifier exists for the algorithm; if
+ * not, a string identifier needs to exist.
+ */
+OSCORE_NONNULL
+oscore_cryptoerr_t oscore_crypto_aead_get_number(oscore_crypto_aeadalg_t alg, int32_t *number);
+
+/** @brief Obtain the algorithms's string COSE identifier
+ *
+ * @param[in] alg Algorithm
+ * @param[out] string Memory address to be populated with the location of a COSE identifier
+ * @param[out] string_len Memory address to be populated with the COSE identifier's length
+ *
+ * The memory location containing the string is expected to be static and constant.
+ *
+ * Returns an OK value if a string identifier exists for the algorithm; if
+ * not, a numeric identifier needs to exist.
+ */
+OSCORE_NONNULL
+oscore_cryptoerr_t oscore_crypto_aead_get_string(oscore_crypto_aeadalg_t alg, const char **number, size_t *string_len);
+
 /** @brief Get the tag length that is used for a particular algorithm
  *
  * @param[in] alg An AEAD algorithm

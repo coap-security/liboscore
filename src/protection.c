@@ -112,11 +112,17 @@ struct aad_sizes predict_aad_size(
     ret.class_i_length = 0;
     (void) class_i_source;
 
+    int32_t numeric_identifier = 0;
+    // error handling to follow when there are string-based algorithms
+    // to test this with; until then, the estimate is infallible and errs when
+    // feeding.
+    oscore_crypto_aead_get_number(aeadalg, &numeric_identifier);
+
     ret.external_aad_length = \
             1 /* array length 5 */ +
             1 /* oscore version 1 */ +
             1 /* 1-long array of of */ +
-                cbor_intsize(aeadalg < 0 ? -1 - aeadalg : aeadalg) /* FIXME strings? */ +
+                cbor_intsize(numeric_identifier < 0 ? -1 - numeric_identifier : numeric_identifier) /* FIXME strings? */ +
             cbor_intsize(request_kid_len) + request_kid_len + /* request_kid */
             cbor_intsize(request->used_bytes) + request->used_bytes + /* request_piv */
             cbor_intsize(ret.class_i_length) + ret.class_i_length;
@@ -165,8 +171,10 @@ oscore_cryptoerr_t feed_aad(
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Used algorithm
-    // FIXME strings?
-    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(aeadalg < 0 ? -1 - aeadalg : aeadalg, intbuf, aeadalg < 0 ? 0x20 : 0x00));
+    int32_t numeric_identifier = 0;
+    err = oscore_crypto_aead_get_number(aeadalg, &numeric_identifier);
+    if (oscore_cryptoerr_is_error(err)) { return err; }
+    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(numeric_identifier < 0 ? -1 - numeric_identifier : numeric_identifier, intbuf, numeric_identifier < 0 ? 0x20 : 0x00));
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request KID

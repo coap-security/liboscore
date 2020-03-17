@@ -15,6 +15,13 @@ oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, 
     }
 }
 
+oscore_cryptoerr_t oscore_crypto_aead_get_number(oscore_crypto_aeadalg_t alg, int32_t *number)
+{
+    // Valid by the design of libcose's algorithm identifiers
+    *number = alg;
+    return COSE_OK;
+}
+
 bool oscore_cryptoerr_is_error(oscore_cryptoerr_t err)
 {
     return err != COSE_OK;
