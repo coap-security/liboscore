@@ -1,6 +1,7 @@
 #include <oscore/protection.h>
 
 #include <assert.h>
+#include <string.h>
 
 #include <oscore_native/crypto.h>
 

@@ -2,6 +2,8 @@
 #include <oscore/context_impl/primitive.h>
 #include <oscore/context_impl/b1.h>
 
+#include <stdlib.h>
+
 /* Given a PRIMITIVE or B1 context, return a pointer to its actual primitive
  * payload.
  *
