@@ -19,24 +19,45 @@ struct testdata {
     oscore_crypto_aeadalg_t alg;
     const uint8_t *key;
     const uint8_t *nonce;
+    const uint8_t *expected_ciphertext;
 };
 
 static const uint8_t chacha_key[] = CHACHA_SENDER_KEY;
 // This happens to be the actually used IV for PIV 0 and the empty sender ID
 static const uint8_t chacha_nonce[] = CHACHA_COMMON_IV;
+// Extracted using the libcose backend that a) tests against known vectors
+// itself and b) has interoperated with aiocoap both on ChaCha and on AES-CCM.
+// When adding new algorithms, the easiest way to get the initial vector is to
+// set expected_ciphertext NULL, run in gdb until the inevitable segfault, go
+// up to the test_with stackframe, `print sizeof(message) + tag_length` and use
+// that value for `print/x arena[0]@61` or similar.
+static const uint8_t chacha_expected_ciphertext[] = {0x9, 0x4a, 0xcb, 0x7a,
+    0x92, 0xe7, 0x88, 0x6e, 0x21, 0x7f, 0x19, 0xac, 0xf6, 0x3d, 0xcd, 0x78,
+    0xbb, 0xc1, 0x36, 0x5a, 0x26, 0x38, 0xb9, 0x63, 0xee, 0xa0, 0x88, 0x40,
+    0xda, 0xa3, 0x9e, 0xbe, 0x7c, 0x9f, 0x2e, 0x75, 0xa5, 0xb4, 0xc0, 0xbc,
+    0xe2, 0xb0, 0xb8, 0xfa, 0x21, 0xd3, 0x9e, 0x81, 0x52, 0x4d, 0x97, 0xd1,
+    0x48, 0x1c, 0xd7, 0x2a, 0x2b, 0x94, 0xab, 0x2, 0xf1};
 static struct testdata chacha_data = {
     .alg = 24,
     .key = chacha_key,
     .nonce = chacha_nonce,
+    .expected_ciphertext = chacha_expected_ciphertext,
 };
 
 #ifdef CRYPTO_TINYDTLS
 static const uint8_t aesccm_key[] = AESCCM_SENDER_KEY;
 static const uint8_t aesccm_nonce[] = AESCCM_COMMON_IV;
+// see chacha_expected_ciphertext for source
+static const uint8_t aesccm_expected_ciphertext[] = {0xc8, 0xe3, 0x96, 0x8a,
+    0xd0, 0x78, 0x7e, 0x0, 0xc8, 0x69, 0x82, 0x47, 0xe, 0xfe, 0x73, 0x99, 0x65,
+    0x79, 0x86, 0xa9, 0xb6, 0x94, 0xf6, 0x66, 0xc9, 0xdf, 0x4f, 0x87, 0x64,
+    0xae, 0xde, 0xca, 0x8e, 0xde, 0x1a, 0x48, 0x6f, 0xe0, 0x18, 0x31, 0x95,
+    0xe3, 0xb7, 0x1f, 0x98, 0xea, 0xe, 0xe, 0xde, 0xfe, 0x3, 0x82, 0xd7};
 static struct testdata aesccm_data = {
     .alg = 10,
     .key = aesccm_key,
     .nonce = aesccm_nonce,
+    .expected_ciphertext = aesccm_expected_ciphertext,
 };
 #endif
 
@@ -83,6 +104,7 @@ int test_with(struct testdata *data, int introduce_error)
     if (oscore_cryptoerr_is_error(err)) return 33;
 
     assert(memcmp(message, arena, sizeof(message)) != 0);
+    assert(memcmp(arena, data->expected_ciphertext, sizeof(message) + tag_length) == 0);
     arena[0] ^= (introduce_error == 1);
 
     oscore_crypto_aead_decryptstate_t decstate;
