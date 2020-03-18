@@ -7,4 +7,4 @@ typedef int32_t oscore_crypto_hkdfalg_t;
 typedef enum {OSCORE_CRYPTOERR_DONTCARE} oscore_cryptoerr_t;
 
 #define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)13)
-#define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)16)
+#define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)32)
