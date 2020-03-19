@@ -336,7 +336,9 @@ fn oscore_crypto_aead_decrypt_start(
     // struct by its fields
     let mut tempstate = MaybeUninit::uninit();
     let ret = oscore_crypto_aead_encrypt_start(&mut tempstate, alg, aad_len, plaintext_len, iv, key);
-    state.write(DecryptState { actually_encrypt: unsafe { tempstate.assume_init() } });
+    if let CryptoErr::Ok = ret {
+        state.write(DecryptState { actually_encrypt: unsafe { tempstate.assume_init() } });
+    }
     ret
 }
 
