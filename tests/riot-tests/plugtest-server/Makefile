@@ -51,11 +51,11 @@ USEMODULE += fib
 CFLAGS += -DGNRC_NETIF_IPV6_ADDRS_NUMOF=3
 endif
 
-# The +1500 it's still a but much for my taste, and I should confirm my suspicion about
-# most of it being the crypto library at some point.
-CFLAGS += -DGCOAP_STACK_SIZE="THREAD_STACKSIZE_DEFAULT + DEBUG_EXTRA_STACKSIZE + sizeof(coap_pkt_t) + 1500"
+# The +20000 it's still a but much for my taste, and I should confirm my suspicion about
+# most of it being the crypto library at some point. (The Rust backend needs 20k, libcose does with 1.5k)
+CFLAGS += -DGCOAP_STACK_SIZE="THREAD_STACKSIZE_DEFAULT + DEBUG_EXTRA_STACKSIZE + sizeof(coap_pkt_t) + 20000"
 # As the main thread sends messages, it needs an increased size.
-CFLAGS += -DTHREAD_STACKSIZE_MAIN="THREAD_STACKSIZE_DEFAULT + THREAD_EXTRA_STACKSIZE_PRINTF + 1500"
+CFLAGS += -DTHREAD_STACKSIZE_MAIN="THREAD_STACKSIZE_DEFAULT + THREAD_EXTRA_STACKSIZE_PRINTF + 20000"
 
 # Make sanely sized blocks
 CFLAGS += -DGCOAP_PDU_BUF_SIZE=600

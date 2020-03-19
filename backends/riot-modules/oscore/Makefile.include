@@ -16,19 +16,24 @@ ifeq (rust,${OSCORE_CRYPTO_BACKEND})
 INCLUDES += -I${OSCOREBASE}/rust/liboscore-cryptobackend-aead/c-headers
 
 ifeq (native,${BOARD})
-# Doesn't export a TARGET_ARCH
 RUST_ARCH = i686-unknown-linux-gnu
-else
-# It's tricky -- the M4F need thumbv7em-none-eabihf, the M3 with the same TARGET_ARCH need thumb7m-none-eabi
-RUST_ARCH := $(shell echo ${TARGET_ARCH} | sed \
--e 's/^arm-none-eabi$$/thumbv7em-none-eabihf/' \
-)
 endif
 
-BASELIBS += ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/debug/libliboscore_cryptobackend_aead_standalone.a
+ifeq (cortex-m4f,${CPU_ARCH})
+RUST_ARCH = thumbv7em-none-eabihf
+endif
+ifeq (cortex-m3,${CPU_ARCH})
+RUST_ARCH = thumb7m-none-eabi
+endif
 
-${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/debug/libliboscore_cryptobackend_aead_standalone.a:
-	cd ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/ && cargo +nightly build --target=${RUST_ARCH}
+ifeq (riscv-none-embed,${TARGET_ARCH})
+RUST_ARCH = riscv32imac-unknown-none-elf
+endif
 
-.PHONY: ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/debug/libliboscore_cryptobackend_aead_standalone.a
+BASELIBS += ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a
+
+${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a:
+	cd ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/ && cargo +nightly build --target=${RUST_ARCH} --release
+
+.PHONY: ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a
 endif
