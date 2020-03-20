@@ -1,0 +1,30 @@
+language = "C"
+
+header = """
+#define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)13)
+#define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)32)
+
+typedef uint32_t oscore_crypto_hkdfalg_t;
+
+struct oscore_crypto_aead_encryptstate_t {
+    uint64_t padding[64];
+};
+
+struct oscore_crypto_aead_decryptstate_t {
+    uint64_t padding[64];
+};
+"""
+
+# If `type oscore_..._foo = Foo` could be made no_mangle, this could do away with the need for below export.rename 
+# [export]
+# prefix = "liboscore_cryptobackend_aead_"
+
+[export.rename]
+"Algorithm" = "oscore_crypto_aeadalg_t"
+"CryptoErr" = "oscore_cryptoerr_t"
+"DecryptState" = "oscore_crypto_aead_decryptstate_t"
+"EncryptState" = "oscore_crypto_aead_encryptstate_t"
+
+# Could this allow repr(C) on EncryptState?
+#[parse]
+#parse_deps = true
