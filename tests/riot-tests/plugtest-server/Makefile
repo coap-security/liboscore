@@ -12,7 +12,9 @@ CFLAGS += -DOSCORE_NANOCOAP_MEMMOVE_MODE
 
 BOARD ?= native
 
-FEATURES_OPTIONAL += periph_flashpage
+ifneq ($(BOARD),native)
+FEATURES_REQUIRED += periph_flashpage
+endif
 
 ifeq ($(BOARD),particle-xenon)
 # when using particle-xenon
