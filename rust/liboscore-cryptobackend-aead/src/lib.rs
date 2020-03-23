@@ -13,6 +13,11 @@ use typenum::marker_traits::Unsigned;
 use generic_array::GenericArray;
 use core::mem::MaybeUninit;
 
+/// Void stand-in recognized by the cbindgen library by its name
+#[allow(non_camel_case_types)]
+pub enum c_void {
+}
+
 // Those types that are passed in and out as arguments need to be repr(C). The rest can be any repr
 // as it is only stack-allocated and passed through pointers, but CryptoErr and Algorithm are
 // passed around explicitly.
@@ -237,11 +242,13 @@ fn oscore_crypto_aead_encrypt_start(
 #[no_mangle]
 pub extern "C"
 fn oscore_crypto_aead_encrypt_feed_aad(
-    state: &mut EncryptState,
+    state: *mut c_void,
     aad_chunk: *const u8,
     aad_chunk_len: usize,
 ) -> CryptoErr
 {
+    let state: &mut EncryptState = unsafe { core::mem::transmute(state) };
+
     let aad_chunk = unsafe { core::slice::from_raw_parts(aad_chunk, aad_chunk_len) };
     match state.buffered_aad.extend_from_slice(aad_chunk) {
         Ok(()) => CryptoErr::Ok,
@@ -345,12 +352,14 @@ fn oscore_crypto_aead_decrypt_start(
 #[no_mangle]
 pub extern "C"
 fn oscore_crypto_aead_decrypt_feed_aad(
-    state: &mut DecryptState,
+    state: *mut c_void,
     aad_chunk: *const u8,
     aad_chunk_len: usize,
 ) -> CryptoErr
 {
-    oscore_crypto_aead_encrypt_feed_aad(&mut state.actually_encrypt, aad_chunk, aad_chunk_len)
+    let state: &mut DecryptState = unsafe { core::mem::transmute(state) };
+
+    oscore_crypto_aead_encrypt_feed_aad(unsafe { core::mem::transmute(&mut state.actually_encrypt) }, aad_chunk, aad_chunk_len)
 }
 
 /// Workhorse of oscore_crypto_aead_decrypt_inplace that is generic and thus can access all the
