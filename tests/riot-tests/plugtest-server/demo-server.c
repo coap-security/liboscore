@@ -13,10 +13,13 @@
 
 struct persisted_data *persist;
 
-// Having _b and _d static is OK here because the gcoap thread will only process messages one at a time
+// Having _b and _d static is OK here because the gcoap thread will only process messages one at a time.
+//
+// They could be const if it were not for aeadalg that is set by the oscore_crypto_aead_from_number function.
+// (In practical applications that's less of an issue, because *if* the whole primitive key is placed in flash memory at build time, the backend is usually known well enough to also have a known value here, whereas this demo expects to run on any backend)
+//
 // Context B: as specified in plug test description (therefore hard-coded; outside the plug tests, this must only be done only when one of the recovery mechanisms of the OSCORE specification appendix B or equivalent are used).
-static const struct oscore_context_primitive_immutables immutables_b = {
-    .aeadalg = 24,
+static struct oscore_context_primitive_immutables immutables_b = {
     .common_iv = B_COMMON_IV,
 
     .recipient_id_len = 0,
@@ -34,8 +37,7 @@ oscore_context_t secctx_b = {
 mutex_t secctx_b_usage = MUTEX_INIT;
 
 // Context D: as specified in plug test description (see B)
-static const struct oscore_context_primitive_immutables immutables_d = {
-    .aeadalg = 24,
+static struct oscore_context_primitive_immutables immutables_d = {
     .common_iv = D_COMMON_IV,
 
     .recipient_id_len = 0,
@@ -861,6 +863,13 @@ int main(void)
         persist->target.port = 0;
         persist->key_good = false;
     }
+
+    oscore_cryptoerr_t oscerr;
+    oscerr = oscore_crypto_aead_from_number(&immutables_b.aeadalg, 24);
+    // Not having the plugtest context available is not expected
+    assert(!oscore_cryptoerr_is_error(oscerr));
+    oscerr = oscore_crypto_aead_from_number(&immutables_d.aeadalg, 24);
+    assert(!oscore_cryptoerr_is_error(oscerr));
 
     gcoap_register_listener(&_listener);
 
