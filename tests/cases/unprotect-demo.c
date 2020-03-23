@@ -13,13 +13,14 @@ int testmain(int introduce_error)
 {
     oscore_msgerr_native_t msgerr;
 
-    const static struct oscore_context_primitive_immutables key = {
-        .aeadalg = 24,
+    struct oscore_context_primitive_immutables key = {
         .common_iv = "d\xf0\xbd" "1MK\xe0<'\x0c+\x1c",
 
         .recipient_id_len = 0,
         .recipient_key = "\xd5" "0\x1e\xb1\x8d\x06xI\x95\x08\x93\xba*\xc8\x91" "A|\x89\xae\t\xdfJ8U\xaa\x00\n\xc9\xff\xf3\x87Q",
     };
+    bool ok = !oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&key.aeadalg, 24));
+    assert(ok);
     struct oscore_context_primitive primitive = {
         .immutables = &key
     };
