@@ -63,7 +63,7 @@ oscore_cryptoerr_t oscore_crypto_aead_from_number(oscore_crypto_aeadalg_t *alg, 
  *
  */
 OSCORE_NONNULL
-oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, uint8_t *string, size_t string_len);
+oscore_cryptoerr_t oscore_crypto_aead_from_string(oscore_crypto_aeadalg_t *alg, const uint8_t *string, size_t string_len);
 
 /** @brief Obtain the algorithms's numeric COSE identifier
  *
