@@ -164,6 +164,7 @@ pub struct EncryptState {
     buffered_aad: heapless::Vec<u8, AadBufferSize>,
 }
 
+#[repr(transparent)]
 pub struct DecryptState {
     actually_encrypt: EncryptState,
 }
