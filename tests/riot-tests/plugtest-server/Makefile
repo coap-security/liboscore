@@ -17,8 +17,9 @@ FEATURES_REQUIRED += periph_flashpage
 endif
 
 ifeq ($(BOARD),particle-xenon)
-# when using particle-xenon
+# The firmware upload method described in the documentation
 PARTICLE_MONOFIRMWARE = 1
+
 # Don't checksum the whole program, that'd render the whole program unbootable
 # once data is persisted
 CFLAGS += -DPARTICLE_MONOFIRMWARE_CHECKSUMLIMIT
