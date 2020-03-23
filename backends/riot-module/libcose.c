@@ -1,1 +1,0 @@
-../libcose/src/libcose.c

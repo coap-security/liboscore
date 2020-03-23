@@ -1,1 +1,0 @@
-../nanocoap/src/oscore_msg_native.c

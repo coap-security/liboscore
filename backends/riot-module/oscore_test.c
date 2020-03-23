@@ -1,1 +1,0 @@
-../nanocoap/src/oscore_test.c
