@@ -93,13 +93,15 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
 }
 
 oscore_cryptoerr_t oscore_crypto_aead_encrypt_feed_aad(
-        oscore_crypto_aead_encryptstate_t *state,
+        void *state,
         const uint8_t *aad_chunk,
         size_t aad_chunk_len
         )
 {
-    memcpy(state->aad_cursor, aad_chunk, aad_chunk_len);
-    state->aad_cursor += aad_chunk_len;
+    oscore_crypto_aead_encryptstate_t *encstate = state;
+
+    memcpy(encstate->aad_cursor, aad_chunk, aad_chunk_len);
+    encstate->aad_cursor += aad_chunk_len;
 
     return COSE_OK;
 }
@@ -152,7 +154,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
 }
 
 oscore_cryptoerr_t oscore_crypto_aead_decrypt_feed_aad(
-        oscore_crypto_aead_decryptstate_t *state,
+        void *state,
         const uint8_t *aad_chunk,
         size_t aad_chunk_len
         )

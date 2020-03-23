@@ -178,9 +178,18 @@ oscore_cryptoerr_t oscore_crypto_aead_encrypt_start(
  * limited buffer and refuse to operate on overly large AADs. That case is
  * common outside the embedded area where those allocations are affordable;
  * high-quality embedded libraries will make do with a block-sized buffer.
+ *
+ * Note that the @p state argument is a void pointer. This is necessary to
+ * handle feeding into encryption and decryption states (which can be different
+ * in some implementations) in an efficient and conformant way. (To the curious
+ * reader, yours truly recommends the excellent summary of the situation [by
+ * Adam Rosenfield](https://stackoverflow.com/questions/559581/casting-a-function-pointer-to-another-type)
+ * about the incompatibility of `void*` and `struct*` pointers, and special
+ * consideration for the comparatively exotic compilers in use for constrained
+ * devices).
  */
 oscore_cryptoerr_t oscore_crypto_aead_encrypt_feed_aad(
-        oscore_crypto_aead_encryptstate_t *state,
+        void *state,
         const uint8_t *aad_chunk,
         size_t aad_chunk_len
         );
@@ -228,7 +237,7 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_start(
  * This is fully analogous to @ref oscore_crypto_aead_decrypt_feed_aad; see there.
  */
 oscore_cryptoerr_t oscore_crypto_aead_decrypt_feed_aad(
-        oscore_crypto_aead_decryptstate_t *state,
+        void *state,
         const uint8_t *aad_chunk,
         size_t aad_chunk_len
         );

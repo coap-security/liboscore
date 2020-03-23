@@ -135,9 +135,10 @@ struct aad_sizes predict_aad_size(
     return ret;
 }
 
-/** Push the AAD for a given message into the decryption state.
+/** Push the AAD for a given message into the en-/decryption state.
  *
- * @param[inout] state AEAD decryption state
+ * @param[inout] feeder Function with a signature of @ref oscore_crypto_aead_encrypt_feed_aad and @ref oscore_crypto_aead_decrypt_feed_aaj
+ * @param[inout] state AEAD en-/decryption state
  * @param[in] aad_sizes Predetermined sizes of the various AAD components
  * @param[in] secctx Security context from which to pick the sender role KID
  * @param[in] requester_role Role in @p secctx that created the request
@@ -146,7 +147,8 @@ struct aad_sizes predict_aad_size(
  *
  */
 oscore_cryptoerr_t feed_aad(
-        oscore_crypto_aead_decryptstate_t *state,
+        oscore_cryptoerr_t (*feeder)(void *, const uint8_t *, size_t),
+        void *state,
         struct aad_sizes aad_sizes,
         const oscore_context_t *secctx,
         enum oscore_context_role requester_role,
@@ -159,22 +161,22 @@ oscore_cryptoerr_t feed_aad(
     uint8_t intbuf[5];
 
     // array length 3, "Encrypt0", h''
-    err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x83\x68" "Encrypt0" "\x40", 11);
+    err = feeder(state, (uint8_t*) "\x83\x68" "Encrypt0" "\x40", 11);
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // full external AAD length
-    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(aad_sizes.external_aad_length, intbuf, 0x40));
+    err = feeder(state, intbuf, cbor_intencode(aad_sizes.external_aad_length, intbuf, 0x40));
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // external AAD array start, constant OSCORE version 1, array of one element
-    err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x85\x01\x81", 3);
+    err = feeder(state, (uint8_t*) "\x85\x01\x81", 3);
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Used algorithm
     int32_t numeric_identifier = 0;
     err = oscore_crypto_aead_get_number(aeadalg, &numeric_identifier);
     if (oscore_cryptoerr_is_error(err)) { return err; }
-    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(numeric_identifier < 0 ? -1 - numeric_identifier : numeric_identifier, intbuf, numeric_identifier < 0 ? 0x20 : 0x00));
+    err = feeder(state, intbuf, cbor_intencode(numeric_identifier < 0 ? -1 - numeric_identifier : numeric_identifier, intbuf, numeric_identifier < 0 ? 0x20 : 0x00));
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request KID
@@ -182,15 +184,15 @@ oscore_cryptoerr_t feed_aad(
     size_t request_kid_len;
     oscore_context_get_kid(secctx, requester_role, &request_kid, &request_kid_len);
 
-    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(request_kid_len, intbuf, 0x40));
+    err = feeder(state, intbuf, cbor_intencode(request_kid_len, intbuf, 0x40));
     if (oscore_cryptoerr_is_error(err)) { return err; }
-    err = oscore_crypto_aead_decrypt_feed_aad(state, request_kid, request_kid_len);
+    err = feeder(state, request_kid, request_kid_len);
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request PIV
-    err = oscore_crypto_aead_decrypt_feed_aad(state, intbuf, cbor_intencode(request->used_bytes, intbuf, 0x40));
+    err = feeder(state, intbuf, cbor_intencode(request->used_bytes, intbuf, 0x40));
     if (oscore_cryptoerr_is_error(err)) { return err; }
-    err = oscore_crypto_aead_decrypt_feed_aad(state, &request->bytes[PIV_BYTES - request->used_bytes], request->used_bytes);
+    err = feeder(state, &request->bytes[PIV_BYTES - request->used_bytes], request->used_bytes);
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Class I options
@@ -198,7 +200,7 @@ oscore_cryptoerr_t feed_aad(
     // As long as that holds, the Class I source can be disregarded.
     (void) class_i_source;
     // 0 byte string
-    err = oscore_crypto_aead_decrypt_feed_aad(state, (uint8_t*) "\x40", 1);
+    err = feeder(state, (uint8_t*) "\x40", 1);
 
     return err;
 }
@@ -349,7 +351,7 @@ bool _decrypt(
             oscore_context_get_key(secctx, OSCORE_ROLE_RECIPIENT)
             );
     if (!oscore_cryptoerr_is_error(err)) {
-        err = feed_aad(&dec, aad_sizes, secctx, request_kid, &unprotected->request_id, aeadalg, protected);
+        err = feed_aad(oscore_crypto_aead_decrypt_feed_aad, &dec, aad_sizes, secctx, request_kid, &unprotected->request_id, aeadalg, protected);
     }
     if (!oscore_cryptoerr_is_error(err)) {
         err = oscore_crypto_aead_decrypt_inplace(
@@ -612,9 +614,8 @@ enum oscore_finish_result oscore_encrypt_message(
             );
 
     if (!oscore_cryptoerr_is_error(err)) {
-        // FIXME this is assuming oscore_crypto_aead_encrypt_feed_aad and
-        // oscore_crypto_aead_decrypt_feed_aad are identical
         err = feed_aad(
+                oscore_crypto_aead_encrypt_feed_aad,
                 &enc,
                 aad_sizes,
                 secctx,
