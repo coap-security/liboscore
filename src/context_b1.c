@@ -126,7 +126,7 @@ bool oscore_context_b1_process_request(
     size_t opt_len;
     oscore_msg_protected_optiter_init(request, &iter);
     while (oscore_msg_protected_optiter_next(request, &iter, &opt_num, &opt_val, &opt_len)) {
-        if (opt_num == 248 /* Echo */ &&
+        if (opt_num == 252 /* Echo */ &&
                 opt_len == echo_length &&
                 memcmp(opt_val, echo_value, echo_length) == 0) {
             // Matches, and replay window was previously checked to be uninitialized
@@ -173,7 +173,7 @@ bool oscore_context_b1_build_401echo(
 
     oscore_msgerr_protected_t err = oscore_msg_protected_append_option(
             &outgoing_plaintext,
-            248 /* Echo */,
+            252 /* Echo */,
             echo_value,
             echo_size
             );

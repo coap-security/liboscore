@@ -67,7 +67,7 @@ static enum option_behavior get_option_behaviour(uint16_t option_number) {
         case 4: // ETag
         case 14: // Max-Age
         case 258: // No-Response
-        case 248: // Echo
+        case 252: // Echo
             return ONLY_E_IGNORE_OUTER;
         case 3: // Uri-Host
         case 7: // Uri-Port

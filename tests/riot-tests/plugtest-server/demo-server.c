@@ -401,7 +401,7 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
             size_t opt_len;
             oscore_msg_protected_optiter_init(&msg, &iter);
             while (oscore_msg_protected_optiter_next(&msg, &iter, &opt_num, &opt_val, &opt_len)) {
-                if (opt_num == 248 /* Echo */ && opt_len < sizeof(ctx_u_received_echo_data)) {
+                if (opt_num == 252 /* Echo */ && opt_len < sizeof(ctx_u_received_echo_data)) {
                     memcpy(ctx_u_received_echo_data, opt_val, opt_len);
                     ctx_u_received_echo_size = opt_len;
                     printf("Stored %d bytes of Echo option for the next attempt\n", opt_len);
@@ -496,7 +496,7 @@ static void send_static_request(char value) {
     }
 
     if (ctx_u_received_echo_size != -1) {
-        oscerr = oscore_msg_protected_append_option(&oscmsg, 248 /* Echo */, ctx_u_received_echo_data, ctx_u_received_echo_size);
+        oscerr = oscore_msg_protected_append_option(&oscmsg, 252 /* Echo */, ctx_u_received_echo_data, ctx_u_received_echo_size);
         if (oscore_msgerr_protected_is_error(oscerr)) {
             printf("Failed to add option\n");
             goto error;
