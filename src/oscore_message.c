@@ -747,6 +747,19 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
         size_t *payload_len
         )
 {
+    if (msg->flags & OSCORE_MSG_PROTECTED_FLAG_WRITABLE) {
+        oscore_msgerr_protected_t flusherr;
+        // Flush out options now before anything relies on the payload_len or starts writing
+        flusherr = flush_autooptions_outer_until(msg, OPTNUM_MAX);
+        if (flusherr != OK) {
+            return flusherr;
+        }
+        flusherr = flush_autooptions_inner_until(msg, OPTNUM_MAX);
+        if (flusherr != OK) {
+            return flusherr;
+        }
+    }
+
     oscore_msgerr_native_t err = oscore_msg_native_map_payload(msg->backend, payload, payload_len);
     if (oscore_msgerr_native_is_error(err)) {
         return NATIVE_ERROR;
@@ -812,15 +825,18 @@ oscore_msgerr_protected_t oscore_msg_protected_trim_payload(
         size_t payload_len
         )
 {
-    oscore_msgerr_protected_t flusherr;
-    // Flush out options now -- otherwise we'd have truncated the underlying message too far
-    flusherr = flush_autooptions_outer_until(msg, OPTNUM_MAX);
-    if (flusherr != OK) {
-        return flusherr;
-    }
-    flusherr = flush_autooptions_outer_until(msg, OPTNUM_MAX);
-    if (flusherr != OK) {
-        return flusherr;
+    if (payload_len == 0) {
+        // For nonzero payload_len, they're already flushed out with the
+        // _map_payload call
+        oscore_msgerr_protected_t flusherr;
+        flusherr = flush_autooptions_outer_until(msg, OPTNUM_MAX);
+        if (flusherr != OK) {
+            return flusherr;
+        }
+        flusherr = flush_autooptions_inner_until(msg, OPTNUM_MAX);
+        if (flusherr != OK) {
+            return flusherr;
+        }
     }
 
     oscore_msgerr_native_t err = oscore_msg_native_trim_payload(msg->backend,
