@@ -109,11 +109,8 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
     if (optnum <= msg->autooption_written) {
         return OK;
     }
-    uint16_t previously_written = msg->autooption_written;
-    // Prevent recursion
-    msg->autooption_written = optnum;
 
-    if (previously_written < 9 && optnum >= 9) {
+    if (msg->autooption_written < 9 && optnum >= 9) {
         // Write OSCORE option
 
         uint8_t optionbuffer[1 + PIV_BYTES + 1 + OSCORE_KEYIDCONTEXT_MAXLEN + OSCORE_KEYID_MAXLEN];
@@ -161,6 +158,8 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         if (oscore_msgerr_native_is_error(err))
             return NATIVE_ERROR;
     }
+
+    msg->autooption_written = optnum;
 
     return OK;
 }
@@ -375,28 +374,18 @@ static size_t _optparts_encode(uint8_t *buffer, uint16_t delta, uint16_t size) {
     return buffer - startbuffer;
 }
 
-oscore_msgerr_protected_t oscore_msg_protected_append_option(
+/** Like @ref oscore_msg_protected_append_option, but without flushing any
+ * autooptions, and going into an inner option unconditionally.
+ *
+ * This is not currently public, but may be eligible for the public API with
+ * the adequate warnings about preferably using the regular append_option. */
+oscore_msgerr_protected_t oscore_msg_protected_append_option_inner(
         oscore_msg_protected_t *msg,
         uint16_t option_number,
         const uint8_t *value,
         size_t value_len
         )
 {
-    oscore_msgerr_protected_t flusherr = flush_autooptions_until(msg, option_number);
-    if (flusherr != OK) {
-        return flusherr;
-    }
-
-    enum option_behavior behavior = get_option_behaviour(option_number);
-    if (behavior == PRIMARILY_U) {
-        oscore_msgerr_native_t err = oscore_msg_native_append_option(
-                msg->backend,
-                option_number,
-                value,
-                value_len
-        );
-        return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
-    } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
         if (option_number < msg->class_e.option_number) {
             return OPTION_SEQUENCE;
         }
@@ -440,6 +429,31 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
         msg->class_e.cursor += opthead + value_len;
         msg->class_e.option_number = option_number;
         return OK;
+}
+
+oscore_msgerr_protected_t oscore_msg_protected_append_option(
+        oscore_msg_protected_t *msg,
+        uint16_t option_number,
+        const uint8_t *value,
+        size_t value_len
+        )
+{
+    oscore_msgerr_protected_t flusherr = flush_autooptions_until(msg, option_number);
+    if (flusherr != OK) {
+        return flusherr;
+    }
+
+    enum option_behavior behavior = get_option_behaviour(option_number);
+    if (behavior == PRIMARILY_U) {
+        oscore_msgerr_native_t err = oscore_msg_native_append_option(
+                msg->backend,
+                option_number,
+                value,
+                value_len
+        );
+        return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
+    } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
+        return oscore_msg_protected_append_option_inner(msg, option_number, value, value_len);
     } else {
         // FIXME: handle special options
         return NOTIMPLEMENTED_ERROR;
