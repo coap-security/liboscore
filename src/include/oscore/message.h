@@ -64,6 +64,9 @@ enum oscore_msg_protected_flags {
      * have been set yet, and that the `class_e` member must be used to
      * determine the payload's position. */
     OSCORE_MSG_PROTECTED_FLAG_WRITABLE = 1 << 0,
+    /** Set if a message is a request message. (This is only defined for
+     * WRITABLE messages). */
+    OSCORE_MSG_PROTECTED_FLAG_REQUEST = 1 << 1,
 };
 
 /** @brief OSCORE protected CoAP message
@@ -120,9 +123,6 @@ typedef struct {
     //
     // only used in writable messages
     //
-
-    // FIXME to be replaced by more sophisicaed typing?
-    bool is_request;
 
     /** @brief Security context used for encryption
      *

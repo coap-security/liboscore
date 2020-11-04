@@ -384,7 +384,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
     /* Comparing to the equivalent aiocoap code:
      *
      * * Not asserting anything about the request or response code properties;
-     *   instead, all following steps make sure to always look into is_request
+     *   instead, all following steps make sure to always look into FLAG_REQUEST
      *   and not into the request code class (which is easy here as there's not
      *   even the API to decide that).
      *
@@ -431,7 +431,6 @@ enum oscore_unprotect_response_result oscore_unprotect_response(
         )
 {
     bool has_piv = extract_requestid(&header, &unprotected->partial_iv);
-    // Maybe in the partial_iv it'd make sense to union the is_request with the role
     enum oscore_context_role piv_kid;
     if (has_piv) {
         // This may be a bit confusing here: With a PIV attached, this means we
@@ -466,7 +465,7 @@ oscore_msg_native_t oscore_release_unprotected(
  * and @ref oscore_prepare_request, except
  *
  * * initialization of the request_id and partial_iv fields
- * * initialization of the is_request field
+ * * setting the FLAG_REQUEST bit
  * * any modifications to the passed request_id (it's not even forwarded)
  * * setting the outer code
  */
@@ -528,7 +527,7 @@ enum oscore_prepare_result oscore_prepare_response(
     // OK because it has special semantics in a oscore_msg_protected_t.partial_iv
     unprotected->partial_iv.is_first_use = true;
 
-    unprotected->is_request = false;
+    // Leaving the FLAG_REQUEST at 0 as it is
 
     oscore_msg_native_set_code(protected, 0x45); // 2.05 Content
 
@@ -554,7 +553,7 @@ enum oscore_prepare_result oscore_prepare_request(
     // OK because it has special semantics in a oscore_msg_protected_t.partial_iv
     unprotected->partial_iv.is_first_use = true;
 
-    unprotected->is_request = true;
+    unprotected->flags |= OSCORE_MSG_PROTECTED_FLAG_REQUEST;
 
     oscore_msg_native_set_code(protected, 0x2); // POST
 
@@ -570,8 +569,10 @@ enum oscore_finish_result oscore_encrypt_message(
     oscore_crypto_aeadalg_t aeadalg = oscore_context_get_aeadalg(secctx);
     size_t tag_length = unprotected->tag_length;
 
-    enum oscore_context_role requester_role = unprotected->is_request ? OSCORE_ROLE_SENDER : OSCORE_ROLE_RECIPIENT;
-    enum oscore_context_role nonceprovider_role = unprotected->is_request ?
+    bool is_request = (unprotected->flags & OSCORE_MSG_PROTECTED_FLAG_REQUEST);
+
+    enum oscore_context_role requester_role = is_request ? OSCORE_ROLE_SENDER : OSCORE_ROLE_RECIPIENT;
+    enum oscore_context_role nonceprovider_role = is_request ?
                     OSCORE_ROLE_SENDER : (
                         unprotected->request_id.is_first_use ?
                         OSCORE_ROLE_RECIPIENT :

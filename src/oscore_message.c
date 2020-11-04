@@ -118,7 +118,7 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
 
         uint8_t n;
         oscore_requestid_t *piv_source;
-        if (msg->request_id.is_first_use && !msg->is_request) {
+        if (msg->request_id.is_first_use && !(msg->flags & OSCORE_MSG_PROTECTED_FLAG_REQUEST)) {
             n = 0;
         } else {
             piv_source = msg->request_id.is_first_use ? &msg->request_id : &msg->partial_iv;
@@ -126,7 +126,7 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         }
         // In multicast responses, that'd be set as well.
         // FIXME any other situation? probably context dependent -- ask context?
-        bool k = msg->is_request;
+        bool k = msg->flags & OSCORE_MSG_PROTECTED_FLAG_REQUEST;
 
         // FIXME ask context for kidcontext
         bool h = 0;
