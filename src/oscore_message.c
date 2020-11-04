@@ -454,6 +454,23 @@ oscore_msgerr_protected_t oscore_msg_protected_append_option(
         return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
     } else if (behavior == ONLY_E || behavior == ONLY_E_IGNORE_OUTER) {
         return oscore_msg_protected_append_option_inner(msg, option_number, value, value_len);
+    } else if (option_number == 6 /* Observe */) {
+        /* Store the data to be flushed later with the autooptions */
+        if (value_len == 0 || !(msg->flags & OSCORE_MSG_PROTECTED_FLAG_REQUEST)) {
+            /* In responses, the inner value is always 0 */
+            msg->flags |= OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_0;
+        } else {
+            /* It's an observe cancellation */
+            msg->flags |= OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_1;
+        }
+
+        oscore_msgerr_native_t err = oscore_msg_native_append_option(
+                msg->backend,
+                option_number,
+                value,
+                value_len
+        );
+        return oscore_msgerr_native_is_error(err) ? NATIVE_ERROR : OK;
     } else {
         // FIXME: handle special options
         return NOTIMPLEMENTED_ERROR;

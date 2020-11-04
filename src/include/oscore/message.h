@@ -67,6 +67,15 @@ enum oscore_msg_protected_flags {
     /** Set if a message is a request message. (This is only defined for
      * WRITABLE messages). */
     OSCORE_MSG_PROTECTED_FLAG_REQUEST = 1 << 1,
+
+    /** An outer Observe option has been set, and requires the inner observe
+     * option to be set as 0 (which is the case for observe-accepting responses
+     * as well as for observe requests) */
+    OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_0 = 1 << 2,
+    /** An outer Observe option has been set, and requires the inner observe
+     * option to be set as 1 (which is the case for observe-cancelling
+     * requests) */
+    OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_1 = 1 << 3,
 };
 
 /** @brief OSCORE protected CoAP message
