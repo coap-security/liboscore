@@ -106,11 +106,9 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
     // thus finally does need the introduction of a private header section (or
     // having private functions in the general headers)
 
-    if (optnum <= msg->autooption_written) {
-        return OK;
-    }
+    if (msg->flags & OSCORE_MSG_PROTECTED_FLAG_PENDING_OSCORE && optnum >= 9) {
+        msg->flags &= ~OSCORE_MSG_PROTECTED_FLAG_PENDING_OSCORE;
 
-    if (msg->autooption_written < 9 && optnum >= 9) {
         // Write OSCORE option
 
         uint8_t optionbuffer[1 + PIV_BYTES + 1 + OSCORE_KEYIDCONTEXT_MAXLEN + OSCORE_KEYID_MAXLEN];
@@ -158,8 +156,6 @@ oscore_msgerr_protected_t flush_autooptions_until(oscore_msg_protected_t *msg, u
         if (oscore_msgerr_native_is_error(err))
             return NATIVE_ERROR;
     }
-
-    msg->autooption_written = optnum;
 
     return OK;
 }

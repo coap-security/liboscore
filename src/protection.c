@@ -489,11 +489,10 @@ enum oscore_prepare_result _prepare_encrypt(
     // request_id
 
     unprotected->backend = protected;
-    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_WRITABLE;
+    unprotected->flags = OSCORE_MSG_PROTECTED_FLAG_WRITABLE | OSCORE_MSG_PROTECTED_FLAG_PENDING_OSCORE;
     unprotected->tag_length = tag_length;
     unprotected->payload_offset = 0;
     unprotected->secctx = secctx;
-    unprotected->autooption_written = 0;
     unprotected->class_e.cursor = 0;
     unprotected->class_e.option_number = 0;
 
