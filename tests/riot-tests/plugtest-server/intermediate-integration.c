@@ -2,6 +2,7 @@
 
 #include <oscore/protection.h>
 #include <oscore/context_impl/b1.h>
+#include <nanocoap_oscore_msg_conversion.h>
 
 /** Write @p text into @p msg and return true on success */
 bool set_message(oscore_msg_protected_t *out, const char *text)
@@ -134,11 +135,8 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         goto error;
     }
 
-    // FIXME: this should be in a dedicated parsed_pdu_to_oscore_msg_native_t process
-    // (and possibly foolishly assuming that there is a payload marker)
-    pdu->payload --;
-    pdu->payload_len ++;
-    oscore_msg_native_t pdu_read = { .pkt = pdu };
+    oscore_msg_native_t pdu_read;
+    oscore_msg_native_from_nanocoap_incoming(&pdu_read, pdu);
 
     oscore_msg_protected_t incoming_decrypted;
     oscore_context_t *secctx;
@@ -237,32 +235,18 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 
     assert(pdu_read_out.pkt == pdu);
 
-    bool is_observe = coap_get_observe(pdu) == COAP_OBS_REGISTER;
     gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
-    // gcoap_res_init prematurely set an outer option -- but that's for us to
-    // set with consideration for the (earlier) OSCORE option (cf.
-    // https://github.com/RIOT-OS/RIOT/issues/12736).
-    //
-    // Storing the data for later use.
-    struct observe_option outer_observe;
-    outer_observe.length = -1;
-    if (is_observe) {
-        assert(pdu->options_len == 1);
-
-        uint8_t *outer_observe_ptr;
-        outer_observe.length = coap_opt_get_opaque(pdu, COAP_OPT_OBSERVE, &outer_observe_ptr);
-        if (outer_observe.length > 0) {
-            memcpy(outer_observe.data, outer_observe_ptr, outer_observe.length);
-        }
-        // Rewind to what happened in gcoap_resp_init
-        pdu->options_len = 0;
-        unsigned header_len  = coap_get_total_hdr_len(pdu);
-        pdu->payload = buf + header_len;
-        pdu->payload_len = len - header_len;
-    }
 
     enum oscore_prepare_result oscerr2;
-    oscore_msg_native_t pdu_write = { .pkt = pdu };
+    oscore_msg_native_t pdu_write;
+    struct observe_option outer_observe;
+
+    uint8_t *outer_observe_ptr;
+    oscore_msg_native_from_gcoap_outgoing(&pdu_write, pdu, &outer_observe.length, &outer_observe_ptr);
+    if (outer_observe.length > 0) {
+        memcpy(outer_observe.data, outer_observe_ptr, outer_observe.length);
+    }
+
     oscore_msg_protected_t outgoing_plaintext;
     if (mutex_trylock(secctx_lock) != 1) {
         errormessage = "Context not available for response";

@@ -55,7 +55,7 @@ a structure like the one used by the nanocoap implementation is recommended:
     backends/nanocoap/
     ├── README.md
     ├── inc
-    │   ├── nanocoap_oscore_msg_conversion.h  # not actually present there
+    │   ├── nanocoap_oscore_msg_conversion.h
     │   └── oscore_native
     │       └── msg_type.h
     └── src

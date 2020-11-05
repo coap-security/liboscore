@@ -206,3 +206,35 @@ oscore_msgerr_native_t oscore_msg_native_trim_payload(
     _pkt(msg)->payload_len = payload_len;
     return 0;
 }
+
+void oscore_msg_native_from_nanocoap_incoming(oscore_msg_native_t *msg, coap_pkt_t *pkt)
+{
+    pkt->payload --;
+    pkt->payload_len ++;
+    /* Initializing all its fields */
+    msg->pkt = pkt;
+}
+
+void oscore_msg_native_from_gcoap_outgoing(oscore_msg_native_t *msg, coap_pkt_t *pkt, int8_t *observe_length, uint8_t **observe_data)
+{
+    /* Initializing all fields
+     *
+     * As an outgoing message, pdu is already in the right shape.
+     * */
+    msg->pkt = pkt;
+
+    // gcoap_res_init prematurely set an outer option -- but that's for us to
+    // set with consideration for the (earlier) OSCORE option (cf.
+    // https://github.com/RIOT-OS/RIOT/issues/12736).
+    //
+    // Storing the data for later use.
+    *observe_length = -1;
+
+    if (pkt->options_len == 1) {
+        *observe_length = coap_opt_get_opaque(pkt, COAP_OPT_OBSERVE, observe_data);
+        // Rewind to what happened in gcoap_resp_init
+        pkt->options_len = 0;
+        pkt->payload -= *observe_length + 1;
+        pkt->payload_len += *observe_length + 1;
+    }
+}
