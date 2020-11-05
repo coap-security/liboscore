@@ -86,6 +86,49 @@ error2:
     oscore_msg_protected_trim_payload(out, 0);
 }
 
+void observe1_parse(oscore_msg_protected_t *in, void *vstate)
+{
+    struct hello_state *state = vstate;
+    state->options_ok = options_are_as_expected(in, (1 << 11 /* Uri-Path */) |
+            (1 << 6 /* Observe */ ));
+    state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
+}
+
+void observe1_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
+{
+    const struct hello_state *state = vstate;
+
+    if (!state->code_ok) {
+        oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
+        goto error2;
+    }
+
+    oscore_msg_protected_set_code(out, 0x45 /* 2.05 content */);
+
+    oscore_msgerr_protected_t err;
+
+    if (outer_observe->length >= 0) {
+        err = oscore_msg_protected_append_option(out, 6 /* observe */, outer_observe->data, outer_observe->length);
+        if (oscore_msgerr_protected_is_error(err))
+            goto error;
+    }
+
+    err = oscore_msg_protected_append_option(out, 12 /* content-format */, (uint8_t*)"", 0);
+    if (oscore_msgerr_protected_is_error(err))
+        goto error;
+
+    if (!set_message(out, state->options_ok ? "one" : "one (with unexpected options)"))
+        goto error;
+
+    return;
+
+error:
+    oscore_msg_protected_set_code(out, 0xa0 /* 5.00 internal error */);
+error2:
+    // not unwinding any option, there's no API for that and it doesn't really matter
+    oscore_msg_protected_trim_payload(out, 0);
+}
+
 void hello2_parse(oscore_msg_protected_t *in, void *vstate)
 {
     struct hello_state *state = vstate;

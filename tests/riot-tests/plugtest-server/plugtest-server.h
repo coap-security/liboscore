@@ -35,6 +35,8 @@ struct hello_state {
 
 void hello_parse(oscore_msg_protected_t *in, void *vstate);
 void hello_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
+void observe1_parse(oscore_msg_protected_t *in, void *vstate);
+void observe1_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void hello2_parse(oscore_msg_protected_t *in, void *vstate);
 void hello2_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void hello3_parse(oscore_msg_protected_t *in, void *vstate);
