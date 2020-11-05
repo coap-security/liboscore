@@ -58,8 +58,9 @@ void hello_parse(oscore_msg_protected_t *in, void *vstate)
     state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
 }
 
-void hello_build(oscore_msg_protected_t *out, const void *vstate)
+void hello_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const struct hello_state *state = vstate;
 
     if (!state->code_ok) {
@@ -92,8 +93,9 @@ void hello2_parse(oscore_msg_protected_t *in, void *vstate)
     state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
 }
 
-void hello2_build(oscore_msg_protected_t *out, const void *vstate)
+void hello2_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const struct hello_state *state = vstate;
 
     if (!state->code_ok) {
@@ -131,8 +133,9 @@ void hello3_parse(oscore_msg_protected_t *in, void *vstate)
     state->code_ok = oscore_msg_protected_get_code(in) == 1 /* GET */;
 }
 
-void hello3_build(oscore_msg_protected_t *out, const void *vstate)
+void hello3_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const struct hello_state *state = vstate;
 
     if (!state->code_ok) {
@@ -171,8 +174,9 @@ void hello6_parse(oscore_msg_protected_t *in, void *vstate)
     /* FIXME check payload */
 }
 
-void hello6_build(oscore_msg_protected_t *out, const void *vstate)
+void hello6_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const struct hello_state *state = vstate;
 
     if (!state->code_ok) {
@@ -207,8 +211,9 @@ void hello7_parse(oscore_msg_protected_t *in, void *vstate)
     /* FIXME check payload */
 }
 
-void hello7_build(oscore_msg_protected_t *out, const void *vstate)
+void hello7_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const struct hello_state *state = vstate;
 
     if (!state->code_ok) {
@@ -232,8 +237,9 @@ void delete_parse(oscore_msg_protected_t *in, void *vstate)
     state->code_ok = oscore_msg_protected_get_code(in) == 4 /* DELETE */;
 }
 
-void delete_build(oscore_msg_protected_t *out, const void *vstate)
+void delete_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const struct hello_state *state = vstate;
 
     if (!state->code_ok) {

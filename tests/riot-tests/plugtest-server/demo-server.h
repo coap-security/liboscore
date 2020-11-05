@@ -25,9 +25,9 @@ struct sensordata_blockopt {
 };
 
 void sensordata_parse(oscore_msg_protected_t *in, void *vstate);
-void sensordata_build(oscore_msg_protected_t *out, const void *vstate);
+void sensordata_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void light_parse(oscore_msg_protected_t *in, void *vstate);
-void light_build(oscore_msg_protected_t *out, const void *vstate);
+void light_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 
 extern oscore_context_t secctx_b;
 extern mutex_t secctx_b_usage;

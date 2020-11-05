@@ -75,7 +75,7 @@ void dispatcher_parse(oscore_msg_protected_t *in, void *vstate)
     config->current_choice->handler.parse(in, data);
 }
 
-void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
+void dispatcher_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe) {
     const struct dispatcher_config *config = vstate;
 
     if (config->current_choice == NULL) {
@@ -85,7 +85,7 @@ void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
     }
 
     const void *data = &config->handlerstate;
-    config->current_choice->handler.build(out, data);
+    config->current_choice->handler.build(out, data, outer_observe);
 }
 
 #define RESOURCE(name, pathcount, path, handler_parse, handler_build, statetype) static const char* const name[pathcount] = path;
@@ -237,7 +237,29 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 
     assert(pdu_read_out.pkt == pdu);
 
+    bool is_observe = coap_get_observe(pdu) == COAP_OBS_REGISTER;
     gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
+    // gcoap_res_init prematurely set an outer option -- but that's for us to
+    // set with consideration for the (earlier) OSCORE option (cf.
+    // https://github.com/RIOT-OS/RIOT/issues/12736).
+    //
+    // Storing the data for later use.
+    struct observe_option outer_observe;
+    outer_observe.length = -1;
+    if (is_observe) {
+        assert(pdu->options_len == 1);
+
+        uint8_t *outer_observe_ptr;
+        outer_observe.length = coap_opt_get_opaque(pdu, COAP_OPT_OBSERVE, &outer_observe_ptr);
+        if (outer_observe.length > 0) {
+            memcpy(outer_observe.data, outer_observe_ptr, outer_observe.length);
+        }
+        // Rewind to what happened in gcoap_resp_init
+        pdu->options_len = 0;
+        unsigned header_len  = coap_get_total_hdr_len(pdu);
+        pdu->payload = buf + header_len;
+        pdu->payload_len = len - header_len;
+    }
 
     enum oscore_prepare_result oscerr2;
     oscore_msg_native_t pdu_write = { .pkt = pdu };
@@ -276,7 +298,7 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     secctx_lock = NULL; // Don't unlock secctx_u_change in the error path
 
     // Deferring to the dispatcher again for actual response building
-    dispatcher_build(&outgoing_plaintext, &plugtest_config);
+    dispatcher_build(&outgoing_plaintext, &plugtest_config, &outer_observe);
 
     enum oscore_finish_result oscerr4;
     oscore_msg_native_t pdu_write_out;

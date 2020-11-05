@@ -123,8 +123,9 @@ void light_parse(oscore_msg_protected_t *in, void *vstate)
     }
 }
 
-void light_build(oscore_msg_protected_t *out, const void *vstate)
+void light_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const uint16_t *responsecode = vstate;
 
     oscore_msg_protected_set_code(out, *responsecode);
@@ -232,8 +233,9 @@ const char message[] = "{\"data\": ["
 "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
 "42]}";
 
-void sensordata_build(oscore_msg_protected_t *out, const void *vstate)
+void sensordata_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     struct sensordata_blockopt state = *(struct sensordata_blockopt*)vstate;
 
     oscore_msg_protected_set_code(out, state.responsecode);

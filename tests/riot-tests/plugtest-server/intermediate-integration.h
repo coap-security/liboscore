@@ -1,3 +1,6 @@
+#ifndef INTERMEDIATE_INTEGRATION_H
+#define INTERMEDIATE_INTEGRATION_H
+
 /** @file
  *
  * @brief A simple intermediate integration built on Gcoap
@@ -30,7 +33,7 @@ bool set_message(oscore_msg_protected_t *out, const char *text);
 
 struct handler {
     void (*parse)(/* not const because of memoization */ oscore_msg_protected_t *in, void *state);
-    void (*build)(oscore_msg_protected_t *in, const void *state);
+    void (*build)(oscore_msg_protected_t *in, const void *state, const struct observe_option *outer_observe);
 };
 
 struct dispatcher_choice {
@@ -64,7 +67,7 @@ struct dispatcher_config {
 };
 
 void dispatcher_parse(oscore_msg_protected_t *in, void *vstate);
-void dispatcher_build(oscore_msg_protected_t *out, const void *vstate);
+void dispatcher_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 
 /** A gcoap handler that dispatches messages through the handlers desribed in
  *  resources.inc. It needs to be registered at the `/` resource, and does not
@@ -82,3 +85,5 @@ void dispatcher_build(oscore_msg_protected_t *out, const void *vstate);
  *
  * */
 ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
+
+#endif
