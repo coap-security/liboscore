@@ -64,6 +64,24 @@ enum oscore_msg_protected_flags {
      * have been set yet, and that the `class_e` member must be used to
      * determine the payload's position. */
     OSCORE_MSG_PROTECTED_FLAG_WRITABLE = 1 << 0,
+    /** Set if a message is a request message. (This is only defined for
+     * WRITABLE messages). */
+    OSCORE_MSG_PROTECTED_FLAG_REQUEST = 1 << 1,
+
+    /** An outer Observe option has been set, and requires the inner observe
+     * option to be set as 0 (which is the case for observe-accepting responses
+     * as well as for observe requests) */
+    OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_0 = 1 << 2,
+    /** An outer Observe option has been set, and requires the inner observe
+     * option to be set as 1 (which is the case for observe-cancelling
+     * requests) */
+    OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_1 = 1 << 3,
+
+    /** The OSCORE options still needs to be written
+     *
+     * This is set at message creation time, and cleared when the OSCORE option
+     * is written as an autooption. */
+    OSCORE_MSG_PROTECTED_FLAG_PENDING_OSCORE = 1 << 4,
 };
 
 /** @brief OSCORE protected CoAP message
@@ -121,9 +139,6 @@ typedef struct {
     // only used in writable messages
     //
 
-    // FIXME to be replaced by more sophisicaed typing?
-    bool is_request;
-
     /** @brief Security context used for encryption
      *
      * This context pointer is only used for the (yet to be defined, FIXME)
@@ -153,19 +168,6 @@ typedef struct {
      * @private
      */
     oscore_requestid_t request_id;
-
-    /** @brief Highest autooption number that has been written
-     *
-     * @see flush_autooptions_until
-     *
-     * @note The design of this as "has been written" (as opposed to "has not
-     * been written yet") doesn't allow postponing option 0, but allows
-     * expressing whether the last option has been written or not; given that
-     * neither option is an autooption, this is kind of irrelevant.
-     *
-     * @private
-     */
-    uint16_t autooption_written;
 
     struct oscore_opttrack class_e;
 } oscore_msg_protected_t;

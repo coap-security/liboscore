@@ -2,6 +2,7 @@
 
 #include <oscore/protection.h>
 #include <oscore/context_impl/b1.h>
+#include <nanocoap_oscore_msg_conversion.h>
 
 /** Write @p text into @p msg and return true on success */
 bool set_message(oscore_msg_protected_t *out, const char *text)
@@ -75,7 +76,7 @@ void dispatcher_parse(oscore_msg_protected_t *in, void *vstate)
     config->current_choice->handler.parse(in, data);
 }
 
-void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
+void dispatcher_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe) {
     const struct dispatcher_config *config = vstate;
 
     if (config->current_choice == NULL) {
@@ -85,7 +86,7 @@ void dispatcher_build(oscore_msg_protected_t *out, const void *vstate) {
     }
 
     const void *data = &config->handlerstate;
-    config->current_choice->handler.build(out, data);
+    config->current_choice->handler.build(out, data, outer_observe);
 }
 
 #define RESOURCE(name, pathcount, path, handler_parse, handler_build, statetype) static const char* const name[pathcount] = path;
@@ -134,11 +135,8 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         goto error;
     }
 
-    // FIXME: this should be in a dedicated parsed_pdu_to_oscore_msg_native_t process
-    // (and possibly foolishly assuming that there is a payload marker)
-    pdu->payload --;
-    pdu->payload_len ++;
-    oscore_msg_native_t pdu_read = { .pkt = pdu };
+    oscore_msg_native_t pdu_read;
+    oscore_msg_native_from_nanocoap_incoming(&pdu_read, pdu);
 
     oscore_msg_protected_t incoming_decrypted;
     oscore_context_t *secctx;
@@ -240,7 +238,15 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
 
     enum oscore_prepare_result oscerr2;
-    oscore_msg_native_t pdu_write = { .pkt = pdu };
+    oscore_msg_native_t pdu_write;
+    struct observe_option outer_observe;
+
+    uint8_t *outer_observe_ptr;
+    oscore_msg_native_from_gcoap_outgoing(&pdu_write, pdu, &outer_observe.length, &outer_observe_ptr);
+    if (outer_observe.length > 0) {
+        memcpy(outer_observe.data, outer_observe_ptr, outer_observe.length);
+    }
+
     oscore_msg_protected_t outgoing_plaintext;
     if (mutex_trylock(secctx_lock) != 1) {
         errormessage = "Context not available for response";
@@ -276,7 +282,7 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
     secctx_lock = NULL; // Don't unlock secctx_u_change in the error path
 
     // Deferring to the dispatcher again for actual response building
-    dispatcher_build(&outgoing_plaintext, &plugtest_config);
+    dispatcher_build(&outgoing_plaintext, &plugtest_config, &outer_observe);
 
     enum oscore_finish_result oscerr4;
     oscore_msg_native_t pdu_write_out;

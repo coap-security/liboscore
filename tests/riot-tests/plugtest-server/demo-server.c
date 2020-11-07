@@ -6,6 +6,8 @@
 #include <oscore/context_impl/b1.h>
 #include <oscore/protection.h>
 
+#include <nanocoap_oscore_msg_conversion.h>
+
 #include "plugtest-server.h"
 #include "persistence.h"
 #include "intermediate-integration.h"
@@ -123,8 +125,9 @@ void light_parse(oscore_msg_protected_t *in, void *vstate)
     }
 }
 
-void light_build(oscore_msg_protected_t *out, const void *vstate)
+void light_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     const uint16_t *responsecode = vstate;
 
     oscore_msg_protected_set_code(out, *responsecode);
@@ -232,8 +235,9 @@ const char message[] = "{\"data\": ["
 "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, "
 "42]}";
 
-void sensordata_build(oscore_msg_protected_t *out, const void *vstate)
+void sensordata_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
+    (void)outer_observe;
     struct sensordata_blockopt state = *(struct sensordata_blockopt*)vstate;
 
     oscore_msg_protected_set_code(out, state.responsecode);
@@ -325,6 +329,7 @@ static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 }
 
 static const coap_resource_t _resources[] = {
+    /* This index (0) is used by the notify mechanism, don't move it around without updating there */
     { "/", COAP_POST | COAP_FETCH, oscore_handler, NULL },
     { "/oscore/hello/coap", COAP_GET, plugtest_nonoscore_hello, NULL },
     { "/riot/board", COAP_GET, _riot_board_handler, NULL },
@@ -783,6 +788,119 @@ static int cmdline_userctx_shutdown(int argc, char **argv) {
     return 0;
 }
 
+static int cmdline_notify(int argc, char **argv) {
+    if (argc != 2 || argv[1][0] == '-') {
+        printf("Usage: %s off|<word>\n", argv[0]);
+        return 1;
+    }
+
+    oscore_msgerr_protected_t oscerr;
+    uint8_t buf[GCOAP_PDU_BUF_SIZE];
+    coap_pkt_t pdu;
+
+    // This is largely following the sequence of send_static_request
+
+    int err;
+    err = gcoap_obs_init(&pdu, buf, sizeof(buf), &_resources[0]);
+    if (err != 0) {
+        printf("Failed to initialize request (probably no observation active)\n");
+        return 1;
+    }
+
+    oscore_msg_native_t native;
+    struct observe_option outer_observe;
+    uint8_t *outer_observe_ptr;
+    oscore_msg_native_from_gcoap_outgoing(&native, &pdu, &outer_observe.length, &outer_observe_ptr);
+    if (outer_observe.length > 0) {
+        memcpy(outer_observe.data, outer_observe_ptr, outer_observe.length);
+    }
+
+    oscore_msg_protected_t oscmsg;
+    // This is about an obsevation for context B -- FIXME ensure the sender ID only ever gets set for that
+    // (or if it's for u, see the secctx_u_change below)
+    if (mutex_trylock(&secctx_b_usage) != 1)  {
+        // Could just as well block, but I prefer this for its clearer error behavior
+        printf("Can't send request, security context in use\n");
+        return 1;
+    }
+
+    // FIXME if this were ever to be used with a secctx u, changing the key
+    // material would need to clear all request memos (or be disallowed while
+    // an observation is active)
+    //
+    // secctx_u_change ?
+    userctx_maybe_persist();
+    extern bool observation_id_valid;
+    extern oscore_requestid_t observation_id;
+    if (!observation_id_valid) {
+        printf("No observation was recorded by the observe1_build handler\n");
+        return 1;
+    }
+    if (oscore_prepare_response(native, &oscmsg, &secctx_b, &observation_id) != OSCORE_PREPARE_OK) {
+        mutex_unlock(&secctx_b_usage);
+        printf("Failed to prepare request encryption\n");
+        return 1;
+    }
+    mutex_unlock(&secctx_b_usage);
+
+    size_t text_length = strlen(argv[1]);
+    uint8_t *text = (uint8_t*)argv[1];
+
+    if (text_length == 3 && memcmp(text, "off", 3) == 0) {
+        /* As requested in the plugtest specs; "off" us used as a shorthand as
+         * it's readable with a single argument */
+        text = (uint8_t*)"Terminate Observe";
+        text_length = strlen((char*)text);
+        oscore_msg_protected_set_code(&oscmsg, 0xa0 /* 5.00 Internal Server Error */);
+    } else {
+        oscore_msg_protected_set_code(&oscmsg, 0x45 /* 2.05 Content */);
+        oscerr = oscore_msg_protected_append_option(&oscmsg, 6 /* Observe */, outer_observe.data, outer_observe.length);
+        if (oscore_msgerr_protected_is_error(oscerr)) {
+            printf("Failed to set Observe option\n");
+            goto error;
+        }
+    }
+
+    uint8_t *payload;
+    size_t payload_length;
+    oscerr = oscore_msg_protected_map_payload(&oscmsg, &payload, &payload_length);
+    if (oscore_msgerr_protected_is_error(oscerr)) {
+        printf("Failed to map payload\n");
+        goto error;
+    }
+
+    if (payload_length < text_length) {
+        printf("Message too short for allocated memory\n");
+        goto error;
+    }
+    memcpy(payload, text, text_length);
+
+    oscerr = oscore_msg_protected_trim_payload(&oscmsg, text_length);
+    if (oscore_msgerr_protected_is_error(oscerr)) {
+        printf("Unexpected failure to trim payload\n");
+        goto error;
+    }
+
+    oscore_msg_native_t pdu_write_out;
+    if (oscore_encrypt_message(&oscmsg, &pdu_write_out) != OSCORE_FINISH_OK) {
+        // see FIXME in oscore_encrypt_message description
+        assert(false);
+    }
+
+    // PDU is usable now again and can be sent
+
+    int bytes_sent = gcoap_obs_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &_resources[0]);
+    if (bytes_sent <= 0) {
+        printf("Error sending\n");
+    }
+    return 0;
+
+error:
+    // FIXME: abort encryption (but no PDU recovery and PDU freeing necessary on this backend as it's all stack allocated)
+
+    return 1;
+}
+
 // This is a brutally inefficient task as it constantly polls the buttons --
 // but at the same time it is easily portable. Don't run any power measurements
 // while this is running.
@@ -839,6 +957,7 @@ static const shell_command_t shell_commands[] = {
     {"target", "Set the IP and port to which to send on and off requests", cmdline_target },
     {"userctx", "Reset the user context with new key material", cmdline_userctx },
     {"userctx-shutdown", "Switch off the user context but allow resuming it later", cmdline_userctx_shutdown },
+    {"notify", "Emit a notification from the /oscore/observe1 resource", cmdline_notify },
     { NULL, NULL, NULL }
 };
 

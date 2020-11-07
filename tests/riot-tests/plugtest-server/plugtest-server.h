@@ -15,6 +15,8 @@
 #include <net/gcoap.h>
 #include <oscore/message.h>
 
+#include "intermediate-integration-helpers.h"
+
 #define B_SENDER_KEY {50, 136, 42, 28, 97, 144, 48, 132, 56, 236, 152, 230, 169, 50, 240, 32, 112, 143, 55, 57, 223, 228, 109, 119, 152, 155, 3, 155, 31, 252, 28, 172}
 #define B_RECIPIENT_KEY {213, 48, 30, 177, 141, 6, 120, 73, 149, 8, 147, 186, 42, 200, 145, 65, 124, 137, 174, 9, 223, 74, 56, 85, 170, 0, 10, 201, 255, 243, 135, 81}
 #define B_COMMON_IV {100, 240, 189, 49, 77, 75, 224, 60, 39, 12, 43, 28}
@@ -32,16 +34,18 @@ struct hello_state {
 };
 
 void hello_parse(oscore_msg_protected_t *in, void *vstate);
-void hello_build(oscore_msg_protected_t *out, const void *vstate);
+void hello_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
+void observe1_parse(oscore_msg_protected_t *in, void *vstate);
+void observe1_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void hello2_parse(oscore_msg_protected_t *in, void *vstate);
-void hello2_build(oscore_msg_protected_t *out, const void *vstate);
+void hello2_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void hello3_parse(oscore_msg_protected_t *in, void *vstate);
-void hello3_build(oscore_msg_protected_t *out, const void *vstate);
+void hello3_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void hello6_parse(oscore_msg_protected_t *in, void *vstate);
-void hello6_build(oscore_msg_protected_t *out, const void *vstate);
+void hello6_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void hello7_parse(oscore_msg_protected_t *in, void *vstate);
-void hello7_build(oscore_msg_protected_t *out, const void *vstate);
+void hello7_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 void delete_parse(oscore_msg_protected_t *in, void *vstate);
-void delete_build(oscore_msg_protected_t *out, const void *vstate);
+void delete_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe);
 
 #endif

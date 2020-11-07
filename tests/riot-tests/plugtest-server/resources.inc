@@ -15,6 +15,7 @@ RESOURCE(hello2, 3, PATH("oscore", "hello", "2"), hello2_parse, hello2_build, st
 RESOURCE(hello3, 3, PATH("oscore", "hello", "3"), hello3_parse, hello3_build, struct hello_state)
 RESOURCE(hello6, 3, PATH("oscore", "hello", "6"), hello6_parse, hello6_build, struct hello_state)
 RESOURCE(hello7, 3, PATH("oscore", "hello", "7"), hello7_parse, hello7_build, struct hello_state)
+RESOURCE(observe1, 2, PATH("oscore", "observe1"), observe1_parse, observe1_build, struct hello_state)
 RESOURCE(delete, 2, PATH("oscore", "test"), delete_parse, delete_build, struct hello_state)
 
 /* From the demo server */
