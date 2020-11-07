@@ -1,5 +1,6 @@
 #include "plugtest-server.h"
 #include "intermediate-integration.h"
+#include <oscore/protection.h>
 
 ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
 {
@@ -86,6 +87,9 @@ error2:
     oscore_msg_protected_trim_payload(out, 0);
 }
 
+bool observation_id_valid = false;
+oscore_requestid_t observation_id;
+
 void observe1_parse(oscore_msg_protected_t *in, void *vstate)
 {
     struct hello_state *state = vstate;
@@ -97,6 +101,24 @@ void observe1_parse(oscore_msg_protected_t *in, void *vstate)
 void observe1_build(oscore_msg_protected_t *out, const void *vstate, const struct observe_option *outer_observe)
 {
     const struct hello_state *state = vstate;
+
+
+    /* We're *not* storing this conditionally on whether this is an observation
+     * -- for anything to make actual sense here, that'd need to allow for
+     *  multiple concurrent observations in Gcoap anyway.
+     *
+     * What we *do* need to test very carefully is that this is only stored
+     * with context B -- as that's the one hard-coded in cmdlin_notify. A more
+     * practical implementation would store the context reference along with
+     * the key -- but then it'd need to invalidate the observations at the time
+     * of (or just prevent) modifications to the context, and eg. for the user
+     * context that's not easily possible without making it unmodifiable
+     * forever (given we're not informed of the end of observation).
+     */
+    if (out->secctx == &secctx_b) {
+        oscore_requestid_clone(&observation_id, &out->request_id);
+        observation_id_valid = true;
+    }
 
     if (!state->code_ok) {
         oscore_msg_protected_set_code(out, 0x85 /* 4.05 Method Not Allowed */);
