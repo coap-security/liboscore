@@ -356,7 +356,9 @@ oscore_msgerr_protected_t oscore_msg_protected_optiter_finish(
  * @param[out] payload Address where message payload can be written to
  * @param[out] payload_len Size of writable payload
  *
- * This modifies the message as it ends the possibility of adding options.
+ * This modifies the message as it ends the possibility of adding options
+ * (after having added any outstanding automatically inserted options like the
+ * OSCORE or the inner Observe option).
  *
  * This function can fail if the encoding of the inner options is erroneous (as
  * their encoding is not checked at decryption time). It will not fail if the
@@ -381,9 +383,10 @@ oscore_msgerr_protected_t oscore_msg_protected_map_payload(
  * @param[in] payload_len Size of writable payload
  *
  * Reduce the payload length of the message to the given size. After this, no
- * further @ref oscore_msg_protected_append_option calls are possible, as this
- * also flushes out any automatically inserted options (like the OSCORE
- * option), and then trims the underlying native message.
+ * further @ref oscore_msg_protected_append_option calls are possible (as this,
+ * like @ref oscore_msg_protected_map_payload, flushes the outstanding
+ * automatically inserted options), and then trims the underlying native
+ * message.
  *
  * The given size must be at most the @p payload_len obtained in a
  * @ref oscore_msg_protected_map_payload call; zero may be passed in even
