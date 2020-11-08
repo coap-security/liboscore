@@ -7,15 +7,6 @@ and toggle each other's LEDs from their buttons.
 Before attempting to follow through this,
 please ensure to have all prerequisites installed as described on @ref demo_common.
 
-Until [12751](https://github.com/RIOT-OS/RIOT/pull/12751) is merged,
-please go to the RIOT checkout in `tests/riot-tests/RIOT` and run:
-
-    $ git remote add chrysn https://github.com/chrysn-pull-requests/RIOT
-    $ git fetch chrysn
-    $ git checkout particle-xenon-native-bootloader2
-
-That branch is kept sufficiently close to the version used in here.
-
 * Plug in the first board while keeping the "Mode" button pressed (or press the "Reset" button briefly while keeping Mode pressed).
 
   The board will blink purple for some time, then start blinking yellow. Release the Mode button.
@@ -27,13 +18,15 @@ That branch is kept sufficiently close to the version used in here.
   will show several "Found DFU" lines;
   if not, check whether you installed the udev rules in @ref demo_common.
 
-* Inside `tests/riot-tests/plugtest-server`, run `make BOARD=particle-xenon PARTICLE_MONOFIRMWARE=1 all flash`.
+  This step should *only* be necessary the first time you flash this onto your particle;
+  once in place, later firmware uploads can send the device into DFU mode automatically.
+
+* Inside `tests/riot-tests/plugtest-server`, run `make BOARD=particle-xenon PARTICLE_MONOFIRMWARE=1 PORT=/dev/ttyACM0 all flash term`.
 
   This builds the plug test server
-  (which also contains the other demos)
-  and uploads it via DFU.
-
-  Once that is compleed, run `make BOARD=particle-xenon PARTICLE_MONOFIRMWARE=1 PORT=/dev/ttyACM0 term`.
+  (which also contains the other demos),
+  uploads it via DFU,
+  and gives you terminal access.
 
   If this gives you a "Device or resource busy" error,
   something else has just started interacting with the board.
