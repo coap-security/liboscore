@@ -340,6 +340,7 @@ static gcoap_listener_t _listener = {
     &_resources[0],
     ARRAY_SIZE(_resources),
     NULL,
+    NULL,
     NULL
 };
 
