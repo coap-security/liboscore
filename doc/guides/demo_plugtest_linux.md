@@ -72,9 +72,19 @@ The server side is now prepared and ready; leave that running and switch over to
     If this fails, verify that you changed the encryption algorithm as in the previous step.
     Make sure to remove the `/tmp/clientctx` folder after any updates to the common context.
 
-  * 5-7: These are about observation, and currently fail spectacularly.
+  * 6: This test includes an observation.
 
-    Please skip them until [#12736](https://github.com/RIOT-OS/RIOT/issues/12736) is fixed.
+    When test 6 is started, it will not complete immediately, but wait for further events from RIOT.
+    These can be sent by entering at the RIOT command prompt:
+
+        > notify two
+        > notify off
+
+    This sends exactly the two messages back to the plugtest client, and the observation can complete.
+    Different text can be sent as well, but then the plugtest client will complain about it being unexpected.
+    The value "off" is special in that it sends an error response that ends the observation.
+
+  * 7: This test is not implemented in the intermediate integration layer for RIOT, please skip it.
 
   * 12-15: These test for incorrect use of OSCORE.
 
