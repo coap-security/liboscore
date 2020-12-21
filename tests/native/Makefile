@@ -54,14 +54,12 @@ libs:
 	mkdir libs
 	# not created as submodules as those are expected to be used in full
 	# library fashion on the long run
-	cd libs && git clone https://github.com/chrysn-pull-requests/libcose -b tinydtls
+	cd libs && git clone https://github.com/chrysn-pull-requests/libcose -b liboscore-vendor
 	cd libs && git clone https://github.com/bergzand/NanoCBOR nanocbor
 	cd libs && git clone https://github.com/eclipse/tinydtls -b develop
 
 clean:
-	rm -f standalone-demo
-	rm -f cryptobackend-aead
-	rm -f unprotect-demo
+	rm -f ${CASES}
 	rm -f *.o
 	rm -f *.d
 
