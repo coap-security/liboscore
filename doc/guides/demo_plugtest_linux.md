@@ -43,8 +43,6 @@ please ensure to have all prerequisites installed as described on @ref demo_comm
 
 The server side is now prepared and ready; leave that running and switch over to your aiocoap check-out.
 
-* As the plug test prescribes the use of AES-CCM which is not availble in RIOT-OS's default COSE implementation,
-  change the algorithm setting in `contrib/oscore-plugtest/common-context/*/settings.json` from "AES-CCM-16-64-128" to "ChaCha20/Poly1305".
 * Run the plug test client:
 
       $ ./contrib/oscore-plugtest/plugtest-client '[fe80::3c63:beff:fe85:ca96%tapbr0]' /tmp/clientctx

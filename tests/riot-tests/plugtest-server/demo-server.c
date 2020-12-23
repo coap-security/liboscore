@@ -980,7 +980,7 @@ int main(void)
     }
 
     oscore_cryptoerr_t oscerr;
-    oscerr = oscore_crypto_aead_from_number(&immutables_b.aeadalg, 24);
+    oscerr = oscore_crypto_aead_from_number(&immutables_b.aeadalg, 10);
     // Not having the plugtest context available is not expected
     assert(!oscore_cryptoerr_is_error(oscerr));
 
@@ -997,7 +997,7 @@ int main(void)
             );
     assert(!oscore_cryptoerr_is_error(oscerr));
 
-    oscerr = oscore_crypto_aead_from_number(&immutables_d.aeadalg, 24);
+    oscerr = oscore_crypto_aead_from_number(&immutables_d.aeadalg, 10);
     assert(!oscore_cryptoerr_is_error(oscerr));
 
     gcoap_register_listener(&_listener);
