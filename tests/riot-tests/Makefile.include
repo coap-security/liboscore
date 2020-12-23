@@ -15,11 +15,20 @@ USEMODULE += oscore
 
 # Pick a backend; without, no algorithms are available
 USEMODULE += libcose_crypt_hacl
-# That would offer AES-CCM algorithms, but using it requires changing the RIOT
-# package to point to the branch at https://github.com/bergzand/libcose/pull/91
-# until that is completed and a version including it has been mada available in
-# RIOT.
-# USEMODULE += libcose_crypt_tinydtls
+# Add tinydtls backend for AES-CCM and HKDF support.
+#
+# As this is waiting for https://github.com/bergzand/libcose/pull/91 and /94,
+# it needs the following lines adapted in RIOT:
+#
+# In tests/riot-tests/RIOT/pkg/libcose/Makefile, set:
+#
+# PKG_URL=https://github.com/chrysn-pull-requests/libcose
+# PKG_VERSION=f4eb5b54c48a2985512bf9e83587bf7b2ec90fb4
+#
+# (This picks a recent commit from the liboscore-vendor branch).
+USEMODULE += libcose_crypt_tinydtls
+# and we'll have to pick one of those recently...
+USEMODULE += prng_sha256prng
 
 EXTERNAL_MODULE_DIRS += $(abspath ..)/testwrapper
 

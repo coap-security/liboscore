@@ -20,16 +20,11 @@ struct persisted_data *persist;
 // They could be const if it were not for aeadalg that is set by the oscore_crypto_aead_from_number function.
 // (In practical applications that's less of an issue, because *if* the whole primitive key is placed in flash memory at build time, the backend is usually known well enough to also have a known value here, whereas this demo expects to run on any backend)
 //
-// Context B: as specified in plug test description (therefore hard-coded; outside the plug tests, this must only be done only when one of the recovery mechanisms of the OSCORE specification appendix B or equivalent are used).
+// Context B: as specified in plug test description; to show how thigns can be used, this is not static but populated by a key derivation.
 static struct oscore_context_primitive_immutables immutables_b = {
-    .common_iv = B_COMMON_IV,
-
     .recipient_id_len = 0,
-    .recipient_key = B_RECIPIENT_KEY,
-
     .sender_id_len = 1,
     .sender_id = "\x01",
-    .sender_key = B_SENDER_KEY,
 };
 static struct oscore_context_primitive primitive_b = { .immutables = &immutables_b };
 oscore_context_t secctx_b = {
@@ -38,7 +33,7 @@ oscore_context_t secctx_b = {
 };
 mutex_t secctx_b_usage = MUTEX_INIT;
 
-// Context D: as specified in plug test description (see B)
+// Context D: as specified in plug test description (see B); to show how things can be used, this *is* static.
 static struct oscore_context_primitive_immutables immutables_d = {
     .common_iv = D_COMMON_IV,
 
@@ -988,6 +983,20 @@ int main(void)
     oscerr = oscore_crypto_aead_from_number(&immutables_b.aeadalg, 24);
     // Not having the plugtest context available is not expected
     assert(!oscore_cryptoerr_is_error(oscerr));
+
+    oscore_crypto_hkdfalg_t hkdfalg;
+    oscerr = oscore_crypto_hkdf_from_number(&hkdfalg, 5); /* or -10? */
+    assert(!oscore_cryptoerr_is_error(oscerr));
+
+    // Algorithm and IDs are already set; sender, recipient key and common IV can be derived
+    oscerr = oscore_context_primitive_derive(&immutables_b,
+            hkdfalg,
+            ab_master_salt, sizeof(ab_master_salt),
+            ab_master_secret, sizeof(ab_master_secret),
+            NULL, 0
+            );
+    assert(!oscore_cryptoerr_is_error(oscerr));
+
     oscerr = oscore_crypto_aead_from_number(&immutables_d.aeadalg, 24);
     assert(!oscore_cryptoerr_is_error(oscerr));
 
