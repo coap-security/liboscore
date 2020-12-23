@@ -307,11 +307,11 @@ oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 		const uint8_t *salt,
 		size_t salt_len,
 		const uint8_t *ikm,
-		size_t ikm_length,
+		size_t ikm_len,
 		const uint8_t *info,
-		size_t info_length,
+		size_t info_len,
 		uint8_t *out,
-		size_t out_length
+		size_t out_len
 		);
 
 /** Return true if an error type indicates an unsuccessful operation */
