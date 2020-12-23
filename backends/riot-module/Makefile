@@ -9,6 +9,7 @@ vpath %.c ${OSCOREBASE}/backends/libcose/src/
 
 SRC += oscore_message.c
 SRC += context_b1.c
+SRC += context_primitive.c
 SRC += contextpair.c
 SRC += oscore_msg_native.c
 SRC += oscore_test.c

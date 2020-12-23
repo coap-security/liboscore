@@ -104,6 +104,33 @@ struct oscore_context_primitive {
     uint32_t replay_window;
 };
 
+/** @brief Derive sender and recipient key and common IV
+ *
+ * Given a @p context that is prepopulated with algorithm and IDs, populate all
+ * key and IV fields.
+ *
+ * @param[inout] context        The prepopulated context
+ * @param[in]    salt           The master salt
+ * @param[in]    salt_len       The master salt's length
+ * @param[in]    ikm            The master key
+ * @param[in]    ikm_len        The master key's length
+ * @param[in]    id_context     The id_context of the key (may be NULL to create a nil value in the `info`)
+ * @param[in]    id_context_len The length of the id_context (must be 0 if id_context is NULL)
+ *
+ * @return a successful cryptoerr type for all valid inputs.
+ *
+ */
+oscore_cryptoerr_t oscore_context_primitive_derive(
+        struct oscore_context_primitive_immutables *context,
+        oscore_crypto_hkdfalg_t alg,
+        const uint8_t *salt,
+        size_t salt_len,
+        const uint8_t *ikm,
+        size_t ikm_len,
+        const uint8_t *id_context,
+        size_t id_context_len
+        );
+
 /** @} */
 
 #endif
