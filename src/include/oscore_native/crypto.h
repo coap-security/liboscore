@@ -278,6 +278,10 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
  * function must return an error; it may leave @p alg uninitialized or set it
  * arbitrarily in that case.
  *
+ * @FIXME There is some inconsistency here in how the number is treated ("is 5
+ * a valid input, or -10?"), see
+ * <https://gitlab.com/oscore/liboscore/-/issues/58> for details.
+ *
  */
 OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, int32_t number);
@@ -297,10 +301,34 @@ oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, 
 OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_hkdf_from_string(oscore_crypto_hkdfalg_t *alg, uint8_t *string, size_t string_len);
 
-// Having info as a buffer is really inconvenient as I'd rather feed that slice
-// by slice given it contains potentially long id / id_context. 
-//
-// running expand and extract independently would be nice as well, given it'd save a hashing step.
+/** @brief Run a single HKDF derivation (ie. extraction and expansion)
+ *
+ * @param[in] alg HKDF algorithm
+ * @param[in] salt The Salt fed into the extract step (in the "key" position)
+ * @param[in] salt_len Length of @salt
+ * @param[in] ikm The Input Keying Material (IKM) fed into the extract step (in the "input" position)
+ * @param[in] ikm_len Length of @p ikm
+ * @param[in] info Application specific informartion fed into the expand steps
+ * @param[in] info_len Length of @p info
+ * @param[out] out Buffer into which the expand output is to be placed
+ * @param[in] out_len Length of @p out
+ *
+ * @return a successful cryptoerr value unless @p out_len is so large that the HKDF fails.
+ *
+ * Design notes:
+ *
+ * Having info as a buffer is really inconvenient as it'd be more convenient to feedd that slice
+ * by slice given it contains potentially long id / id_context. A future change
+ * here could remove the need for contiguously allocated @p info (also possibly
+ * @p salt or @p ikm) data; the challenge will be that @p info is needed
+ * multiple times if @p out_len exceeds the HKDF algorithm's block size -- in
+ * theory, at least. (In practice, what gets extracted is a key and an IV, and
+ * both are typically <= 32 bytes which the common SHA-256 HKDF already
+ * provides in a single pass).
+ *
+ * Running expand and extract independently could save some steps, especially
+ * during group rekeying.
+ */
 OSCORE_NONNULL
 oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 		oscore_crypto_hkdfalg_t alg,
