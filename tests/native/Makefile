@@ -50,6 +50,8 @@ unprotect-demo: unprotect-demo.o contextpair.o protection.o oscore_message.o ${B
 
 unit-contextpair-window: unit-contextpair-window.o contextpair.o ${BACKEND_OBJS}
 
+cryptobackend-hkdf: cryptobackend-hkdf.o ${BACKEND_OBJS}
+
 libs:
 	mkdir libs
 	# not created as submodules as those are expected to be used in full

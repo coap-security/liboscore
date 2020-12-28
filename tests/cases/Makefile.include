@@ -1,1 +1,1 @@
-CASES = cryptobackend-aead standalone-demo unprotect-demo unit-contextpair-window
+CASES = cryptobackend-aead standalone-demo unprotect-demo unit-contextpair-window cryptobackend-hkdf
