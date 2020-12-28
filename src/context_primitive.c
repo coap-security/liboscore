@@ -16,6 +16,8 @@ const size_t info_maxlen = 1 + \
 
 extern size_t cbor_intencode(size_t input, uint8_t buf[5], uint8_t type);
 extern size_t cbor_intsize(size_t input);
+extern size_t cbor_signedintencode(int32_t input, uint8_t buf[5]);
+extern size_t cbor_signedintsize(int32_t input);
 
 /** Build an `info` and derive a single output parameter.
  *
@@ -39,10 +41,8 @@ oscore_cryptoerr_t _derive_single(
         )
 {
     int32_t numeric_alg = 0;
-    /* FIXME just do preencoding */
+    /* FIXME just have a oscore_crypto_aeadalg_get_preencoded? */
     oscore_crypto_aead_get_number(context->aeadalg, &numeric_alg);
-    uint32_t preencoded_alg = numeric_alg >= 0 ? numeric_alg : (-1 - numeric_alg);
-    uint8_t preencoded_type = numeric_alg >= 0 ? 0x00 : 0x20;
 
     /* Note that while it'd be kind of possible to feed at least one of salt or
      * ikm in in a streaming fashion, feeding in info is really a no-go as is
@@ -54,7 +54,7 @@ oscore_cryptoerr_t _derive_single(
     size_t infobuf_len = 1 + \
             cbor_intsize(id_len) + id_len + \
             cbor_intsize(id_context_len) + id_context_len + \
-            cbor_intsize(preencoded_alg) + \
+            cbor_signedintsize(numeric_alg) + \
             cbor_intsize(type_len) + type_len + \
             cbor_intsize(dest_len);
 
@@ -72,7 +72,7 @@ oscore_cryptoerr_t _derive_single(
         memcpy(cursor, id_context, id_context_len);
         cursor += id_context_len;
     }
-    cursor += cbor_intencode(preencoded_alg, cursor, preencoded_type);
+    cursor += cbor_signedintencode(numeric_alg, cursor);
     cursor += cbor_intencode(type_len, cursor, 0x60);
     memcpy(cursor, type, type_len);
     cursor += type_len;

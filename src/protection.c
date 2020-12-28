@@ -78,6 +78,18 @@ size_t cbor_intencode(size_t input, uint8_t buf[5], uint8_t type)
     return ret;
 }
 
+/** Return the number of bytes needed to encode the given input number as a
+ * positive or negative integer. */
+size_t cbor_signedintsize(int32_t input) {
+    return cbor_intsize(input < 0 ? -1 - input : input);
+}
+
+/** Shorthand for cbor_intencode that sets type to 0x00 or 0x20 depending on
+ * the sign, and adjust the value ccordingly to encode an integer. */
+size_t cbor_signedintencode(int32_t input, uint8_t buf[5]) {
+    return cbor_intencode(input < 0 ? -1 - input : input, buf, input < 0 ? 0x20 : 0x00);
+}
+
 struct aad_sizes {
     size_t class_i_length;
     size_t external_aad_length;
@@ -122,7 +134,7 @@ struct aad_sizes predict_aad_size(
             1 /* array length 5 */ +
             1 /* oscore version 1 */ +
             1 /* 1-long array of of */ +
-                cbor_intsize(numeric_identifier < 0 ? -1 - numeric_identifier : numeric_identifier) /* FIXME strings? */ +
+                cbor_signedintsize(numeric_identifier) /* FIXME strings? */ +
             cbor_intsize(request_kid_len) + request_kid_len + /* request_kid */
             cbor_intsize(request->used_bytes) + request->used_bytes + /* request_piv */
             cbor_intsize(ret.class_i_length) + ret.class_i_length;
@@ -176,7 +188,7 @@ oscore_cryptoerr_t feed_aad(
     int32_t numeric_identifier = 0;
     err = oscore_crypto_aead_get_number(aeadalg, &numeric_identifier);
     if (oscore_cryptoerr_is_error(err)) { return err; }
-    err = feeder(state, intbuf, cbor_intencode(numeric_identifier < 0 ? -1 - numeric_identifier : numeric_identifier, intbuf, numeric_identifier < 0 ? 0x20 : 0x00));
+    err = feeder(state, intbuf, cbor_signedintencode(numeric_identifier, intbuf));
     if (oscore_cryptoerr_is_error(err)) { return err; }
 
     // Request KID
