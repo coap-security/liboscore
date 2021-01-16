@@ -88,6 +88,13 @@ void oscore_context_get_kid(
         );
 
 OSCORE_NONNULL
+void oscore_context_get_kidcontext(
+        const oscore_context_t *secctx,
+        const uint8_t **kidcontext,
+        size_t *kidcontext_len
+        );
+
+OSCORE_NONNULL
 const uint8_t *oscore_context_get_commoniv(const oscore_context_t *secctx);
 
 OSCORE_NONNULL
@@ -118,5 +125,16 @@ bool oscore_context_take_seqno(
         );
 
 /** @} */
+
+/** @brief Ask the context whether to encode the KID Context in the OSCORE option
+ *
+ * @param[in] secctx Security context pair to query
+ * @param[in] is_request `true` when asking about a request, `false` when asking about a response
+ *
+ * @return `true` if the KID Context should be encoded in the message.
+ *
+ */
+OSCORE_NONNULL
+bool oscore_context_emit_kidcontext(const oscore_context_t *secctx, bool is_request);
 
 #endif

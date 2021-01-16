@@ -221,3 +221,24 @@ void oscore_context_strikeout_requestid(
         abort();
     }
 }
+
+void oscore_context_get_kidcontext(
+        const oscore_context_t *secctx,
+        const uint8_t **kidcontext,
+        size_t *kidcontext_len
+        )
+{
+    switch (secctx->type) {
+    default:
+        /* For those it is not relevant ever, returning empty as they don't keep it */
+        *kidcontext_len = 0;
+    }
+}
+
+bool oscore_context_emit_kidcontext(const oscore_context_t *secctx, bool is_request)
+{
+    switch (secctx->type) {
+    default:
+        return false;
+    }
+}

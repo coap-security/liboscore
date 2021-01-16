@@ -237,8 +237,8 @@ oscore_msgerr_protected_t flush_autooptions_outer_until(oscore_msg_protected_t *
         // FIXME any other situation? probably context dependent -- ask context?
         bool k = msg->flags & OSCORE_MSG_PROTECTED_FLAG_REQUEST;
 
-        // FIXME ask context for kidcontext
-        bool h = 0;
+        bool h = oscore_context_emit_kidcontext(msg->secctx,
+                msg->flags & OSCORE_MSG_PROTECTED_FLAG_REQUEST);
 
         optionbuffer[0] = n | (k << 3) | (h << 4);
         optionlength = 1;
@@ -247,7 +247,14 @@ oscore_msgerr_protected_t flush_autooptions_outer_until(oscore_msg_protected_t *
             optionlength += n;
         }
 
-        assert(h == 0); // set s and kid context here
+        if (h) {
+            const uint8_t *kidcontext;
+            size_t kidcontext_len;
+            oscore_context_get_kidcontext(msg->secctx, &kidcontext, &kidcontext_len);
+            optionbuffer[optionlength++] = kidcontext_len;
+            memcpy(&optionbuffer[optionlength], kidcontext, kidcontext_len);
+            optionlength += kidcontext_len;
+        }
 
         if (k) {
             const uint8_t *kid;
