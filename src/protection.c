@@ -538,11 +538,10 @@ enum oscore_prepare_result oscore_prepare_response(
     // OK because it has special semantics in a oscore_msg_protected_t.partial_iv
     unprotected->partial_iv.is_first_use = true;
 
-    // Leaving the FLAG_REQUEST at 0 as it is
-
     oscore_msg_native_set_code(protected, 0x45); // 2.05 Content
 
     return _prepare_encrypt(protected, unprotected, secctx);
+    // Leaving the FLAG_REQUEST at 0 as it is
 }
 
 enum oscore_prepare_result oscore_prepare_request(
@@ -564,11 +563,13 @@ enum oscore_prepare_result oscore_prepare_request(
     // OK because it has special semantics in a oscore_msg_protected_t.partial_iv
     unprotected->partial_iv.is_first_use = true;
 
-    unprotected->flags |= OSCORE_MSG_PROTECTED_FLAG_REQUEST;
-
     oscore_msg_native_set_code(protected, 0x2); // POST
 
-    return _prepare_encrypt(protected, unprotected, secctx);
+    enum oscore_prepare_result result = _prepare_encrypt(protected, unprotected, secctx);
+
+    unprotected->flags |= OSCORE_MSG_PROTECTED_FLAG_REQUEST;
+
+    return result;
 }
 
 enum oscore_finish_result oscore_encrypt_message(
