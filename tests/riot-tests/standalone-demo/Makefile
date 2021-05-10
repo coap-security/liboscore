@@ -1,3 +1,3 @@
-include ../Makefile.include
-
 USEMODULE += testwrapper
+
+include ../Makefile.include

@@ -10,7 +10,7 @@ DEVELHELP ?= 1
 # pedantic Werrors to show up in RIOT source; gnu11 seems to ignore those.
 CFLAGS += -std=gnu11
 
-EXTERNAL_MODULE_DIRS += $(abspath ../../..)/backends/riot-module
+EXTERNAL_MODULE_DIRS += $(abspath ../../..)/backends/riot-modules
 USEMODULE += oscore
 
 # Pick a backend; without, no algorithms are available
@@ -30,7 +30,7 @@ USEMODULE += libcose_crypt_tinydtls
 # and we'll have to pick one of those recently...
 USEMODULE += prng_sha256prng
 
-EXTERNAL_MODULE_DIRS += $(abspath ..)/testwrapper
+EXTERNAL_MODULE_DIRS += $(abspath ..)/
 
 TESTS = ../test-evaluator.sh
 

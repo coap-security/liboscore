@@ -1,7 +1,7 @@
 MODULE = oscore
 
 # See comment in MAkefile.include
-OSCOREBASE := $(abspath $(lastword $(MAKEFILE_LIST))/../../..)
+OSCOREBASE := $(abspath $(lastword $(MAKEFILE_LIST))/../../../..)
 
 vpath %.c ${OSCOREBASE}/src
 vpath %.c ${OSCOREBASE}/backends/nanocoap/src/
