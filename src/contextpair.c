@@ -228,6 +228,8 @@ void oscore_context_get_kidcontext(
         size_t *kidcontext_len
         )
 {
+    (void)secctx;
+    (void)kidcontext;
     switch (secctx->type) {
     default:
         /* For those it is not relevant ever, returning empty as they don't keep it */
@@ -237,6 +239,8 @@ void oscore_context_get_kidcontext(
 
 bool oscore_context_emit_kidcontext(const oscore_context_t *secctx, bool is_request)
 {
+    (void)secctx;
+    (void)is_request;
     switch (secctx->type) {
     default:
         return false;

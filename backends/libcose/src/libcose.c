@@ -228,6 +228,7 @@ oscore_cryptoerr_t oscore_crypto_hkdf_derive(
 #ifdef LIBCOSE_HAS_HKDF
     return cose_crypto_hkdf_derive(salt, salt_len, ikm, ikm_len, info, info_len, out, out_len, alg);
 #else
+    (void)salt, (void)salt_len, (void)ikm, (void)ikm_len, (void)info, (void)info_len, (void)out, (void)out_len, (void)alg;
     // No hkdfalg_t could have been valid
     abort();
 #endif
