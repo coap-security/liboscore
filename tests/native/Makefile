@@ -31,14 +31,15 @@ test: ${CASES}
 
 test-all-versions:
 	${MAKE} clean
-	${MAKE} CC=gcc OPTFLAGS=-O0 test
+	${MAKE} CC=gcc OPTFLAGS=-O0 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
-	${MAKE} CC=gcc OPTFLAGS=-O3 test
+	${MAKE} CC=gcc OPTFLAGS=-O3 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
 	${MAKE} CC=clang TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
-	${MAKE} CC=clang BE_PEDANTIC=no test
-	${MAKE} clean
+	# only relevant with TINYDTLS
+# 	${MAKE} CC=clang BE_PEDANTIC=no test
+# 	${MAKE} clean
 
 include $(wildcard *.d)
 
@@ -56,7 +57,9 @@ libs:
 	mkdir libs
 	# not created as submodules as those are expected to be used in full
 	# library fashion on the long run
-	cd libs && git clone https://github.com/chrysn-pull-requests/libcose -b liboscore-vendor
+	# temporarily switching over to upstream version while vendor version has not merged upstream code
+	#cd libs && git clone https://github.com/chrysn-pull-requests/libcose -b liboscore-vendor
+	cd libs && git clone https://github.com/bergzand/libcose
 	cd libs && git clone https://github.com/bergzand/NanoCBOR nanocbor
 	cd libs && git clone https://github.com/eclipse/tinydtls -b develop
 	cd libs && git clone https://github.com/intel/tinycrypt
