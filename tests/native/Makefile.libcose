@@ -1,6 +1,8 @@
 # FIXME: the sodium.o name is hardcoded as this makefile uses vpath while libcose works from source names
 libs/libcose/makefiles/sodium.mk: libs
 include libs/libcose/makefiles/sodium.mk
+TINYCRYPT_DIR = libs/tinycrypt/lib
+include libs/libcose/makefiles/tinycrypt.mk
 
 TESTS_USE_TINYDTLS ?= yes
 ifeq (yes,${TESTS_USE_TINYDTLS})
@@ -10,6 +12,8 @@ ifeq (yes,${TESTS_USE_TINYDTLS})
     CFLAGS_CRYPTO += -Ilibs/tinydtls
     # I hope most of the DTLS objects will not even be used after dead function elimination
     TINYDTLS_OBJS = tinydtls.o crypto.o ccm.o rijndael.o rijndael_wrap.o hmac.o ccm.o sha2.o netq.o
+    # HKDF currently only available in the tinydtls branches
+    TINYDTLS_OBJS += cose_hkdf.o
     # dtls_crit("can not allocate a handshake struct\n") / ISO C99 requires at least one argument for the "..." in a variadic macro
     $(TINYDTLS_OBJS): CFLAGS += -std=gnu11 -Wno-gnu-zero-variadic-macro-arguments
     vpath %.c libs/tinydtls/
@@ -28,4 +32,4 @@ vpath %.c libs/libcose/src/crypt/
 CFLAGS += ${CFLAGS_CRYPTO}
 LDFLAGS += ${LDFLAGS_CRYPTO}
 
-BACKEND_OBJS += libcose.o cose_crypto.o sodium.o cose_hkdf.o $(shell pkg-config --libs $(SODIUM_LIB)) $(TINYDTLS_OBJS)
+BACKEND_OBJS += libcose.o cose_crypto.o tinycrypt.o sodium.o $(shell pkg-config --libs $(SODIUM_LIB)) $(TINYCRYPT_LIB) $(TINYDTLS_OBJS)

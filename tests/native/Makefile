@@ -59,6 +59,7 @@ libs:
 	cd libs && git clone https://github.com/chrysn-pull-requests/libcose -b liboscore-vendor
 	cd libs && git clone https://github.com/bergzand/NanoCBOR nanocbor
 	cd libs && git clone https://github.com/eclipse/tinydtls -b develop
+	cd libs && git clone https://github.com/intel/tinycrypt
 
 clean:
 	rm -f ${CASES}
