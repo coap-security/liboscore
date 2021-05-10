@@ -44,7 +44,6 @@ static struct testdata chacha_data = {
     .expected_ciphertext = chacha_expected_ciphertext,
 };
 
-#ifdef CRYPTO_TINYDTLS
 static const uint8_t aesccm_key[] = AESCCM_SENDER_KEY;
 static const uint8_t aesccm_nonce[] = AESCCM_COMMON_IV;
 // see chacha_expected_ciphertext for source
@@ -59,7 +58,6 @@ static struct testdata aesccm_data = {
     .nonce = aesccm_nonce,
     .expected_ciphertext = aesccm_expected_ciphertext,
 };
-#endif
 
 const char message[] = "The quick brown fox jumps over the lazy dog.";
 
@@ -135,8 +133,6 @@ int testmain(int introduce_error)
     ret = test_with(&chacha_data, introduce_error == 1);
     if (ret != 0)
         return ret;
-#ifdef CRYPTO_TINYDTLS
     ret = test_with(&aesccm_data, introduce_error > 1);
-#endif
     return ret;
 }
