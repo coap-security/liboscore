@@ -97,7 +97,8 @@ int test_with(struct testdata *data, int introduce_error)
 
 int testmain(int introduce_error)
 {
-    int ret;
+    int ret = 0;
+#ifdef LIBCOSE_HAS_HKDF
     ret = test_with(&sha256_data, introduce_error == 1);
     if (ret != 0)
         return ret;
@@ -109,5 +110,10 @@ int testmain(int introduce_error)
         return ret;
     */
     ret = test_with(&sha256_data_longextracted, introduce_error > 2);
+#else
+    (void)sha256_data;
+    (void)sha256_data_longsalt;
+    (void)sha256_data_longextracted;
+#endif
     return ret;
 }
