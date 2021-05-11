@@ -3,6 +3,8 @@
 
 #ifdef BOARD_NATIVE
 
+/* The native support of flashpage is not used as that is not persisted */
+
 #include <sys/stat.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -100,7 +102,7 @@ static const uint8_t backing_memory[FLASHPAGE_SIZE] __attribute__((aligned(FLASH
 
 // The RAM that's read from the flashpage, and where to data is written to
 // before it is flashed.
-uint8_t flashpage_buffer[FLASHPAGE_SIZE] __attribute__((aligned(FLASHPAGE_RAW_ALIGNMENT))) = {0};
+uint8_t flashpage_buffer[FLASHPAGE_SIZE] __attribute__((aligned(FLASHPAGE_WRITE_BLOCK_ALIGNMENT))) = {0};
 
 static int flashpage;
 

@@ -14,6 +14,7 @@ BOARD ?= native
 
 ifneq ($(BOARD),native)
 FEATURES_REQUIRED += periph_flashpage
+USEMODULE += periph_flashpage_pagewise
 endif
 
 ifeq ($(BOARD),particle-xenon)
