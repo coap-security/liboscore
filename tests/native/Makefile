@@ -21,8 +21,14 @@ all: test
 vpath %.c ../../src/
 vpath %.c ../cases/
 
+ifeq (libs,$(wildcard libs))
 include Makefile.mockoap
 include Makefile.libcose
+else
+# We might pull in libs through a dependency of the to-be-included
+# Makefile.libcose, but even some expansions run into errors
+$(warning "Before running anything else, run `make libs` to ensure all Makefile components are ready")
+endif
 
 BACKEND_OBJS += testwrapper.c
 
@@ -63,6 +69,9 @@ libs:
 	cd libs && git clone https://github.com/bergzand/NanoCBOR nanocbor
 	cd libs && git clone https://github.com/eclipse/tinydtls -b develop
 	cd libs && git clone https://github.com/intel/tinycrypt
+
+libs/tinycrypt/lib/libtinycrypt.a:
+	$(MAKE) -C libs/tinycrypt/lib
 
 clean:
 	rm -f ${CASES}
