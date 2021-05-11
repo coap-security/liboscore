@@ -979,26 +979,45 @@ int main(void)
         persist->key_good = false;
     }
 
+    bool plugtest_available = true;
+
     oscore_cryptoerr_t oscerr;
     oscerr = oscore_crypto_aead_from_number(&immutables_b.aeadalg, 10);
     // Not having the plugtest context available is not expected
-    assert(!oscore_cryptoerr_is_error(oscerr));
+    if (oscore_cryptoerr_is_error(oscerr)) {
+        puts("Plugtest server unavailable for lack of AEAD algorithm support.");
+        plugtest_available = false;
+    }
 
     oscore_crypto_hkdfalg_t hkdfalg;
-    oscerr = oscore_crypto_hkdf_from_number(&hkdfalg, 5); /* or -10? */
-    assert(!oscore_cryptoerr_is_error(oscerr));
+    if (plugtest_available) {
+        oscerr = oscore_crypto_hkdf_from_number(&hkdfalg, 5); /* or -10? */
+        if (oscore_cryptoerr_is_error(oscerr)) {
+            puts("Plugtest server unavailable for lack of HKDF algorithm support.");
+            plugtest_available = false;
+        }
+    }
 
-    // Algorithm and IDs are already set; sender, recipient key and common IV can be derived
-    oscerr = oscore_context_primitive_derive(&immutables_b,
-            hkdfalg,
-            ab_master_salt, sizeof(ab_master_salt),
-            ab_master_secret, sizeof(ab_master_secret),
-            NULL, 0
-            );
-    assert(!oscore_cryptoerr_is_error(oscerr));
+    if (plugtest_available) {
+        // Algorithm and IDs are already set; sender, recipient key and common IV can be derived
+        oscerr = oscore_context_primitive_derive(&immutables_b,
+                hkdfalg,
+                ab_master_salt, sizeof(ab_master_salt),
+                ab_master_secret, sizeof(ab_master_secret),
+                NULL, 0
+                );
+        // Nothing can't easily go wrong here
+        assert(!oscore_cryptoerr_is_error(oscerr));
 
-    oscerr = oscore_crypto_aead_from_number(&immutables_d.aeadalg, 10);
-    assert(!oscore_cryptoerr_is_error(oscerr));
+        oscerr = oscore_crypto_aead_from_number(&immutables_d.aeadalg, 10);
+        // would have broken before
+        assert(!oscore_cryptoerr_is_error(oscerr));
+    }
+
+    if (!plugtest_available) {
+        mutex_lock(&secctx_b_usage);
+        mutex_lock(&secctx_d_usage);
+    }
 
     gcoap_register_listener(&_listener);
 
