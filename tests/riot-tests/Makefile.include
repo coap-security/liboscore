@@ -52,6 +52,13 @@ USEMODULE += libcose_crypt_tinycrypt
 #
 #USEMODULE += libcose_crypt_tinydtls
 
+ifeq (rust,${OSCORE_CRYPTO_BACKEND})
+BASELIBS += ../../../rust/liboscore-cryptobackend-aead-standalone/target/i686-unknown-linux-gnu/debug/libliboscore_cryptobackend_aead_standalone.a
+
+../../../rust/liboscore-cryptobackend-aead-standalone/target/i686-unknown-linux-gnu/debug/libliboscore_cryptobackend_aead_standalone.a:
+	cd ../../rust/liboscore-cryptobackend-aead/ && cargo +nightly build --target=i686-unknown-linux-gnu
+endif
+
 # Some RNG needs to be selected for libcose
 USEMODULE += prng_sha256prng
 

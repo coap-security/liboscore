@@ -1,7 +1,15 @@
 BACKEND_OBJS += ../../rust/liboscore-cryptobackend-aead-standalone/target/debug/libliboscore_cryptobackend_aead_standalone.a
 
+../../rust/liboscore-cryptobackend-aead-standalone/target/debug/libliboscore_cryptobackend_aead_standalone.a: always
+	cd ../../rust/liboscore-cryptobackend-aead-standalone && cargo +nightly build
+
 rustbuilthdr/oscore_native/crypto_type.h:
 	mkdir -p $$(dirname $@)
 	(cd ../../rust/liboscore-cryptobackend-aead/ && cbindgen --lang=C) > $@
 
-CFLAGS += -Irustbuilthdr/
+# not really, but that currently starts AES-CCM tests
+CFLAGS += -DCRYPTO_TINYDTLS
+
+CFLAGS += -I../../rust/liboscore-cryptobackend-aead/c-headers/
+
+.PHONY: always

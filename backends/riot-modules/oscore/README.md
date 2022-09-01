@@ -19,3 +19,8 @@ The `libcose_crypt_monocypher` line selects libcose's cryptography backend. Any
 libcose backend (or combination thereof) can be selected as long as it provides
 the AEAD algorithms needed for the selected ciphers. See [the libcose RIOT
 documentation](https://riot-os.org/api/group__pkg__libcose.html) for details.
+
+As an alternative to libcose, the experimental Rust backend can be chosen. When
+`OSCORE_CRYPTO_BACKEND=rust` is set, no libcose backends need to be selected,
+and the liboscore-cryptobackend-aead-standalone crate is used to create a
+static library.

@@ -1,2 +1,5 @@
 USEMODULE += nanocoap
+
+ifeq (libcose,${OSCORE_CRYPTO_BACKEND})
 USEPKG += libcose
+endif

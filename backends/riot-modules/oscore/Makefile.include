@@ -8,4 +8,10 @@ INCLUDES += -I${OSCOREBASE}/src/include
 
 # Backends we choose for RIOT
 INCLUDES += -I${OSCOREBASE}/backends/nanocoap/inc
+
+ifeq (libcose,${OSCORE_CRYPTO_BACKEND})
 INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
+endif
+ifeq (rust,${OSCORE_CRYPTO_BACKEND})
+INCLUDES += -I${OSCOREBASE}/rust/liboscore-cryptobackend-aead/c-headers
+endif
