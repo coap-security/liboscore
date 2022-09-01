@@ -61,9 +61,9 @@ pub enum Algorithm {
 #[cfg(feature="chacha20poly1305")]
 type AlgtypeChaCha20Poly1305 = chacha20poly1305::ChaCha20Poly1305;
 #[cfg(feature="aes-ccm")]
-type AlgtypeAesCcm16_64_128 = aes_ccm::AesCcm<typenum::consts::U8>;
+type AlgtypeAesCcm16_64_128 = ccm::Ccm<aes::Aes128, ccm::consts::U8, ccm::consts::U13>;
 #[cfg(feature="aes-ccm")]
-type AlgtypeAesCcm16_128_128 = aes_ccm::AesCcm<typenum::consts::U16>;
+type AlgtypeAesCcm16_128_128 = ccm::Ccm<aes::Aes128, ccm::consts::U8, ccm::consts::U7>;
 #[cfg(feature="aes-gcm")]
 type AlgtypeA128GCM = aes_gcm::Aes128Gcm;
 #[cfg(feature="aes-gcm")]
