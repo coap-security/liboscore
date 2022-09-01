@@ -5,12 +5,11 @@ authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2018"
 
 [dependencies]
-aead = { version = "0.2", default-features = false }
+aead = { version = "0.5", default-features = false }
 typenum = "1"
-heapless = "0.5"
-# as expected by chacha
-generic-array = "0.12"
+heapless = "0.7"
 
-chacha20poly1305 = { version = "0.4", optional = true, default-features = false, features=["chacha20"] }
-aes-ccm = { version = "0.4", default-features = false, optional = true }
-aes-gcm = { version = "0.4", default-features = false, optional = true, features = ["aes"] }
+chacha20poly1305 = { version = "0.10", optional = true, default-features = false }
+# Grew terribly outdated; probably to be replaced with ccm and aes crates.
+#aes-ccm = { version = "0.4", default-features = false, optional = true }
+aes-gcm = { version = "0.10", default-features = false, optional = true, features = ["aes"] }

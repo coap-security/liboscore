@@ -8,7 +8,7 @@ pub use liboscore_cryptobackend_aead::*;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    unsafe { core::intrinsics::abort() }
+    core::intrinsics::abort()
 }
 
 #[lang = "eh_personality"]

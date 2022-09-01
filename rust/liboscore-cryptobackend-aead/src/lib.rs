@@ -5,12 +5,9 @@
 //! objects (or constructors derived from them), but the oscore_crypto_aead_encryptstate_t would
 //! eventually be an enum in order to be Sized and thus stack-allocatable.
 #![no_std]
-// Seems uncontroverial enough at least where .write() is concerned, and if someone needs this on
-// stable, it's just a few writes that have to be replaced with an unsafe .as_mut_ptr().write(...)
-#![feature(maybe_uninit_extra)]
 
 use typenum::marker_traits::Unsigned;
-use generic_array::GenericArray;
+use aead::generic_array::GenericArray;
 use core::mem::MaybeUninit;
 
 /// Void stand-in recognized by the cbindgen library by its name
@@ -72,8 +69,9 @@ type AlgtypeA128GCM = aes_gcm::Aes128Gcm;
 #[cfg(feature="aes-gcm")]
 type AlgtypeA256GCM = aes_gcm::Aes256Gcm;
 
-/// A fully deparametrized type for variables that might want to be type variables for a `dyn Aead
-/// + AeadNew` but can't for lack of type variables and limitations in object safety of traits.
+/// A fully deparametrized type for variables that might want to be type variables for a `dyn
+/// AeadMutInPlace + KeyInit` but can't for lack of type variables and limitations in object safety
+/// of traits.
 impl Algorithm {
     fn from_number(num: i32) -> Option<Self> {
         match num {
@@ -109,50 +107,50 @@ impl Algorithm {
     fn tag_length(&self) -> usize {
         match self {
             #[cfg(feature="chacha20poly1305")]
-            Algorithm::ChaCha20Poly1305 => <AlgtypeChaCha20Poly1305 as aead::Aead>::TagSize::to_usize(),
+            Algorithm::ChaCha20Poly1305 => <AlgtypeChaCha20Poly1305 as aead::AeadCore>::TagSize::to_usize(),
             #[cfg(feature="aes-ccm")]
-            Algorithm::AesCcm16_64_128 => <AlgtypeAesCcm16_64_128 as aead::Aead>::TagSize::to_usize(),
+            Algorithm::AesCcm16_64_128 => <AlgtypeAesCcm16_64_128 as aead::AeadCore>::TagSize::to_usize(),
             #[cfg(feature="aes-ccm")]
-            Algorithm::AesCcm16_128_128 => <AlgtypeAesCcm16_128_128 as aead::Aead>::TagSize::to_usize(),
+            Algorithm::AesCcm16_128_128 => <AlgtypeAesCcm16_128_128 as aead::AeadCore>::TagSize::to_usize(),
             #[cfg(feature="aes-gcm")]
-            Algorithm::A128GCM => <AlgtypeA128GCM as aead::Aead>::TagSize::to_usize(),
+            Algorithm::A128GCM => <AlgtypeA128GCM as aead::AeadCore>::TagSize::to_usize(),
             #[cfg(feature="aes-gcm")]
-            Algorithm::A256GCM => <AlgtypeA256GCM as aead::Aead>::TagSize::to_usize(),
+            Algorithm::A256GCM => <AlgtypeA256GCM as aead::AeadCore>::TagSize::to_usize(),
         }
     }
 
     fn iv_length(&self) -> usize {
         match self {
             #[cfg(feature="chacha20poly1305")]
-            Algorithm::ChaCha20Poly1305 => <AlgtypeChaCha20Poly1305 as aead::Aead>::NonceSize::to_usize(),
+            Algorithm::ChaCha20Poly1305 => <AlgtypeChaCha20Poly1305 as aead::AeadCore>::NonceSize::to_usize(),
             #[cfg(feature="aes-ccm")]
-            Algorithm::AesCcm16_64_128 => <AlgtypeAesCcm16_64_128 as aead::Aead>::NonceSize::to_usize(),
+            Algorithm::AesCcm16_64_128 => <AlgtypeAesCcm16_64_128 as aead::AeadCore>::NonceSize::to_usize(),
             #[cfg(feature="aes-ccm")]
-            Algorithm::AesCcm16_128_128 => <AlgtypeAesCcm16_128_128 as aead::Aead>::NonceSize::to_usize(),
+            Algorithm::AesCcm16_128_128 => <AlgtypeAesCcm16_128_128 as aead::AeadCore>::NonceSize::to_usize(),
             #[cfg(feature="aes-gcm")]
-            Algorithm::A128GCM => <AlgtypeA128GCM as aead::Aead>::NonceSize::to_usize(),
+            Algorithm::A128GCM => <AlgtypeA128GCM as aead::AeadCore>::NonceSize::to_usize(),
             #[cfg(feature="aes-gcm")]
-            Algorithm::A256GCM => <AlgtypeA256GCM as aead::Aead>::NonceSize::to_usize(),
+            Algorithm::A256GCM => <AlgtypeA256GCM as aead::AeadCore>::NonceSize::to_usize(),
         }
     }
 
     fn key_length(&self) -> usize {
         match self {
             #[cfg(feature="chacha20poly1305")]
-            Algorithm::ChaCha20Poly1305 => <AlgtypeChaCha20Poly1305 as aead::NewAead>::KeySize::to_usize(),
+            Algorithm::ChaCha20Poly1305 => <AlgtypeChaCha20Poly1305 as aead::KeySizeUser>::key_size(),
             #[cfg(feature="aes-ccm")]
-            Algorithm::AesCcm16_64_128 => <AlgtypeAesCcm16_64_128 as aead::NewAead>::KeySize::to_usize(),
+            Algorithm::AesCcm16_64_128 => <AlgtypeAesCcm16_64_128 as aead::KeySizeUser>::key_size(),
             #[cfg(feature="aes-ccm")]
-            Algorithm::AesCcm16_128_128 => <AlgtypeAesCcm16_128_128 as aead::NewAead>::KeySize::to_usize(),
+            Algorithm::AesCcm16_128_128 => <AlgtypeAesCcm16_128_128 as aead::KeySizeUser>::key_size(),
             #[cfg(feature="aes-gcm")]
-            Algorithm::A128GCM => <AlgtypeA128GCM as aead::NewAead>::KeySize::to_usize(),
+            Algorithm::A128GCM => <AlgtypeA128GCM as aead::KeySizeUser>::key_size(),
             #[cfg(feature="aes-gcm")]
-            Algorithm::A256GCM => <AlgtypeA256GCM as aead::NewAead>::KeySize::to_usize(),
+            Algorithm::A256GCM => <AlgtypeA256GCM as aead::KeySizeUser>::key_size(),
         }
     }
 }
 
-type AadBufferSize = heapless::consts::U32;
+const AAD_BUFFER_SIZE: usize = 32;
 
 // Ideally with streaming AAD, those would be enums that union all the intermediate state types of
 // the individual algorithms
@@ -161,7 +159,7 @@ pub struct EncryptState {
     alg: Algorithm,
     iv: *const u8,
     key: *const u8,
-    buffered_aad: heapless::Vec<u8, AadBufferSize>,
+    buffered_aad: heapless::Vec<u8, AAD_BUFFER_SIZE>,
 }
 
 #[repr(transparent)]
@@ -225,7 +223,7 @@ fn oscore_crypto_aead_encrypt_start(
     iv: *const u8,
     key: *const u8,
 ) -> CryptoErr {
-    if aad_len > AadBufferSize::to_usize() {
+    if aad_len > AAD_BUFFER_SIZE {
         return CryptoErr::AadPreallocationExceeded;
     }
 
@@ -269,7 +267,7 @@ fn _encrypt_inplace<A>(
     buffer_len: usize,
 ) -> CryptoErr
 where
-    A: aead::Aead + aead::NewAead
+    A: aead::AeadMutInPlace + aead::KeyInit
 {
     let taglen = A::TagSize::to_usize();
 
@@ -290,7 +288,7 @@ where
     let nonce = unsafe { core::slice::from_raw_parts(state.iv, noncelen) };
     let nonce = GenericArray::from_slice(nonce);
 
-    let aead = A::new(key);
+    let mut aead = A::new(&key);
     let tagdata = match aead.encrypt_in_place_detached(
             nonce, 
             state.buffered_aad.as_ref(),
@@ -375,7 +373,7 @@ fn _decrypt_inplace<A>(
     buffer_len: usize,
 ) -> CryptoErr
 where
-    A: aead::Aead + aead::NewAead
+    A: aead::AeadMutInPlace + aead::KeyInit
 {
     let state = &mut state.actually_encrypt;
 
@@ -406,7 +404,7 @@ where
     let _nonce: &[u8] = nonce.as_ref();
     let _key: &[u8] = key.as_ref();
 
-    let aead = A::new(key);
+    let mut aead = A::new(&key);
     match aead.decrypt_in_place_detached(
             nonce, 
             state.buffered_aad.as_ref(),
