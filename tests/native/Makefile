@@ -23,13 +23,13 @@ vpath %.c ../cases/
 
 ifeq (libs,$(wildcard libs))
 include Makefile.mockoap
-include Makefile.libcose
+#include Makefile.libcose
 else
 # We might pull in libs through a dependency of the to-be-included
 # Makefile.libcose, but even some expansions run into errors
 $(warning "Before running anything else, run `make libs` to ensure all Makefile components are ready")
 endif
-include Makefile.rustaead
+include Makefile.rustcrypto
 
 BACKEND_OBJS += testwrapper.c
 

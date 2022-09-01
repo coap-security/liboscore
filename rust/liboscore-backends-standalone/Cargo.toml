@@ -1,5 +1,5 @@
 [package]
-name = "liboscore-cryptobackend-aead-standalone"
+name = "liboscore-backends-standalone"
 version = "0.1.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2018"
