@@ -14,4 +14,11 @@ INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
 endif
 ifeq (rust,${OSCORE_CRYPTO_BACKEND})
 INCLUDES += -I${OSCOREBASE}/rust/liboscore-cryptobackend-aead/c-headers
+
+BASELIBS += ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/i686-unknown-linux-gnu/debug/libliboscore_cryptobackend_aead_standalone.a
+
+${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/i686-unknown-linux-gnu/debug/libliboscore_cryptobackend_aead_standalone.a:
+	cd ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/ && cargo +nightly build --target=i686-unknown-linux-gnu
+
+.PHONY: ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/i686-unknown-linux-gnu/debug/libliboscore_cryptobackend_aead_standalone.a
 endif
