@@ -32,4 +32,4 @@ vpath %.c libs/libcose/src/crypt/
 CFLAGS += ${CFLAGS_CRYPTO}
 LDFLAGS += ${LDFLAGS_CRYPTO}
 
-BACKEND_OBJS += libcose.o cose_crypto.o tinycrypt.o sodium.o $(shell pkg-config --libs $(SODIUM_LIB)) $(TINYCRYPT_LIB) $(TINYDTLS_OBJS)
+BACKEND_OBJS += libcose.o cose_crypto.o tinycrypt.o sodium.o keygen_symm.o $(shell pkg-config --libs $(SODIUM_LIB)) $(TINYCRYPT_LIB) $(TINYDTLS_OBJS)
