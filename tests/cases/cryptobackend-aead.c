@@ -132,7 +132,9 @@ int testmain(int introduce_error)
     int ret;
     ret = test_with(&chacha_data, introduce_error == 1);
     if (ret != 0)
-        return ret;
+        return 100 + ret;
     ret = test_with(&aesccm_data, introduce_error > 1);
-    return ret;
+    if (ret != 0)
+        return 200 + ret;
+    return 0;
 }
