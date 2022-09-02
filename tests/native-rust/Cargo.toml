@@ -1,0 +1,12 @@
+[package]
+name = "liboscore-tests-native-rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+liboscore-cryptobackend-aead = { path = "../../rust/liboscore-cryptobackend-aead", features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
+liboscore-cryptobackend-hkdf = { path = "../../rust/liboscore-cryptobackend-hkdf" }
+
+[build-dependencies]
+cc = "1"
