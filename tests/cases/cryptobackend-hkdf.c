@@ -60,7 +60,7 @@ static struct testdata sha256_data_longextracted = {
     .expected_len = 80,
 };
 
-int test_with(struct testdata *data, int introduce_error)
+static int test_with(struct testdata *data, int introduce_error)
 {
     uint8_t out_buf[max_output_length];
 
@@ -110,6 +110,7 @@ int testmain(int introduce_error)
     */
     ret = test_with(&sha256_data_longextracted, introduce_error > 2);
 #else
+    (void)test_with;
     (void)introduce_error;
     (void)sha256_data;
     (void)sha256_data_longsalt;

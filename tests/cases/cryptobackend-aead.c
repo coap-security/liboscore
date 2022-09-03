@@ -60,7 +60,7 @@ static struct testdata aesccm_data = {
 
 const char message[] = "The quick brown fox jumps over the lazy dog.";
 
-int test_with(struct testdata *data, int introduce_error)
+static int test_with(struct testdata *data, int introduce_error)
 {
     oscore_cryptoerr_t err;
 
