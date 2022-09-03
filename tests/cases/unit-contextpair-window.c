@@ -53,6 +53,8 @@ static void test_sequence_from_zero_expecting(
 
 int testmain(int introduce_error)
 {
+    (void) introduce_error;
+
     struct number small_linear[] = {
         { 0, true },
         { 0, false },

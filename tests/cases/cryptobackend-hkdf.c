@@ -111,6 +111,7 @@ int testmain(int introduce_error)
     */
     ret = test_with(&sha256_data_longextracted, introduce_error > 2);
 #else
+    (void)introduce_error;
     (void)sha256_data;
     (void)sha256_data_longsalt;
     (void)sha256_data_longextracted;
