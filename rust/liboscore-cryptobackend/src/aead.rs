@@ -1,40 +1,9 @@
-//! Backend for liboscore's crypto API that fans out to AEAD algorithms base on the aead Rust
-//! crate.
-//!
-//! This takes a mixture of trait- and enum-based approaches; algorithms are handled as trait
-//! objects (or constructors derived from them), but the oscore_crypto_aead_encryptstate_t would
-//! eventually be an enum in order to be Sized and thus stack-allocatable.
-#![no_std]
-
-use typenum::marker_traits::Unsigned;
-use aead::generic_array::GenericArray;
 use core::mem::MaybeUninit;
 
-/// Void stand-in recognized by the cbindgen library by its name
-#[allow(non_camel_case_types)]
-pub enum c_void {
-}
+use aead::generic_array::GenericArray;
+use typenum::marker_traits::Unsigned;
 
-// Those types that are passed in and out as arguments need to be repr(C). The rest can be any repr
-// as it is only stack-allocated and passed through pointers, but CryptoErr and Algorithm are
-// passed around explicitly.
-
-#[repr(C)]
-pub enum CryptoErr {
-    Ok,
-    NoSuchAlgorithm,
-    /// Data was put into the AAD, plaintext or buffer whose length was not as originally announced
-    UnexpectedDataLength,
-    /// The only possible encryption error
-    BufferShorterThanTag,
-    /// Decryption failed (ie. message corruption / tampering / disagreement on nonce or AAD)
-    DecryptError,
-    /// Returned when the AAD is longer than pre-allocated, and neither streaming AAD nor dynamic
-    /// allocation are not implemented (which is unconditional so far)
-    AadPreallocationExceeded,
-    /// A kind of identifier was requested of an algorithm that is not specified
-    NoIdentifier,
-}
+use super::{CryptoErr, c_void};
 
 /// Expressed as an enum for lack of type variables and/or the unsuitability of the NewAead::new
 /// method as a function pointer constructor due to its generic component.
@@ -436,15 +405,5 @@ fn oscore_crypto_aead_decrypt_inplace(
         Algorithm::A128GCM => _decrypt_inplace::<AlgtypeA128GCM>(state, buffer, buffer_len),
         #[cfg(feature="aes-gcm")]
         Algorithm::A256GCM => _decrypt_inplace::<AlgtypeA256GCM>(state, buffer, buffer_len),
-    }
-}
-
-#[no_mangle]
-pub extern "C"
-fn oscore_cryptoerr_is_error(err: CryptoErr) -> bool {
-    match err {
-
-        CryptoErr::Ok => false,
-        _ => true,
     }
 }

@@ -4,8 +4,7 @@
 
 use core::panic::PanicInfo;
 
-pub use liboscore_cryptobackend_aead::*;
-pub use liboscore_cryptobackend_hkdf::*;
+pub use liboscore_cryptobackend::*;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {

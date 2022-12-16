@@ -8,8 +8,7 @@ edition = "2018"
 crate-type = ["staticlib"]
 
 [dependencies]
-liboscore-cryptobackend-aead = { path = "../liboscore-cryptobackend-aead", features = ["chacha20poly1305", "aes-gcm"] }
-liboscore-cryptobackend-hkdf = { path = "../liboscore-cryptobackend-hkdf" }
+liboscore-cryptobackend = { path = "../liboscore-cryptobackend", features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
 
 [profile.release]
 opt-level = "s"
