@@ -317,7 +317,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
 
 [[package]]
-name = "liboscore-cryptobackend-aead"
+name = "liboscore-cryptobackend"
 version = "0.1.0"
 dependencies = [
  "aead",
@@ -325,19 +325,12 @@ dependencies = [
  "aes-gcm",
  "ccm",
  "chacha20poly1305",
- "heapless",
- "typenum",
-]
-
-[[package]]
-name = "liboscore-cryptobackend-hkdf"
-version = "0.1.0"
-dependencies = [
  "crypto-common",
+ "heapless",
  "hkdf",
  "hmac",
- "liboscore-cryptobackend-aead",
  "sha2",
+ "typenum",
 ]
 
 [[package]]
@@ -345,8 +338,7 @@ name = "liboscore-tests-native-rust"
 version = "0.1.0"
 dependencies = [
  "cc",
- "liboscore-cryptobackend-aead",
- "liboscore-cryptobackend-hkdf",
+ "liboscore-cryptobackend",
 ]
 
 [[package]]

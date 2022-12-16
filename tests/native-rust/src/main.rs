@@ -1,18 +1,23 @@
 // Not using them directly, but they have to be linked in for the C functions to be available.
 extern crate liboscore_cryptobackend;
 
-extern "C" {
-    fn testmain(introduce_error: i32) -> i32;
-}
+include!(concat!(env!("OUT_DIR"), "/testmain-list.rs"));
 
-fn main() -> Result<(), ()> {
-    let introduce_error = 0;
-    println!("Running test case...");
-    let result = unsafe { testmain(introduce_error) };
-    println!("Test ran (errors introduced: {}), result was {}", introduce_error, result);
-    if (introduce_error == 0) == (result == 0) {
-        Ok(())
-    } else {
-        Err(())
+fn main() -> Result<(), &'static str> {
+    let mut first_error = Ok(());
+    for (name, tmf) in TESTMAINS {
+        println!("Running test case {} without introducing errors...", name);
+        let result = unsafe { tmf(0) };
+        println!("Test ran, result was {}", result);
+        if result != 0 && first_error.is_ok() {
+            first_error = Err(name);
+        }
+        println!("Running test case {} and introducing errors...", name);
+        let result = unsafe { tmf(1) };
+        println!("Test ran, result was {}", result);
+        if result == 0 && first_error.is_ok() {
+            first_error = Err(name);
+        }
     }
+    first_error
 }
