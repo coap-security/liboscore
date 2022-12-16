@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include <oscore_native/message.h>
 #include <oscore_native/test.h>
@@ -8,6 +7,8 @@
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/primitive.h>
 #include <oscore/message.h>
+
+#define assert(cond) if(!cond) { return 1; }
 
 int testmain(int introduce_error)
 {
