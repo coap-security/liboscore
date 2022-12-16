@@ -8,11 +8,28 @@ fn main() {
         "cryptobackend-aead",
 //         "standalone-demo",
 //         "unprotect-demo",
-//         "unit-contextpair-window",
+        "unit-contextpair-window",
         "cryptobackend-hkdf",
     ];
 
     let mut testmain_functions = Vec::new();
+
+    let mut basebuilder = cc::Build::new();
+    let basebuilder = basebuilder
+        .include("../../src/include/")
+        // FIXME: Build.
+        // TBD: We could also use libcose, but then we'd have to replicate the mess that the
+        // dependencies are in the Makefile here as well, and for what? Whoever runs this with Rust
+        // as frontend likely also uses Rust backends.
+        .include("../native/rustbuilthdr/")
+
+        // Let's use a known simple mock backend for starters...
+        .include("../../backends/mockoap/inc/")
+
+        // FIXME: missing a few more ... but for the current tests that's sufficient
+        // and all the files we need, piece by piece, eg for the contextpair window test
+        .file("../../src/contextpair.c")
+        ;
 
     for case in cases {
         // Not that we'd particularly care -- they just need to be distinct.
@@ -23,18 +40,12 @@ fn main() {
         let testmain_redefined = format!("-Dtestmain={}", testmain_newname);
         testmain_functions.push(testmain_newname);
 
-        cc::Build::new()
+        basebuilder.clone()
             .flag(&testmain_redefined)
+            // Test cases use these a lot (for describing their starting conditions) and just rely
+            // on the rest being zero as required by the standard
+            .flag("-Wno-missing-field-initializers")
             .file(format!("../cases/{}.c", case))
-
-            .include("../../src/include/")
-            // FIXME: Build.
-            // TBD: We could also use libcose, but then we'd have to replicate the mess that the
-            // dependencies are in the Makefile here as well, and for what? Whoever runs this with Rust
-            // as frontend likely also uses Rust backends.
-            .include("../native/rustbuilthdr/")
-
-            // FIXME: missing a few more ... but for AEAD it's really sufficient.
             .compile(&output_name);
     }
 
