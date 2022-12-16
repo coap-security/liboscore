@@ -5,7 +5,9 @@ BACKEND_OBJS += ../../rust/liboscore-backends-standalone/target/debug/liblibosco
 
 rustbuilthdr/oscore_native/crypto_type.h:
 	mkdir -p $$(dirname $@)
-	(cd ../../rust/liboscore-cryptobackend-aead/ && cbindgen --lang=C) > $@
+	(cd ../../rust/liboscore-cryptobackend/ && cbindgen --lang=C) > $@
+
+cryptobackend-aead.o cryptobackend-hkdf.o: rustbuilthdr/oscore_native/crypto_type.h
 
 CPPFLAGS += -I rustbuilthdr/
 
