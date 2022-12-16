@@ -14,14 +14,25 @@ fn main() {
 
     let mut testmain_functions = Vec::new();
 
+    let rustbuilthdr_base = PathBuf::from(env::var("OUT_DIR").unwrap()).join("rust-built-headers");
+    let rustbuilthdr_dir = (&rustbuilthdr_base).join("oscore_native");
+    std::fs::create_dir_all(&rustbuilthdr_dir).unwrap();
+
+    let exitcode = std::process::Command::new("cbindgen")
+        .arg("--lang=C")
+        .current_dir("../../rust/liboscore-cryptobackend")
+        .stdout(std::fs::File::create(rustbuilthdr_dir.join("crypto_type.h")).unwrap())
+        .status()
+        .expect("Failed to run cbindgen for cryptobackend headers");
+    // Simplification after exit_status_error is stable <https://github.com/rust-lang/rust/issues/84908>
+//         .exit_ok()
+//         .expect("cbindgen returned unsuccessfully");
+    assert!(exitcode.success(), "cbindgen returned unsuccessfully");
+
     let mut basebuilder = cc::Build::new();
     let basebuilder = basebuilder
         .include("../../src/include/")
-        // FIXME: Build.
-        // TBD: We could also use libcose, but then we'd have to replicate the mess that the
-        // dependencies are in the Makefile here as well, and for what? Whoever runs this with Rust
-        // as frontend likely also uses Rust backends.
-        .include("../native/rustbuilthdr/")
+        .include(&rustbuilthdr_base)
 
         // Let's use a known simple mock backend for starters...
         .include("../../backends/mockoap/inc/")
