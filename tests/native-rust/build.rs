@@ -7,7 +7,7 @@ fn main() {
     let cases = [
         "cryptobackend-aead",
 //         "standalone-demo",
-//         "unprotect-demo",
+        "unprotect-demo",
         "unit-contextpair-window",
         "cryptobackend-hkdf",
     ];
@@ -29,6 +29,10 @@ fn main() {
         // FIXME: missing a few more ... but for the current tests that's sufficient
         // and all the files we need, piece by piece, eg for the contextpair window test
         .file("../../src/contextpair.c")
+        .file("../../src/oscore_message.c")
+        .file("../../src/protection.c")
+        .file("../../backends/mockoap/src/oscore_msg.c")
+        .file("../../backends/mockoap/src/oscore_test.c")
         ;
 
     for case in cases {
