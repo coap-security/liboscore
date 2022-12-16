@@ -6,7 +6,7 @@ fn main() {
     // Copied from ../cases/Makefile.include, and limited one by one as we start supporting them
     let cases = [
         "cryptobackend-aead",
-//         "standalone-demo",
+        "standalone-demo",
         "unprotect-demo",
         "unit-contextpair-window",
         "cryptobackend-hkdf",
