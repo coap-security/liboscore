@@ -9,9 +9,6 @@ rustbuilthdr/oscore_native/crypto_type.h:
 
 CPPFLAGS += -I rustbuilthdr/
 
-# not really, but that currently starts AES-CCM tests
-CFLAGS += -DCRYPTO_TINYDTLS
-
 CFLAGS += -I../../rust/liboscore-backends-standalone/c-headers/
 
 .PHONY: always
