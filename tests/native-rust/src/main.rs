@@ -1,6 +1,5 @@
 // Not using them directly, but they have to be linked in for the C functions to be available.
-extern crate liboscore_cryptobackend_aead;
-extern crate liboscore_cryptobackend_hkdf;
+extern crate liboscore_cryptobackend;
 
 extern "C" {
     fn testmain(introduce_error: i32) -> i32;
