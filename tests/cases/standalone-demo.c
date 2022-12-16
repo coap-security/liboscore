@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define assert(cond) if(!cond) { return 1; }
+#define assert(cond) if(!(cond)) { return 1; }
 
 #include <oscore_native/message.h>
 #include <oscore_native/test.h>
