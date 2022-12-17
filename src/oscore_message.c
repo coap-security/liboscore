@@ -305,10 +305,7 @@ oscore_msgerr_protected_t flush_autooptions_inner_until(oscore_msg_protected_t *
         static uint8_t optionbuffer[] = {1};
         size_t optionlength = (msg->flags & OSCORE_MSG_PROTECTED_FLAG_PENDING_OBSERVE_1) ? 1 : 0;
 
-        oscore_msgerr_native_t err;
-        err = oscore_msg_protected_append_option_inner(msg, 6 /* Observe */, optionbuffer, optionlength);
-        if (oscore_msgerr_native_is_error(err))
-            return NATIVE_ERROR;
+        return oscore_msg_protected_append_option_inner(msg, 6 /* Observe */, optionbuffer, optionlength);
     }
 
     return OK;
