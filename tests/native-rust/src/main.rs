@@ -1,5 +1,6 @@
 // Not using them directly, but they have to be linked in for the C functions to be available.
 extern crate liboscore_cryptobackend;
+extern crate liboscore_msgbackend;
 
 include!(concat!(env!("OUT_DIR"), "/testmain-list.rs"));
 

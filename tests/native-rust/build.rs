@@ -26,24 +26,30 @@ fn main() {
         .expect("Failed to run cbindgen for cryptobackend headers");
     // Simplification after exit_status_error is stable <https://github.com/rust-lang/rust/issues/84908>
 //         .exit_ok()
-//         .expect("cbindgen returned unsuccessfully");
-    assert!(exitcode.success(), "cbindgen returned unsuccessfully");
+//         .expect("cbindgen for cryptobackend returned unsuccessfully");
+    assert!(exitcode.success(), "cbindgen for cryptobackend returned unsuccessfully");
+
+    let exitcode = std::process::Command::new("cbindgen")
+        .arg("--lang=C")
+        .current_dir("../../rust/liboscore-msgbackend")
+        .stdout(std::fs::File::create(rustbuilthdr_dir.join("msg_type.h")).unwrap())
+        .status()
+        .expect("Failed to run cbindgen for msg headers");
+    // Simplification after exit_status_error is stable <https://github.com/rust-lang/rust/issues/84908>
+//         .exit_ok()
+//         .expect("cbindgen for msg returned unsuccessfully");
+    assert!(exitcode.success(), "cbindgen for msg returned unsuccessfully");
 
     let mut basebuilder = cc::Build::new();
     let basebuilder = basebuilder
         .include("../../src/include/")
         .include(&rustbuilthdr_base)
 
-        // Let's use a known simple mock backend for starters...
-        .include("../../backends/mockoap/inc/")
-
         // FIXME: missing a few more ... but for the current tests that's sufficient
         // and all the files we need, piece by piece, eg for the contextpair window test
         .file("../../src/contextpair.c")
         .file("../../src/oscore_message.c")
         .file("../../src/protection.c")
-        .file("../../backends/mockoap/src/oscore_msg.c")
-        .file("../../backends/mockoap/src/oscore_test.c")
         ;
 
     for case in cases {
