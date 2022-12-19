@@ -460,6 +460,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "liboscore"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+ "coap-message",
+ "liboscore-cryptobackend",
+ "liboscore-msgbackend",
+]
+
+[[package]]
 name = "liboscore-cryptobackend"
 version = "0.1.0"
 dependencies = [
@@ -488,10 +499,9 @@ dependencies = [
 name = "liboscore-tests-native-rust"
 version = "0.1.0"
 dependencies = [
- "bindgen",
  "cc",
  "coap-message",
- "liboscore-cryptobackend",
+ "liboscore",
  "liboscore-msgbackend",
 ]
 

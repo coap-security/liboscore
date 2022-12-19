@@ -6,7 +6,9 @@
 //! eventually be an enum in order to be Sized and thus stack-allocatable.
 #![no_std]
 
-mod aead;
+// pub only because for bindgen we need types again. This is probably cleaner (because done in Rust
+// rather than in cbindgen) in the message backend.
+pub mod aead;
 mod hkdf;
 
 /// Void stand-in recognized by the cbindgen library by its name

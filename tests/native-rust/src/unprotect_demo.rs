@@ -5,7 +5,7 @@ use core::mem::MaybeUninit;
 
 use coap_message::{ReadableMessage, MinimalWritableMessage, MessageOption};
 
-use crate::raw;
+use liboscore::raw;
 
 pub fn run() -> Result<(), &'static str> {
     unsafe {
@@ -63,7 +63,7 @@ pub fn run() -> Result<(), &'static str> {
             assert!(ret == raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK);
             let unprotected = unprotected.assume_init();
 
-            let unprotected = crate::impl_message::ProtectedMessage::new(unprotected);
+            let unprotected = liboscore::ProtectedMessage::new(unprotected);
             assert!(unprotected.code() == 1);
 
             for o in unprotected.options() {

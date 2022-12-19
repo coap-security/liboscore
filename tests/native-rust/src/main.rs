@@ -1,9 +1,3 @@
-// Not using them directly, but they have to be linked in for the C functions to be available.
-extern crate liboscore_cryptobackend;
-extern crate liboscore_msgbackend;
-
-mod raw;
-mod impl_message;
 mod unprotect_demo;
 
 include!(concat!(env!("OUT_DIR"), "/testmain-list.rs"));

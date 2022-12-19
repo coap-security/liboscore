@@ -375,3 +375,24 @@ pub extern "C" fn oscore_test_msg_destroy(msg: oscore_msg_native_t) {
     let boxed = unsafe { alloc::boxed::Box::from_raw(msg.0) };
     drop(boxed);
 }
+
+// Functions for interacting with messages from the Rust side
+
+#[cfg(feature = "alloc")]
+// FIXME: This drops the heapmessage afterwards; that's OK for decoding (and for encoding we'll
+// probably want to create it freshly anyway)
+pub fn with_heapmessage_as_msg_native<F, R>(
+    msg: coap_message::heapmessage::HeapMessage,
+    f: F,
+) -> R
+where
+    F: FnOnce(oscore_msg_native_t) -> R
+{
+    // This is just the kind of message that does need its payload length known and set
+    let payload_len = msg.payload().len();
+    let mut wrapped_message = Message {
+        data: MessageVariant::CmHmHm(msg),
+        payload_length: Some(payload_len),
+    };
+    f(oscore_msg_native_t(&mut wrapped_message as *mut _ as *mut _))
+}

@@ -1,0 +1,18 @@
+[package]
+name = "liboscore"
+version = "0.1.0"
+edition = "2021"
+
+# More like "builds and includes"; this matters so that we can pass on
+# PLATFORMHEADERS as DEP_LIBOSCORE_PLATFORMHEADERS
+links = "liboscore"
+
+[dependencies]
+liboscore-cryptobackend = { path = "../liboscore-cryptobackend", features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
+liboscore-msgbackend = { path = "../liboscore-msgbackend", features = [ "alloc" ] }
+
+coap-message = { version = "0.2", features = [ "alloc" ] }
+
+[build-dependencies]
+cc = "1"
+bindgen = "0.63"
