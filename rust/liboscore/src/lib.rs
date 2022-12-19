@@ -7,3 +7,6 @@ pub mod raw;
 
 mod impl_message;
 pub use impl_message::ProtectedMessage;
+
+mod oscore_option;
+pub use oscore_option::OscoreOption;

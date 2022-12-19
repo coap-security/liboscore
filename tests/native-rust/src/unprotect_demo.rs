@@ -49,13 +49,11 @@ pub fn run() -> Result<(), &'static str> {
         msg.set_payload(b"\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb");
 
         liboscore_msgbackend::with_heapmessage_as_msg_native(msg, |msg| {
-            let mut header = MaybeUninit::uninit();
-            let ret = raw::oscore_oscoreoption_parse(header.as_mut_ptr(), oscopt.as_ptr(), oscopt.len());
-            assert!(ret);
-            let header = header.assume_init();
+            let header = liboscore::OscoreOption::parse(oscopt).unwrap();
+
             let mut unprotected = MaybeUninit::uninit();
             let mut request_id = MaybeUninit::uninit();
-            let ret = raw::oscore_unprotect_request(msg, unprotected.as_mut_ptr(), header, &mut secctx, request_id.as_mut_ptr());
+            let ret = raw::oscore_unprotect_request(msg, unprotected.as_mut_ptr(), header.into_inner(), &mut secctx, request_id.as_mut_ptr());
             assert!(ret == raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK);
             let unprotected = unprotected.assume_init();
 
