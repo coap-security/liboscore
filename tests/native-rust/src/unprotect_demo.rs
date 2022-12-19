@@ -1,5 +1,4 @@
-// Next step: translate unprotect test in here, and run it on an inmemory_writable message that was
-// into Message referenced in the C style
+//! Run the "unprotect-demo" case, but with the test code in Rust.
 
 use core::mem::MaybeUninit;
 
@@ -50,10 +49,7 @@ pub fn run() -> Result<(), &'static str> {
         msg.set_payload(b"\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb");
 
         liboscore_msgbackend::with_heapmessage_as_msg_native(msg, |msg| {
-            let mut header = MaybeUninit::zeroed(); // Supicion: kid_context_len does not get set
-                                                    // to zero otherwise (but probably that's not
-                                                    // it, and smething looks at the length only if
-                                                    // one is set)
+            let mut header = MaybeUninit::uninit();
             let ret = raw::oscore_oscoreoption_parse(header.as_mut_ptr(), oscopt.as_ptr(), oscopt.len());
             assert!(ret);
             let header = header.assume_init();
@@ -66,10 +62,15 @@ pub fn run() -> Result<(), &'static str> {
             let unprotected = liboscore::ProtectedMessage::new(unprotected);
             assert!(unprotected.code() == 1);
 
-            for o in unprotected.options() {
-                println!("  {} {:?}", o.number(), std::str::from_utf8(o.value()));
+            let mut message_options = unprotected.options().fuse();
+            let mut ref_options = [(11, "oscore"), (11, "hello"), (11, "1")].into_iter().fuse();
+            for (msg_o, ref_o) in (&mut message_options).zip(&mut ref_options) {
+                assert!(msg_o.number() == ref_o.0);
+                assert!(std::str::from_utf8(msg_o.value()) == Ok(ref_o.1));
             }
-            println!("{:?}", unprotected.payload());
+            assert!(message_options.next().is_none(), "Message contained extra options");
+            assert!(ref_options.next().is_none(), "Message didn't contain the reference options");
+            assert!(unprotected.payload() == b"");
         });
 
         // We've taken a *mut of it, let's make sure it lives to the end
