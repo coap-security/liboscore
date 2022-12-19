@@ -2,6 +2,10 @@
 extern crate liboscore_cryptobackend;
 extern crate liboscore_msgbackend;
 
+mod raw;
+mod impl_message;
+mod unprotect_demo;
+
 include!(concat!(env!("OUT_DIR"), "/testmain-list.rs"));
 
 fn run_c_test(name: &'static str, tmf: unsafe extern "C" fn(i32) -> i32) -> Result<(), &'static str> {
@@ -31,5 +35,11 @@ fn main() -> Result<(), &'static str> {
             first_error = result;
         }
     }
+
+    let result = unprotect_demo::run();
+    if first_error.is_ok() {
+        first_error = result;
+    }
+
     first_error
 }
