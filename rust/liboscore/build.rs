@@ -35,9 +35,11 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         .allowlist_function("oscore_unprotect_request")
         .allowlist_function("oscore_oscoreoption_parse")
         .allowlist_function("oscore_crypto_aead_from_number")
+        .allowlist_function("oscore_crypto_hkdf_from_number")
         .allowlist_function("oscore_msg_protected_optiter_init")
         .allowlist_function("oscore_msg_protected_optiter_next")
         .allowlist_function("oscore_msg_protected_optiter_finish")
+        .allowlist_function("oscore_context_primitive_derive")
         .allowlist_type("oscore_msgerr_protected_t")
         .allowlist_type("oscore_msg_protected_t")
         .allowlist_type("oscore_msg_protected_optiter_t")
@@ -87,5 +89,6 @@ fn bundle_staticlib(rustbuilthdr_base: &Path) {
         .file("../../src/contextpair.c")
         .file("../../src/oscore_message.c")
         .file("../../src/protection.c")
+        .file("../../src/context_primitive.c")
         .compile("liboscore_static_objects");
 }

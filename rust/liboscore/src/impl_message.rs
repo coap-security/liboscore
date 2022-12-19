@@ -9,6 +9,19 @@ impl ProtectedMessage {
     pub fn new(msg: raw::oscore_msg_protected_t) -> Self {
         ProtectedMessage(core::cell::UnsafeCell::new(msg))
     }
+
+// That's gonna be tricky; let's see first whether we'll have good lifetimes for secctx & co.
+// Possibly, we'll need to do this two-phased with an intermediary object, because we need a &mut
+// to the secctx that later only becomes a &, or more precisely, the secctx has an exclusive part
+// we need only during this function, and a shared one we need longer.
+//     pub fn unprotect_request(
+//         msg: raw::oscore_msg_native_t,
+//         header: crate::OscoreOption,
+//         secctx
+//     ) -> Result<Self, ()>
+//     {
+//         todo!()
+//     }
 }
 
 impl coap_message::ReadableMessage for ProtectedMessage {

@@ -10,3 +10,9 @@ pub use impl_message::ProtectedMessage;
 
 mod oscore_option;
 pub use oscore_option::OscoreOption;
+
+mod algorithms;
+pub use algorithms::{AlgorithmNotSupported, HkdfAlg, AeadAlg};
+
+mod primitive;
+pub use primitive::{PrimitiveContext, PrimitiveImmutables};
