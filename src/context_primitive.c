@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <oscore/context_impl/primitive.h>
+#include <string.h>
 
 const size_t info_maxlen = 1 + \
     /* Assuming OSCORE_KEYID_MAXLEN is not >255 */ \
