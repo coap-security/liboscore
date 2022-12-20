@@ -1,5 +1,9 @@
 language = "C"
 
+include_guard = "LIBOSCORE_CRYPTOBACKEND_OSCORE_NATIVE_CRYPTO_TYPE_H"
+no_includes = true
+sys_includes = ["stdint.h", "stddef.h"]
+
 header = """
 #define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)13)
 #define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)32)

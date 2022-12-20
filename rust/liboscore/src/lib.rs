@@ -1,3 +1,4 @@
+#![no_std]
 // We need these linked in
 extern crate liboscore_cryptobackend;
 extern crate liboscore_msgbackend;

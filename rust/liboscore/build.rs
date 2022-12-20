@@ -20,9 +20,12 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         .clang_arg(format!("-I{}", liboscore_include.to_str().unwrap()))
         .clang_arg(format!("-I{}", platform_include.to_str().unwrap()))
 
+        .use_core()
+
         // Not sure why exactly these conflict, but we don't need them
         .derive_copy(false)
         .derive_debug(false)
+
         // It's Rust code that defines them, and we're building it in the same process, so let's
         // avoid redefinitions
         .blocklist_type("oscore_msg_native_t")
