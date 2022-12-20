@@ -19,6 +19,10 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
     bindgen::Builder::default()
         .clang_arg(format!("-I{}", liboscore_include.to_str().unwrap()))
         .clang_arg(format!("-I{}", platform_include.to_str().unwrap()))
+        // FIXME: This is practically required for bindgen output to contain any functions when
+        // built for wasm32-unknown-unknown -- might need a more proper solution (but this is a
+        // good workaround from <https://github.com/rust-lang/rust-bindgen/issues/751>).
+        .clang_arg("-fvisibility=default")
 
         .use_core()
 
