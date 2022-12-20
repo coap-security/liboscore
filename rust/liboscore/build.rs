@@ -62,27 +62,20 @@ fn run_cbindgen(rustbuilthdr_base: &PathBuf) {
     let rustbuilthdr_dir = (&rustbuilthdr_base).join("oscore_native");
     std::fs::create_dir_all(&rustbuilthdr_dir).unwrap();
 
-    let exitcode = std::process::Command::new("cbindgen")
-        .arg("--lang=C")
-        .current_dir("../../rust/liboscore-cryptobackend")
-        .stdout(std::fs::File::create(rustbuilthdr_dir.join("crypto_type.h")).unwrap())
-        .status()
-        .expect("Failed to run cbindgen for cryptobackend headers");
-    // Simplification after exit_status_error is stable <https://github.com/rust-lang/rust/issues/84908>
-    //         .exit_ok()
-    //         .expect("cbindgen for cryptobackend returned unsuccessfully");
-    assert!(exitcode.success(), "cbindgen for cryptobackend returned unsuccessfully");
+    cbindgen::Builder::new()
+        .with_crate("../../rust/liboscore-cryptobackend")
+        .with_config(cbindgen::Config::from_file("../../rust/liboscore-cryptobackend/cbindgen.toml").unwrap())
+        .generate()
+        .expect("Failure generating cbindgen headers for the cryptobackend")
+        .write_to_file(rustbuilthdr_dir.join("crypto_type.h"));
 
-    let exitcode = std::process::Command::new("cbindgen")
-        .arg("--lang=C")
-        .current_dir("../../rust/liboscore-msgbackend")
-        .stdout(std::fs::File::create(rustbuilthdr_dir.join("msg_type.h")).unwrap())
-        .status()
-        .expect("Failed to run cbindgen for msg headers");
-    // Simplification after exit_status_error is stable <https://github.com/rust-lang/rust/issues/84908>
-    //         .exit_ok()
-    //         .expect("cbindgen for msg returned unsuccessfully");
-    assert!(exitcode.success(), "cbindgen for msg returned unsuccessfully");
+    cbindgen::Builder::new()
+        .with_crate("../../rust/liboscore-msgbackend")
+        .with_config(cbindgen::Config::from_file("../../rust/liboscore-msgbackend/cbindgen.toml").unwrap())
+        .with_language(cbindgen::Language::C)
+        .generate()
+        .expect("Failure generating cbindgen headers for the msgbackend")
+        .write_to_file(rustbuilthdr_dir.join("msg_type.h"));
 }
 
 fn bundle_staticlib(rustbuilthdr_base: &Path) {
