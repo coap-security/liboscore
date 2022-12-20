@@ -1,13 +1,16 @@
 use std::path::{Path, PathBuf};
 use std::env;
-use std::io::Write;
 
 fn main() {
     let rustbuilthdr_base = PathBuf::from(env::var("OUT_DIR").unwrap()).join("rust-built-headers");
     run_cbindgen(&rustbuilthdr_base);
     println!("cargo:PLATFORMHEADERS={}", rustbuilthdr_base.to_str().expect("Please use paths tha are also strings"));
 
-    run_bindgen(Path::new("../../src/include/"), &rustbuilthdr_base);
+    let liboscore_includes = Path::new("../../src/include/");
+    // Err out early to get a clearer error message
+    assert!(liboscore_includes.join("oscore/message.h").exists(), "libOSCORE headers are not avaialble at {}", liboscore_includes.display());
+    assert!(rustbuilthdr_base.join("oscore_native/msg_type.h").exists(), "libOSCORE platform headers are not avaialble at {}", rustbuilthdr_base.display());
+    run_bindgen(liboscore_includes, &rustbuilthdr_base);
 
     bundle_staticlib(&rustbuilthdr_base)
 }

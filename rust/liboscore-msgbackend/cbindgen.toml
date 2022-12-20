@@ -1,1 +1,4 @@
 language = "C"
+
+[export]
+item_types = ["structs", "typedefs", "enums"]

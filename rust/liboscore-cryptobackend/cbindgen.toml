@@ -19,6 +19,9 @@ struct oscore_crypto_aead_decryptstate_t {
 # [export]
 # prefix = "liboscore_cryptobackend_aead_"
 
+[export]
+item_types = ["structs", "typedefs", "enums", "constants", "opaque"]
+
 [export.rename]
 "Algorithm" = "oscore_crypto_aeadalg_t"
 "CryptoErr" = "oscore_cryptoerr_t"
