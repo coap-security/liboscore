@@ -13,6 +13,9 @@ liboscore-msgbackend = { path = "../liboscore-msgbackend", features = [ "alloc" 
 
 coap-message = { version = "0.2", features = [ "alloc" ] }
 
+# Only for Debug implementations
+pretty-hex = { version = "0.3", default-features = false }
+
 [build-dependencies]
 cc = "1"
 bindgen = "0.63"

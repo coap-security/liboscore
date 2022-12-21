@@ -60,6 +60,29 @@ impl PrimitiveImmutables {
         ) };
         Ok(Self(unsafe { _0.assume_init() }))
     }
+
+    fn sender_id(&self) -> &[u8] {
+        &self.0.sender_id[..self.0.sender_id_len]
+    }
+
+    pub fn recipient_id(&self) -> &[u8] {
+        &self.0.recipient_id[..self.0.recipient_id_len]
+    }
+}
+
+impl core::fmt::Debug for PrimitiveImmutables {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        // Displaying anything more, like the keys or IV, would be trickier -- we've already
+        // converted the AeadAlg (where their lengths are in) into its C version.
+        use pretty_hex::simple_hex_write;
+        write!(f, "PrimitiveImmutables ")?;
+        write!(f, "{{ sender_id: '")?;
+        simple_hex_write(f, &self.sender_id())?;
+        write!(f, "', recipient_id: '")?;
+        simple_hex_write(f, &self.recipient_id());
+        write!(f, "' }}")?;
+        Ok(())
+    }
 }
 
 /// A simplistic owned primitive context
@@ -73,7 +96,7 @@ impl PrimitiveImmutables {
 ///   same time in different ways (once exclusively, many times shared, and unlike references they
 ///   don't conflict)
 pub struct PrimitiveContext {
-    immutables: raw::oscore_context_primitive_immutables,
+    immutables: PrimitiveImmutables,
     primitive: raw::oscore_context_primitive,
     context: raw::oscore_context_t,
 }
@@ -88,7 +111,7 @@ impl PrimitiveContext {
     /// contributed entropy.
     pub fn new_from_fresh_material(immutables: PrimitiveImmutables) -> Self {
         Self {
-            immutables: immutables.0,
+            immutables: immutables,
             primitive: raw::oscore_context_primitive {
                 immutables: core::ptr::null(),
                 replay_window: 0,
@@ -104,12 +127,22 @@ impl PrimitiveContext {
     }
 
     fn fix(&mut self) {
-        self.primitive.immutables = &self.immutables as *const _;
+        self.primitive.immutables = &self.immutables.0 as *const _;
         self.context.data = &mut self.primitive as *mut _ as *mut _;
     }
 
     pub fn as_mut(&mut self) -> &mut raw::oscore_context_t {
         self.fix();
         &mut self.context
+    }
+
+    pub fn recipient_id(&self) -> &[u8] {
+        self.immutables.recipient_id()
+    }
+}
+
+impl core::fmt::Debug for PrimitiveContext {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        write!(f, "PrimitiveContext {{ sender_sequence_number: {}, replay_window_left_edge: {}, replay_window: {:b}, immutables: {:?} }}", self.primitive.sender_sequence_number, self.primitive.replay_window_left_edge, self.primitive.replay_window, self.immutables)
     }
 }
