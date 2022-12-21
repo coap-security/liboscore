@@ -11,6 +11,7 @@ use crate::raw;
 pub struct AlgorithmNotSupported;
 
 /// An HKDF algorithm (usable for OSCORE context derivation)
+#[derive(Copy, Clone)]
 pub struct HkdfAlg(raw::oscore_crypto_hkdfalg_t);
 
 impl HkdfAlg {
@@ -29,6 +30,7 @@ impl HkdfAlg {
 }
 
 /// An AEAD algorithm (usable for OSCORE message protection)
+#[derive(Copy, Clone)]
 pub struct AeadAlg(raw::oscore_crypto_aeadalg_t);
 
 impl AeadAlg {
@@ -43,5 +45,9 @@ impl AeadAlg {
 
     pub fn into_inner(self) -> raw::oscore_crypto_aeadalg_t {
         self.0
+    }
+
+    pub fn iv_len(&self) -> usize {
+        unsafe { raw::oscore_crypto_aead_get_ivlength(self.clone().0) }
     }
 }

@@ -16,4 +16,4 @@ mod algorithms;
 pub use algorithms::{AlgorithmNotSupported, HkdfAlg, AeadAlg};
 
 mod primitive;
-pub use primitive::{PrimitiveContext, PrimitiveImmutables};
+pub use primitive::{PrimitiveContext, PrimitiveImmutables, DeriveError};

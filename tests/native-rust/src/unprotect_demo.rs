@@ -19,16 +19,10 @@ pub fn run() -> Result<(), &'static str> {
         liboscore::AeadAlg::from_number(24).unwrap(),
         b"\x01",
         b"",
-        );
+        )
+        .unwrap();
 
-    let mut primitive = liboscore::PrimitiveContext::new_from_fresh_material(&immutables);
-
-    // FIXME CONTINUE HERE: Wrapping is best done as two-part thing, one exclusive and one
-    // sharable
-    let mut secctx = raw::oscore_context_t {
-        type_: raw::oscore_context_type_OSCORE_CONTEXT_PRIMITIVE,
-        data: primitive.as_inner() as *mut _,
-    };
+    let mut primitive = liboscore::PrimitiveContext::new_from_fresh_material(immutables);
 
     let mut msg = coap_message::heapmessage::HeapMessage::new();
     let oscopt = b"\x09\x00";
