@@ -13,7 +13,7 @@ use super::{CryptoErr, c_void};
 /// that makes them two pointers large. One could probably pick the vtable from trait object
 /// pointers, but that's deep unsafe territory.)
 #[derive(Copy, Clone)]
-#[repr(C)]
+#[repr(u8)]
 pub enum Algorithm {
     #[cfg(feature="chacha20poly1305")]
     ChaCha20Poly1305,
