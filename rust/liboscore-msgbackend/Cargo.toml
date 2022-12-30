@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 coap-message = "0.2.3"
-coap-message-utils = "0.2.1"
+coap-message-utils = "0.2.2"
 
 [features]
 # Wrap the coap_message::heapmessage, and provide the oscore_test_msg functions

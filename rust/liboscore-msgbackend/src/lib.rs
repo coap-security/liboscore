@@ -38,7 +38,9 @@ struct Message<'a> {
 enum MessageVariant<'a> {
     #[cfg(feature = "alloc")]
     CmHmHm(coap_message::heapmessage::HeapMessage),
-    CmuImM(coap_message_utils::inmemory::Message<'a>),
+    CmuImwM(&'a mut coap_message_utils::inmemory_write::Message<'a>),
+    // Note that there's little point in wrapping anything that's Readable but not MutableWritable:
+    // All our decryption happens in-place.
 }
 
 impl<'a> Message<'a> {
@@ -55,7 +57,7 @@ impl<'a> ReadableMessage for Message<'a> {
         match &self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.code(),
-            MessageVariant::CmuImM(m) => m.code(),
+            MessageVariant::CmuImwM(m) => m.code(),
         }
     }
     fn payload(&self) -> &[u8] {
@@ -66,7 +68,7 @@ impl<'a> ReadableMessage for Message<'a> {
         match &self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => OptionsIter::CmHmHm(m.options()),
-            MessageVariant::CmuImM(m) => OptionsIter::CmuImM(m.options()),
+            MessageVariant::CmuImwM(m) => OptionsIter::CmuImwM(m.options()),
         }
     }
 }
@@ -79,18 +81,14 @@ impl<'a> MinimalWritableMessage for Message<'a> {
         match &mut self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.set_code(code),
-            MessageVariant::CmuImM(_) => {
-                panic!("Attempted to write to a read-only message")
-            }
+            MessageVariant::CmuImwM(m) => m.set_code(code),
         }
     }
     fn add_option(&mut self, option: u16, data: &[u8]) {
         match &mut self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.add_option(option, data),
-            MessageVariant::CmuImM(_) => {
-                panic!("Attempted to write to a read-only message")
-            }
+            MessageVariant::CmuImwM(m) => m.add_option(option, data),
         }
     }
     fn set_payload(&mut self, _: &[u8]) {
@@ -104,9 +102,7 @@ impl<'a> MutableWritableMessage for Message<'a> {
         match &self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.available_space(),
-            MessageVariant::CmuImM(_) => {
-                panic!("Attempted to write to a read-only message")
-            }
+            MessageVariant::CmuImwM(m) => m.available_space(),
         }
     }
     fn payload_mut(&mut self) -> &mut [u8] {
@@ -117,9 +113,7 @@ impl<'a> MutableWritableMessage for Message<'a> {
         match &mut self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.payload_mut_with_len(len),
-            MessageVariant::CmuImM(_) => {
-                panic!("Attempted to write to a read-only message")
-            }
+            MessageVariant::CmuImwM(m) => m.payload_mut_with_len(len),
         }
     }
     fn truncate(&mut self, len: usize) {
@@ -128,18 +122,14 @@ impl<'a> MutableWritableMessage for Message<'a> {
         match &mut self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.truncate(len),
-            MessageVariant::CmuImM(_) => {
-                panic!("Attempted to write to a read-only message")
-            }
+            MessageVariant::CmuImwM(m) => m.truncate(len),
         }
     }
     fn mutate_options<F: FnMut(u16, &mut [u8])>(&mut self, f: F) {
         match &mut self.data {
             #[cfg(feature = "alloc")]
             MessageVariant::CmHmHm(m) => m.mutate_options(f),
-            MessageVariant::CmuImM(_) => {
-                panic!("Attempted to write to a read-only message")
-            }
+            MessageVariant::CmuImwM(m) => m.mutate_options(f),
         }
     }
 }
@@ -147,7 +137,7 @@ impl<'a> MutableWritableMessage for Message<'a> {
 enum OptionsIter<'a> {
     #[cfg(feature = "alloc")]
     CmHmHm(<coap_message::heapmessage::HeapMessage as ReadableMessage>::OptionsIter<'a>),
-    CmuImM(<coap_message_utils::inmemory::Message<'a> as ReadableMessage>::OptionsIter<'a>),
+    CmuImwM(<coap_message_utils::inmemory_write::Message<'a> as ReadableMessage>::OptionsIter<'a>),
 }
 
 impl<'a> core::iter::Iterator for OptionsIter<'a> {
@@ -157,7 +147,7 @@ impl<'a> core::iter::Iterator for OptionsIter<'a> {
         match self {
             #[cfg(feature = "alloc")]
             OptionsIter::CmHmHm(i) => i.next().map(MessageOption::CmHmHm),
-            OptionsIter::CmuImM(i) => i.next().map(MessageOption::CmuImM),
+            OptionsIter::CmuImwM(i) => i.next().map(MessageOption::CmuImwM),
         }
     }
 }
@@ -165,7 +155,7 @@ impl<'a> core::iter::Iterator for OptionsIter<'a> {
 enum MessageOption<'a> {
     #[cfg(feature = "alloc")]
     CmHmHm(<coap_message::heapmessage::HeapMessage as ReadableMessage>::MessageOption<'a>),
-    CmuImM(<coap_message_utils::inmemory::Message<'a> as ReadableMessage>::MessageOption<'a>),
+    CmuImwM(<coap_message_utils::inmemory_write::Message<'a> as ReadableMessage>::MessageOption<'a>),
 }
 
 impl<'a> coap_message::MessageOption for MessageOption<'a> {
@@ -173,7 +163,7 @@ impl<'a> coap_message::MessageOption for MessageOption<'a> {
         match self {
             #[cfg(feature = "alloc")]
             MessageOption::CmHmHm(m) => m.number(),
-            MessageOption::CmuImM(m) => m.number(),
+            MessageOption::CmuImwM(m) => m.number(),
         }
     }
 
@@ -181,7 +171,7 @@ impl<'a> coap_message::MessageOption for MessageOption<'a> {
         match self {
             #[cfg(feature = "alloc")]
             MessageOption::CmHmHm(m) => m.value(),
-            MessageOption::CmuImM(m) => m.value(),
+            MessageOption::CmuImwM(m) => m.value(),
         }
     }
 }
