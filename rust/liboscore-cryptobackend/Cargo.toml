@@ -19,5 +19,17 @@ hmac = { version = "0.12", default-features = false }
 hkdf = { version = "0.12", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 
+log = { version = "0.4", optional = true }
+
 [features]
 aes-ccm = [ "ccm", "aes" ]
+
+# Log cryptographic operations (AEAD encryption, decryption, HKDF derivation)
+# through the `log` crate.
+#
+# This is fundamentally unsafe, cryptography-wise -- you just don't print out
+# secret keys. But when debugging internals of libOSCORE, this is immensely
+# helpful (for example during OSCORE plug tests, to see why the different
+# parties derived different keys). Hence the mouthful name: This is not
+# supposed to be enabled lightly.
+log_cryptographic_operations_including_secret_keys = [ "log" ]

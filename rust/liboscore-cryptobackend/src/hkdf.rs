@@ -47,9 +47,15 @@ fn oscore_crypto_hkdf_derive(
     let info = unsafe { core::slice::from_raw_parts(info, info_len) };
     let out = unsafe { core::slice::from_raw_parts_mut(out, out_len) };
 
+    log_secrets!("Running HKDF with salt {:?}", salt);
+    log_secrets!("Running HKDF with key {:?}", ikm);
+    log_secrets!("Running HKDF with info {:?}", info);
+
     let result = match alg {
         Algorithm::Hmac256_256 => hkdf::Hkdf::<Sha256>::new(Some(salt), ikm).expand(info, out),
     };
+
+    log_secrets!("Running HKDF yielded {:?}", out);
 
     match result {
         Ok(()) => CryptoErr::Ok,

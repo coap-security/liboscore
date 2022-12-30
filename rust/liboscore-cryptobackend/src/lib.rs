@@ -6,6 +6,13 @@
 //! eventually be an enum in order to be Sized and thus stack-allocatable.
 #![no_std]
 
+macro_rules! log_secrets {
+    ( $($arg:tt)* ) => {
+        #[cfg(feature = "log_cryptographic_operations_including_secret_keys")]
+        log::info!($($arg)*);
+    }
+}
+
 // pub only because for bindgen we need types again. This is probably cleaner (because done in Rust
 // rather than in cbindgen) in the message backend.
 pub mod aead;

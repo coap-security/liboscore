@@ -246,16 +246,20 @@ where
         None => return CryptoErr::BufferShorterThanTag
     };
     let (plaincipher, tag) = buffer.split_at_mut(plaintextlength);
+    log_secrets!("Encrypting plaintext {:?}", plaincipher);
 
     // The checks in GenericArray initialization should make the intermediary constant go away
     let keylen = A::KeySize::to_usize();
     let key = unsafe { core::slice::from_raw_parts(state.key, keylen) };
     let key = GenericArray::clone_from_slice(key);
+    log_secrets!("Encrypting with key {:?}", key);
 
     // Same as above
     let noncelen = A::NonceSize::to_usize();
     let nonce = unsafe { core::slice::from_raw_parts(state.iv, noncelen) };
     let nonce = GenericArray::from_slice(nonce);
+    log_secrets!("Encrypting with nonce {:?}", nonce);
+    log_secrets!("Encrypting with AAD {:?}", state.buffered_aad);
 
     let mut aead = A::new(&key);
     let tagdata = match aead.encrypt_in_place_detached(
@@ -271,6 +275,8 @@ where
         Err(_) => return CryptoErr::BufferShorterThanTag
     };
     tag.copy_from_slice(&tagdata);
+
+    log_secrets!("Encrypted ciphertext {:?}", buffer);
 
     CryptoErr::Ok
 }
@@ -349,6 +355,7 @@ where
     let taglen = state.alg.tag_length();
 
     let buffer = unsafe { core::slice::from_raw_parts_mut(buffer, buffer_len) };
+    log_secrets!("Decrypting ciphertext {:?}", buffer);
     let plaintextlength = match buffer.len().checked_sub(taglen) {
         Some(x) => x,
         None => return CryptoErr::BufferShorterThanTag
@@ -360,11 +367,14 @@ where
     let keylen = state.alg.key_length();
     let key = unsafe { core::slice::from_raw_parts(state.key, keylen) };
     let key = GenericArray::clone_from_slice(key);
+    log_secrets!("Decrypting with key {:?}", key);
 
     // Same as above
     let noncelen = state.alg.iv_length();
     let nonce = unsafe { core::slice::from_raw_parts(state.iv, noncelen) };
     let nonce = GenericArray::from_slice(nonce);
+    log_secrets!("Decrypting with nonce {:?}", nonce);
+    log_secrets!("Decrypting with AAD {:?}", state.buffered_aad);
 
     // and similar but not quite like
     let tag = GenericArray::from_slice(tag);
@@ -381,9 +391,16 @@ where
             tag
         )
     {
-        Ok(()) => return CryptoErr::Ok,
-        Err(_) => return CryptoErr::DecryptError
-    };
+        Ok(()) => {
+            log_secrets!("Decrypted into plaintext {:?}", plaincipher);
+            CryptoErr::Ok
+        }
+        Err(_) => {
+            log_secrets!("Decryption failed"); // We could try printing out the plaincipher buffer,
+                                               // but AEAD libraries make a point of wiping them.
+            CryptoErr::DecryptError
+        }
+    }
 }
 
 #[no_mangle]
