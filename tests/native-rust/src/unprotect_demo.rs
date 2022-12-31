@@ -35,7 +35,7 @@ pub fn run() -> Result<(), &'static str> {
 
             let mut unprotected = MaybeUninit::uninit();
             let mut request_id = MaybeUninit::uninit();
-            let ret = raw::oscore_unprotect_request(msg, unprotected.as_mut_ptr(), header.into_inner(), &mut secctx, request_id.as_mut_ptr());
+            let ret = raw::oscore_unprotect_request(msg, unprotected.as_mut_ptr(), &header.into_inner(), primitive.as_mut(), request_id.as_mut_ptr());
             assert!(ret == raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK);
             let unprotected = unprotected.assume_init();
 
