@@ -13,7 +13,6 @@ ifeq (libcose,${OSCORE_CRYPTO_BACKEND})
 INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
 endif
 ifeq (rust,${OSCORE_CRYPTO_BACKEND})
-INCLUDES += -I${OSCOREBASE}/rust/liboscore-cryptobackend-aead/c-headers
 
 ifeq (native,${BOARD})
 RUST_ARCH = i686-unknown-linux-gnu

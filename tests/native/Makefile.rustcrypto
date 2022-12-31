@@ -1,7 +1,7 @@
-BACKEND_OBJS += ../../rust/liboscore-backends-standalone/target/debug/libliboscore_backends_standalone.a
+BACKEND_OBJS += target/debug/libliboscore_backends_standalone.a
 
-../../rust/liboscore-backends-standalone/target/debug/libliboscore_backends_standalone.a: always
-	cd ../../rust/liboscore-backends-standalone && cargo +nightly build
+target/debug/libliboscore_backends_standalone.a: always
+	cargo +nightly build --manifest-path ../../rust/liboscore-backends-standalone/Cargo.toml --target-dir=./target
 
 rustbuilthdr/oscore_native/crypto_type.h:
 	mkdir -p $$(dirname $@)
@@ -11,6 +11,6 @@ cryptobackend-aead.o cryptobackend-hkdf.o: rustbuilthdr/oscore_native/crypto_typ
 
 CPPFLAGS += -I rustbuilthdr/
 
-CFLAGS += -I../../rust/liboscore-backends-standalone/c-headers/
+LIB_CLEAN += rustbuilthdr target
 
 .PHONY: always

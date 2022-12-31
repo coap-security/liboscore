@@ -75,10 +75,9 @@ libs/tinycrypt/lib/libtinycrypt.a:
 	$(MAKE) -C libs/tinycrypt/lib
 
 clean:
-	rm -f ${CASES}
+	rm -rf ${CASES} ${LIB_CLEAN}
 	rm -f *.o
 	rm -f *.d
-	rm -rf rustbuilthdr/
 
 	# Not cleaning libs: there may be user edits in them.
 
