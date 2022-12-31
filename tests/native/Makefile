@@ -21,15 +21,17 @@ all: test
 vpath %.c ../../src/
 vpath %.c ../cases/
 
+# either libcose or rustcrypto
+CRYPTOLIB ?= libcose
+
 ifeq (libs,$(wildcard libs))
 include Makefile.mockoap
-#include Makefile.libcose
+include Makefile.$(CRYPTOLIB)
 else
 # We might pull in libs through a dependency of the to-be-included
 # Makefile.libcose, but even some expansions run into errors
 $(warning "Before running anything else, run `make libs` to ensure all Makefile components are ready")
 endif
-include Makefile.rustcrypto
 
 BACKEND_OBJS += testwrapper.c
 
@@ -37,6 +39,7 @@ test: ${CASES}
 	set -ex; for x in $^; do ./$$x; done
 
 test-all-versions:
+	${MAKE} CRYPTOLIB=rustcrypto clean
 	${MAKE} clean
 	${MAKE} CC=gcc OPTFLAGS=-O0 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
@@ -44,6 +47,8 @@ test-all-versions:
 	${MAKE} clean
 	${MAKE} CC=clang TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
+	${MAKE} CRYPTOLIB=rustcrypto test
+	${MAKE} CRYPTOLIB=rustcrypto clean
 	# only relevant with TINYDTLS
 # 	${MAKE} CC=clang BE_PEDANTIC=no test
 # 	${MAKE} clean
