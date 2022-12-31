@@ -388,7 +388,7 @@ bool _decrypt(
 enum oscore_unprotect_request_result oscore_unprotect_request(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_oscoreoption_t header,
+        const oscore_oscoreoption_t *header,
         oscore_context_t *secctx,
         oscore_requestid_t *request_id
         )
@@ -413,7 +413,7 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
      *   upheld.
      */
 
-    bool has_request_id = extract_requestid(&header, request_id);
+    bool has_request_id = extract_requestid(header, request_id);
     if (!has_request_id) {
         return OSCORE_UNPROTECT_REQUEST_INVALID;
     }
@@ -437,12 +437,12 @@ enum oscore_unprotect_request_result oscore_unprotect_request(
 enum oscore_unprotect_response_result oscore_unprotect_response(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_oscoreoption_t header,
+        const oscore_oscoreoption_t *header,
         oscore_context_t *secctx,
         oscore_requestid_t *request_id
         )
 {
-    bool has_piv = extract_requestid(&header, &unprotected->partial_iv);
+    bool has_piv = extract_requestid(header, &unprotected->partial_iv);
     enum oscore_context_role piv_kid;
     if (has_piv) {
         // This may be a bit confusing here: With a PIV attached, this means we
