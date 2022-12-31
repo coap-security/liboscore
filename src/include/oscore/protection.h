@@ -189,7 +189,7 @@ OSCORE_NONNULL
 enum oscore_unprotect_request_result oscore_unprotect_request(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_oscoreoption_t header,
+        const oscore_oscoreoption_t *header,
         oscore_context_t *secctx,
         oscore_requestid_t *request_id
         );
@@ -228,7 +228,7 @@ enum oscore_unprotect_response_result {
 enum oscore_unprotect_response_result oscore_unprotect_response(
         oscore_msg_native_t protected,
         oscore_msg_protected_t *unprotected,
-        oscore_oscoreoption_t header,
+        const oscore_oscoreoption_t *header,
         oscore_context_t *secctx,
         oscore_requestid_t *request_id
         );

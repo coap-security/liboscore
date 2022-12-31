@@ -389,7 +389,7 @@ static void handle_static_response(const struct gcoap_request_memo *memo, coap_p
         printf("Can't unprotect response, security context in use\n");
         goto error;
     }
-    enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, header, &secctx_u, &request_data->request_id);
+    enum oscore_unprotect_response_result success = oscore_unprotect_response(pdu_read, &msg, &header, &secctx_u, &request_data->request_id);
     secctx_u_change -= 1;
     mutex_unlock(&secctx_u_usage);
 

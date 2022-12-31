@@ -196,7 +196,7 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
         userctx_maybe_persist();
     }
 
-    oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, header, secctx, &request_id);
+    oscerr = oscore_unprotect_request(pdu_read, &incoming_decrypted, &header, secctx, &request_id);
 
     bool respond_401echo = secctx_lock == &secctx_u_usage && \
             oscore_context_b1_process_request(

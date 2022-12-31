@@ -75,7 +75,7 @@ int testmain(int introduce_error)
     }
     assert(found_oscoreoption);
 
-    oscerr = oscore_unprotect_request(msg, &unprotected, header, &secctx, &request_id);
+    oscerr = oscore_unprotect_request(msg, &unprotected, &header, &secctx, &request_id);
 
     assert(oscerr == OSCORE_UNPROTECT_REQUEST_OK);
 
