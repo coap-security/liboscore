@@ -1,15 +1,28 @@
-use std::path::{Path, PathBuf};
 use std::env;
+use std::path::{Path, PathBuf};
 
 fn main() {
     let rustbuilthdr_base = PathBuf::from(env::var("OUT_DIR").unwrap()).join("rust-built-headers");
     run_cbindgen(&rustbuilthdr_base);
-    println!("cargo:PLATFORMHEADERS={}", rustbuilthdr_base.to_str().expect("Please use paths tha are also strings"));
+    println!(
+        "cargo:PLATFORMHEADERS={}",
+        rustbuilthdr_base
+            .to_str()
+            .expect("Please use paths tha are also strings")
+    );
 
     let liboscore_includes = Path::new("../../src/include/");
     // Err out early to get a clearer error message
-    assert!(liboscore_includes.join("oscore/message.h").exists(), "libOSCORE headers are not avaialble at {}", liboscore_includes.display());
-    assert!(rustbuilthdr_base.join("oscore_native/msg_type.h").exists(), "libOSCORE platform headers are not avaialble at {}", rustbuilthdr_base.display());
+    assert!(
+        liboscore_includes.join("oscore/message.h").exists(),
+        "libOSCORE headers are not avaialble at {}",
+        liboscore_includes.display()
+    );
+    assert!(
+        rustbuilthdr_base.join("oscore_native/msg_type.h").exists(),
+        "libOSCORE platform headers are not avaialble at {}",
+        rustbuilthdr_base.display()
+    );
     run_bindgen(liboscore_includes, &rustbuilthdr_base);
 
     bundle_staticlib(&rustbuilthdr_base)
@@ -23,13 +36,10 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         // built for wasm32-unknown-unknown -- might need a more proper solution (but this is a
         // good workaround from <https://github.com/rust-lang/rust-bindgen/issues/751>).
         .clang_arg("-fvisibility=default")
-
         .use_core()
-
         // Not sure why exactly these conflict, but we don't need them
         .derive_copy(false)
         .derive_debug(false)
-
         // It's Rust code that defines them, and we're building it in the same process, so let's
         // avoid redefinitions
         .blocklist_type("oscore_msg_native_t")
@@ -37,8 +47,8 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         .blocklist_type("oscore_crypto_aead_decryptstate_t")
         .blocklist_type("oscore_crypto_aead_encryptstate_t")
         .allowlist_function("oscore_cryptoerr_is_error") // a bit weird, this should be directly
-                                                         // importable (but the renaming makes it
-                                                         // weird)
+        // importable (but the renaming makes it
+        // weird)
         .allowlist_function("oscore_msg_protected_get_code")
         .allowlist_function("oscore_msg_protected_map_payload")
         .allowlist_function("oscore_msgerr_protected_is_error")
@@ -73,13 +83,12 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         .allowlist_var("OSCORE_KEYID_MAXLEN")
         .allowlist_var("PIV_BYTES")
         .allowlist_var("OSCORE_CRYPTO_AEAD_IV_MAXLEN")
-
         .header("oscore_all_headers.h")
-            .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-            .generate()
-            .expect("bindgen failed")
-            .write_to_file(PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs"))
-            .expect("writing bindings.rs failed");
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .generate()
+        .expect("bindgen failed")
+        .write_to_file(PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs"))
+        .expect("writing bindings.rs failed");
 }
 
 fn run_cbindgen(rustbuilthdr_base: &PathBuf) {
@@ -88,14 +97,19 @@ fn run_cbindgen(rustbuilthdr_base: &PathBuf) {
 
     cbindgen::Builder::new()
         .with_crate("../../rust/liboscore-cryptobackend")
-        .with_config(cbindgen::Config::from_file("../../rust/liboscore-cryptobackend/cbindgen.toml").unwrap())
+        .with_config(
+            cbindgen::Config::from_file("../../rust/liboscore-cryptobackend/cbindgen.toml")
+                .unwrap(),
+        )
         .generate()
         .expect("Failure generating cbindgen headers for the cryptobackend")
         .write_to_file(rustbuilthdr_dir.join("crypto_type.h"));
 
     cbindgen::Builder::new()
         .with_crate("../../rust/liboscore-msgbackend")
-        .with_config(cbindgen::Config::from_file("../../rust/liboscore-msgbackend/cbindgen.toml").unwrap())
+        .with_config(
+            cbindgen::Config::from_file("../../rust/liboscore-msgbackend/cbindgen.toml").unwrap(),
+        )
         .with_language(cbindgen::Language::C)
         .generate()
         .expect("Failure generating cbindgen headers for the msgbackend")

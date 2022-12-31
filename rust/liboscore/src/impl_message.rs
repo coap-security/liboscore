@@ -26,7 +26,11 @@ impl coap_message::ReadableMessage for ProtectedMessage {
         unsafe {
             let mut payload = MaybeUninit::uninit();
             let mut payload_len = MaybeUninit::uninit();
-            let err = raw::oscore_msg_protected_map_payload(self.0.get(), payload.as_mut_ptr(), payload_len.as_mut_ptr());
+            let err = raw::oscore_msg_protected_map_payload(
+                self.0.get(),
+                payload.as_mut_ptr(),
+                payload_len.as_mut_ptr(),
+            );
             assert!(!raw::oscore_msgerr_protected_is_error(err));
             core::slice::from_raw_parts(payload.assume_init(), payload_len.assume_init())
         }
@@ -47,7 +51,7 @@ impl coap_message::ReadableMessage for ProtectedMessage {
 
 pub struct MessageOption<'a> {
     num: u16,
-    val: &'a [u8]
+    val: &'a [u8],
 }
 
 impl<'a> coap_message::MessageOption for MessageOption<'a> {
@@ -75,18 +79,30 @@ impl<'a> Iterator for OptionsIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.msg.is_none() {
-            return Some(MessageOption { num: OPTION_INVALID, val: &[] })
+            return Some(MessageOption {
+                num: OPTION_INVALID,
+                val: &[],
+            });
         }
         unsafe {
             let mut num = MaybeUninit::uninit();
             let mut val = MaybeUninit::uninit();
             let mut val_len = MaybeUninit::uninit();
-            let next_exists = raw::oscore_msg_protected_optiter_next(self.msg.unwrap().get(), &mut self.iter, num.as_mut_ptr(), val.as_mut_ptr(), val_len.as_mut_ptr());
+            let next_exists = raw::oscore_msg_protected_optiter_next(
+                self.msg.unwrap().get(),
+                &mut self.iter,
+                num.as_mut_ptr(),
+                val.as_mut_ptr(),
+                val_len.as_mut_ptr(),
+            );
             if !next_exists {
                 let msg = self.msg.take().unwrap();
                 let err = raw::oscore_msg_protected_optiter_finish(msg.get(), &mut self.iter);
                 if raw::oscore_msgerr_protected_is_error(err) {
-                    return Some(MessageOption { num: OPTION_INVALID, val: &[] })
+                    return Some(MessageOption {
+                        num: OPTION_INVALID,
+                        val: &[],
+                    });
                 } else {
                     return None;
                 }
@@ -117,7 +133,14 @@ impl coap_message::MinimalWritableMessage for ProtectedMessage {
         unsafe { raw::oscore_msg_protected_set_code(self.0.get(), code) }
     }
     fn add_option(&mut self, number: u16, value: &[u8]) {
-        let err = unsafe { raw::oscore_msg_protected_append_option(self.0.get(), number, value.as_ptr(), value.len()) };
+        let err = unsafe {
+            raw::oscore_msg_protected_append_option(
+                self.0.get(),
+                number,
+                value.as_ptr(),
+                value.len(),
+            )
+        };
         if unsafe { raw::oscore_msgerr_protected_is_error(err) } {
             panic!("coap-message can not express fallibly setting options, but adding option {} caused error {}", number, err);
         }
@@ -125,14 +148,22 @@ impl coap_message::MinimalWritableMessage for ProtectedMessage {
     fn set_payload(&mut self, payload: &[u8]) {
         let mut buffer_start = MaybeUninit::uninit();
         let mut buffer_len = MaybeUninit::uninit();
-        let err = unsafe { raw::oscore_msg_protected_map_payload(self.0.get(), buffer_start.as_mut_ptr(), buffer_len.as_mut_ptr()) };
+        let err = unsafe {
+            raw::oscore_msg_protected_map_payload(
+                self.0.get(),
+                buffer_start.as_mut_ptr(),
+                buffer_len.as_mut_ptr(),
+            )
+        };
         let err = unsafe { raw::oscore_msgerr_protected_is_error(err) };
         // coap-message API is infallible
         assert!(!err);
 
-        let buffer = unsafe { core::slice::from_raw_parts_mut(buffer_start.assume_init(), buffer_len.assume_init()) };
+        let buffer = unsafe {
+            core::slice::from_raw_parts_mut(buffer_start.assume_init(), buffer_len.assume_init())
+        };
         buffer[..payload.len()].copy_from_slice(payload);
-        
+
         let err = unsafe { raw::oscore_msg_protected_trim_payload(self.0.get(), payload.len()) };
         let err = unsafe { raw::oscore_msgerr_protected_is_error(err) };
         assert!(!err);
@@ -147,7 +178,7 @@ impl coap_message::MutableWritableMessage for ProtectedMessage {
         // So we're using the fact that we're really internal to libOSCORE, and dip into fields.
         // Conveniently, this only needs to be correct in the "good" case, so we can just provide a
         // good guess (because nothing can rely on this for unsafe stuff anyway).
-        
+
         // Safety: We're only accessing things inside this function, while we're not mutating
         // (which we know not to happen because ProtectedMessage is not Sync).
         let msg = unsafe { &*self.0.get() };
@@ -157,22 +188,37 @@ impl coap_message::MutableWritableMessage for ProtectedMessage {
         // FIXME: In C, msg_backend_t is implicitly Clone. How do we make it clone most easily
         // here?
         let msg_backend_copy = unsafe { core::ptr::read(&msg.backend) };
-        let err = unsafe { raw::oscore_msg_native_map_payload(msg_backend_copy, outer_payload.as_mut_ptr(), outer_payload_len.as_mut_ptr()) };
+        let err = unsafe {
+            raw::oscore_msg_native_map_payload(
+                msg_backend_copy,
+                outer_payload.as_mut_ptr(),
+                outer_payload_len.as_mut_ptr(),
+            )
+        };
         assert!(!unsafe { raw::oscore_msgerr_native_is_error(err) });
         let outer_payload_len = unsafe { outer_payload_len.assume_init() };
         let mut autooptions_len: usize = 0;
-        if msg.class_e.option_number < 6 /* Observe */ {
+        if msg.class_e.option_number < 6
+        /* Observe */
+        {
             autooptions_len += 2; // Counting only one of the two occurrences, for if the user sets
                                   // one, they account for the other
         }
-        if msg.class_e.option_number < 9 /* OSCORE */ {
+        if msg.class_e.option_number < 9
+        /* OSCORE */
+        {
             // bindgen can't evaluate that for us, expanded manually (assuming the Rust version of
             // the cryptobackend):
             let oscore_crypto_aead_iv_maxlen: usize = 13;
             // bindgen can't evaluate that for us, expanded manually:
             let keyid_maxlen = oscore_crypto_aead_iv_maxlen - raw::IV_KEYID_UNUSABLE as usize;
             // Conservative estimate based on the buffer size inside flush_autooptions_outer_until
-            autooptions_len += 1 + 1 + raw::PIV_BYTES as usize + 1 + raw::OSCORE_KEYIDCONTEXT_MAXLEN as usize + keyid_maxlen;
+            autooptions_len += 1
+                + 1
+                + raw::PIV_BYTES as usize
+                + 1
+                + raw::OSCORE_KEYIDCONTEXT_MAXLEN as usize
+                + keyid_maxlen;
         }
         outer_payload_len - autooptions_len - 2 - msg.class_e.cursor - msg.tag_length
     }
@@ -181,7 +227,11 @@ impl coap_message::MutableWritableMessage for ProtectedMessage {
         unsafe {
             let mut payload = MaybeUninit::uninit();
             let mut payload_len = MaybeUninit::uninit();
-            let err = raw::oscore_msg_protected_map_payload(self.0.get(), payload.as_mut_ptr(), payload_len.as_mut_ptr());
+            let err = raw::oscore_msg_protected_map_payload(
+                self.0.get(),
+                payload.as_mut_ptr(),
+                payload_len.as_mut_ptr(),
+            );
             assert!(!raw::oscore_msgerr_protected_is_error(err));
             core::slice::from_raw_parts_mut(payload.assume_init(), payload_len.assume_init())
         }
@@ -203,7 +253,13 @@ impl coap_message::MutableWritableMessage for ProtectedMessage {
                 let mut num = MaybeUninit::uninit();
                 let mut val = MaybeUninit::uninit();
                 let mut val_len = MaybeUninit::uninit();
-                let next_exists = raw::oscore_msg_protected_optiter_next(self.0.get(), &mut iter, num.as_mut_ptr(), val.as_mut_ptr(), val_len.as_mut_ptr());
+                let next_exists = raw::oscore_msg_protected_optiter_next(
+                    self.0.get(),
+                    &mut iter,
+                    num.as_mut_ptr(),
+                    val.as_mut_ptr(),
+                    val_len.as_mut_ptr(),
+                );
                 if !next_exists {
                     // No way to handle errors, but there shouldn't be any given that we're
                     // building this message

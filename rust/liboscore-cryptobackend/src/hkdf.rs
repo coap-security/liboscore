@@ -14,14 +14,16 @@ impl Algorithm {
     fn from_number(num: i32) -> Option<Self> {
         match num {
             5 => Some(Algorithm::Hmac256_256),
-            _ => None
+            _ => None,
         }
     }
 }
 
 #[no_mangle]
-pub extern "C"
-fn oscore_crypto_hkdf_from_number(alg: &mut MaybeUninit<Algorithm>, num: i32) -> CryptoErr {
+pub extern "C" fn oscore_crypto_hkdf_from_number(
+    alg: &mut MaybeUninit<Algorithm>,
+    num: i32,
+) -> CryptoErr {
     if let Some(found) = Algorithm::from_number(num) {
         alg.write(found);
         CryptoErr::Ok

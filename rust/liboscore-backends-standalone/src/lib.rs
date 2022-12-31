@@ -12,4 +12,4 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[lang = "eh_personality"]
-extern fn eh_personality() {}
+extern "C" fn eh_personality() {}

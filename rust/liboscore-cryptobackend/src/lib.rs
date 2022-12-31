@@ -20,8 +20,7 @@ mod hkdf;
 
 /// Void stand-in recognized by the cbindgen library by its name
 #[allow(non_camel_case_types)]
-pub enum c_void {
-}
+pub enum c_void {}
 
 // Those types that are passed in and out as arguments need to be repr(C). The rest can be any repr
 // as it is only stack-allocated and passed through pointers, but CryptoErr and Algorithm are
@@ -45,10 +44,8 @@ pub enum CryptoErr {
 }
 
 #[no_mangle]
-pub extern "C"
-fn oscore_cryptoerr_is_error(err: CryptoErr) -> bool {
+pub extern "C" fn oscore_cryptoerr_is_error(err: CryptoErr) -> bool {
     match err {
-
         CryptoErr::Ok => false,
         _ => true,
     }

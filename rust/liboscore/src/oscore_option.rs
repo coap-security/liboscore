@@ -1,5 +1,5 @@
-use core::mem::MaybeUninit;
 use core::marker::PhantomData;
+use core::mem::MaybeUninit;
 
 use crate::raw;
 
@@ -36,7 +36,9 @@ impl<'a> OscoreOption<'a> {
         if self.0.kid_context.is_null() {
             None
         } else {
-            Some(unsafe { core::slice::from_raw_parts(self.0.kid_context, self.0.kid_context_len as _) })
+            Some(unsafe {
+                core::slice::from_raw_parts(self.0.kid_context, self.0.kid_context_len as _)
+            })
         }
     }
 
@@ -44,7 +46,9 @@ impl<'a> OscoreOption<'a> {
         if self.0.partial_iv.is_null() {
             None
         } else {
-            Some(unsafe { core::slice::from_raw_parts(self.0.partial_iv, self.0.partial_iv_len as _) })
+            Some(unsafe {
+                core::slice::from_raw_parts(self.0.partial_iv, self.0.partial_iv_len as _)
+            })
         }
     }
 

@@ -3,8 +3,8 @@
 //! stack usage.
 
 use core::mem::MaybeUninit;
-use liboscore_cryptobackend::*;
 use liboscore_cryptobackend::aead::*;
+use liboscore_cryptobackend::*;
 
 fn main() -> Result<(), ()> {
     let key = b"0123456789----------0123456789--";
@@ -13,16 +13,22 @@ fn main() -> Result<(), ()> {
 
     let mut alg = MaybeUninit::uninit();
     let err = oscore_crypto_aead_from_number(&mut alg, 24);
-    if oscore_cryptoerr_is_error(err) { return Err(()) };
+    if oscore_cryptoerr_is_error(err) {
+        return Err(());
+    };
     let alg = unsafe { alg.assume_init() };
 
     let mut state = MaybeUninit::uninit();
     let err = oscore_crypto_aead_encrypt_start(&mut state, alg, 0, 8, nonce.as_ptr(), key.as_ptr());
-    if oscore_cryptoerr_is_error(err) { return Err(()) };
+    if oscore_cryptoerr_is_error(err) {
+        return Err(());
+    };
     let mut state = unsafe { state.assume_init() };
     let msgbuflen = msgbuf.len();
     let err = oscore_crypto_aead_encrypt_inplace(&mut state, msgbuf.as_mut_ptr(), msgbuflen);
-    if oscore_cryptoerr_is_error(err) { return Err(()) };
+    if oscore_cryptoerr_is_error(err) {
+        return Err(());
+    };
 
     Ok(())
 }

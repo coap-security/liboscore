@@ -5,7 +5,7 @@
 
 use core::mem::MaybeUninit;
 
-use coap_message::{ReadableMessage, MinimalWritableMessage, MessageOption};
+use coap_message::{MessageOption, MinimalWritableMessage, ReadableMessage};
 
 use liboscore::raw;
 
@@ -19,8 +19,8 @@ pub fn run() -> Result<(), &'static str> {
         liboscore::AeadAlg::from_number(24).unwrap(),
         b"\x01",
         b"",
-        )
-        .unwrap();
+    )
+    .unwrap();
 
     let mut primitive = liboscore::PrimitiveContext::new_from_fresh_material(immutables);
 
@@ -35,7 +35,13 @@ pub fn run() -> Result<(), &'static str> {
 
             let mut unprotected = MaybeUninit::uninit();
             let mut request_id = MaybeUninit::uninit();
-            let ret = raw::oscore_unprotect_request(msg, unprotected.as_mut_ptr(), &header.into_inner(), primitive.as_mut(), request_id.as_mut_ptr());
+            let ret = raw::oscore_unprotect_request(
+                msg,
+                unprotected.as_mut_ptr(),
+                &header.into_inner(),
+                primitive.as_mut(),
+                request_id.as_mut_ptr(),
+            );
             assert!(ret == raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK);
             let unprotected = unprotected.assume_init();
 
@@ -43,13 +49,21 @@ pub fn run() -> Result<(), &'static str> {
             assert!(unprotected.code() == 1);
 
             let mut message_options = unprotected.options().fuse();
-            let mut ref_options = [(11, "oscore"), (11, "hello"), (11, "1")].into_iter().fuse();
+            let mut ref_options = [(11, "oscore"), (11, "hello"), (11, "1")]
+                .into_iter()
+                .fuse();
             for (msg_o, ref_o) in (&mut message_options).zip(&mut ref_options) {
                 assert!(msg_o.number() == ref_o.0);
                 assert!(std::str::from_utf8(msg_o.value()) == Ok(ref_o.1));
             }
-            assert!(message_options.next().is_none(), "Message contained extra options");
-            assert!(ref_options.next().is_none(), "Message didn't contain the reference options");
+            assert!(
+                message_options.next().is_none(),
+                "Message contained extra options"
+            );
+            assert!(
+                ref_options.next().is_none(),
+                "Message didn't contain the reference options"
+            );
             assert!(unprotected.payload() == b"");
         };
     });

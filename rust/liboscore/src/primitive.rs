@@ -4,8 +4,8 @@
 //! referenced there, a staggered setup is needed to ensure the immutables are not moved once used
 //! by the mutables.
 
-use core::mem::MaybeUninit;
 use core::marker::PhantomData;
+use core::mem::MaybeUninit;
 
 use crate::raw;
 
@@ -28,8 +28,7 @@ impl PrimitiveImmutables {
         aead_alg: crate::algorithms::AeadAlg,
         sender_id: &[u8],
         recipient_id: &[u8],
-        ) -> Result<Self, DeriveError>
-    {
+    ) -> Result<Self, DeriveError> {
         if recipient_id.len() > aead_alg.iv_len() - raw::IV_KEYID_UNUSABLE as usize {
             return Err(DeriveError::RecipientIdTooLong);
         }
@@ -48,16 +47,20 @@ impl PrimitiveImmutables {
             (*_0.as_mut_ptr()).sender_id_len = sender_id.len();
             (*_0.as_mut_ptr()).aeadalg = aead_alg.into_inner();
         }
-        unsafe { raw::oscore_context_primitive_derive(
-            _0.as_mut_ptr(), 
-            hkdf_alg.into_inner(),
-            ikm.as_ptr(),
-            ikm.len(),
-            salt.as_ptr(),
-            salt.len(),
-            context.map(|c| c.as_ptr()).unwrap_or_else(|| core::ptr::null()),
-            context.map(|c| c.len()).unwrap_or(0),
-        ) };
+        unsafe {
+            raw::oscore_context_primitive_derive(
+                _0.as_mut_ptr(),
+                hkdf_alg.into_inner(),
+                ikm.as_ptr(),
+                ikm.len(),
+                salt.as_ptr(),
+                salt.len(),
+                context
+                    .map(|c| c.as_ptr())
+                    .unwrap_or_else(|| core::ptr::null()),
+                context.map(|c| c.len()).unwrap_or(0),
+            )
+        };
         Ok(Self(unsafe { _0.assume_init() }))
     }
 
@@ -121,9 +124,8 @@ impl PrimitiveContext {
             context: raw::oscore_context_t {
                 data: core::ptr::null_mut(),
                 type_: raw::oscore_context_type_OSCORE_CONTEXT_PRIMITIVE,
-            }
+            },
         }
-
     }
 
     fn fix(&mut self) {

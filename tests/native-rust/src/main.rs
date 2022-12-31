@@ -2,7 +2,10 @@ mod unprotect_demo;
 
 include!(concat!(env!("OUT_DIR"), "/testmain-list.rs"));
 
-fn run_c_test(name: &'static str, tmf: unsafe extern "C" fn(i32) -> i32) -> Result<(), &'static str> {
+fn run_c_test(
+    name: &'static str,
+    tmf: unsafe extern "C" fn(i32) -> i32,
+) -> Result<(), &'static str> {
     let mut first_error = Ok(());
 
     println!("Running test case {} without introducing errors...", name);

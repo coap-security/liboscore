@@ -155,7 +155,9 @@ impl<'a> core::iter::Iterator for OptionsIter<'a> {
 enum MessageOption<'a> {
     #[cfg(feature = "alloc")]
     CmHmHm(<coap_message::heapmessage::HeapMessage as ReadableMessage>::MessageOption<'a>),
-    CmuImwM(<coap_message_utils::inmemory_write::Message<'a> as ReadableMessage>::MessageOption<'a>),
+    CmuImwM(
+        <coap_message_utils::inmemory_write::Message<'a> as ReadableMessage>::MessageOption<'a>,
+    ),
 }
 
 impl<'a> coap_message::MessageOption for MessageOption<'a> {
@@ -382,12 +384,9 @@ pub extern "C" fn oscore_test_msg_destroy(msg: oscore_msg_native_t) {
 #[cfg(feature = "alloc")]
 // FIXME: This drops the heapmessage afterwards; that's OK for decoding (and for encoding we'll
 // probably want to create it freshly anyway)
-pub fn with_heapmessage_as_msg_native<F, R>(
-    msg: coap_message::heapmessage::HeapMessage,
-    f: F,
-) -> R
+pub fn with_heapmessage_as_msg_native<F, R>(msg: coap_message::heapmessage::HeapMessage, f: F) -> R
 where
-    F: FnOnce(oscore_msg_native_t) -> R
+    F: FnOnce(oscore_msg_native_t) -> R,
 {
     // This is just the kind of message that does need its payload length known and set
     let payload_len = msg.payload().len();
@@ -395,7 +394,9 @@ where
         data: MessageVariant::CmHmHm(msg),
         payload_length: Some(payload_len),
     };
-    f(oscore_msg_native_t(&mut wrapped_message as *mut _ as *mut _))
+    f(oscore_msg_native_t(
+        &mut wrapped_message as *mut _ as *mut _,
+    ))
 }
 
 /// Make a [coap_message_utils::inmemory_write::Message] usable as a [raw::oscore_msg_native_t]
@@ -406,17 +407,20 @@ pub fn with_inmemory_as_msg_native<'a, 'b: 'a, F, R>(
     f: F,
 ) -> R
 where
-    F: FnOnce(oscore_msg_native_t) -> R
+    F: FnOnce(oscore_msg_native_t) -> R,
 {
     // FIXME: find a safe way to do this
     // Safety: Message is for some reason considered invariant over its lifetime argument, when
     // from how it's working it should be coercible into a shorter lifetime argument.
-    let msg: &'a mut coap_message_utils::inmemory_write::Message<'a> = unsafe { core::mem::transmute(msg) };
+    let msg: &'a mut coap_message_utils::inmemory_write::Message<'a> =
+        unsafe { core::mem::transmute(msg) };
 
     // We don't reliably know a payload length ... this is bound to get confusing
     let mut wrapped_message = Message {
         data: MessageVariant::CmuImwM(msg),
         payload_length: None,
     };
-    f(oscore_msg_native_t(&mut wrapped_message as *mut _ as *mut _))
+    f(oscore_msg_native_t(
+        &mut wrapped_message as *mut _ as *mut _,
+    ))
 }
