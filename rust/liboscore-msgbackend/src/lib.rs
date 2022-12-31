@@ -179,7 +179,15 @@ impl<'a> coap_message::MessageOption for MessageOption<'a> {
 /// The message type is conveniently already more pointer-like; given that we pass around pointers
 /// to a concrete type (albeit possibly an enum), it's just that.
 ///
-/// (If `dyn ReadableMessage` were possible, we could also pass something larger here).
+/// The current convention this crate adheres to is to go through a level of indirection (being a
+/// pointer to the Message enum) rather than the full enum itself. The latter is well within the
+/// design space of libOSCORE, but given that there is as of 2022 some confusion about WASM's ABI
+/// (C and Rust-on-some-target-triples disagree on whether they are passed by value or by
+/// reference on the ABI level when passed by value on the API level), a small struct is
+/// preferable.
+///
+/// If `&dyn the-required-traits` were possible, we could also pass that (subject to the same
+/// limitations as passing the full enum).
 ///
 /// The void pointer hides a [Message] enum (because it can't be repr(C)) that always has
 /// "sufficient" lifetime (we have to trust the C side on that).
@@ -368,6 +376,9 @@ pub extern "C" fn oscore_test_msg_destroy(msg: oscore_msg_native_t) {
 
 // Functions for interacting with messages from the Rust side
 
+/// Make a [coap_message::heapmessage::HeapMessage] usable as a [raw::oscore_msg_native_t]
+///
+/// This is a low-level function mainly used by tests.
 #[cfg(feature = "alloc")]
 // FIXME: This drops the heapmessage afterwards; that's OK for decoding (and for encoding we'll
 // probably want to create it freshly anyway)
@@ -383,6 +394,29 @@ where
     let mut wrapped_message = Message {
         data: MessageVariant::CmHmHm(msg),
         payload_length: Some(payload_len),
+    };
+    f(oscore_msg_native_t(&mut wrapped_message as *mut _ as *mut _))
+}
+
+/// Make a [coap_message_utils::inmemory_write::Message] usable as a [raw::oscore_msg_native_t]
+///
+/// This is a low-level function used by the high-level wrappers in the liboscore crate.
+pub fn with_inmemory_as_msg_native<'a, 'b: 'a, F, R>(
+    msg: &'a mut coap_message_utils::inmemory_write::Message<'b>,
+    f: F,
+) -> R
+where
+    F: FnOnce(oscore_msg_native_t) -> R
+{
+    // FIXME: find a safe way to do this
+    // Safety: Message is for some reason considered invariant over its lifetime argument, when
+    // from how it's working it should be coercible into a shorter lifetime argument.
+    let msg: &'a mut coap_message_utils::inmemory_write::Message<'a> = unsafe { core::mem::transmute(msg) };
+
+    // We don't reliably know a payload length ... this is bound to get confusing
+    let mut wrapped_message = Message {
+        data: MessageVariant::CmuImwM(msg),
+        payload_length: None,
     };
     f(oscore_msg_native_t(&mut wrapped_message as *mut _ as *mut _))
 }
