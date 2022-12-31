@@ -9,9 +9,10 @@ links = "liboscore"
 
 [dependencies]
 liboscore-cryptobackend = { path = "../liboscore-cryptobackend", features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
-liboscore-msgbackend = { path = "../liboscore-msgbackend", features = [ "alloc" ] }
+liboscore-msgbackend = { path = "../liboscore-msgbackend" }
 
-coap-message = { version = "0.2", features = [ "alloc" ] }
+coap-message = "0.2"
+coap-message-utils = "0.2.2"
 
 # Only for Debug implementations
 pretty-hex = { version = "0.3", default-features = false }
