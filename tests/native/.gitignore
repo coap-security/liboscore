@@ -6,3 +6,4 @@ cryptobackend-aead
 cryptobackend-hkdf
 unprotect-demo
 unit-contextpair-window
+rustbuilthdr/

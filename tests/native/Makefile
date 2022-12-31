@@ -78,6 +78,7 @@ clean:
 	rm -f ${CASES}
 	rm -f *.o
 	rm -f *.d
+	rm -rf rustbuilthdr/
 
 	# Not cleaning libs: there may be user edits in them.
 
