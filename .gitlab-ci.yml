@@ -3,10 +3,9 @@ image: debian
 test:
   script:
     - apt-get update
-    - apt-get -y install git build-essential pkg-config libsodium-dev clang curl
+    - apt-get -y install git build-essential pkg-config libsodium-dev clang curl cbindgen
     - "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly"
     - source $HOME/.cargo/env
-    - cargo install cbindgen
 
     - cd tests/native
     # The current Makefile setup fails to consider the vpaths intgroduced in
