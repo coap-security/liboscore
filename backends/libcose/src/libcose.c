@@ -197,7 +197,6 @@ oscore_cryptoerr_t oscore_crypto_aead_decrypt_inplace(
 
 oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, int32_t number)
 {
-#ifdef LIBCOSE_HAS_HKDF
     // Following libcose's practice to just numerically cast an int32_t to the enum
     if (cose_crypto_is_hkdf(number)) {
         *alg = number;
@@ -205,11 +204,6 @@ oscore_cryptoerr_t oscore_crypto_hkdf_from_number(oscore_crypto_hkdfalg_t *alg, 
     } else {
         return COSE_ERR_NOTIMPLEMENTED;
     }
-#else
-    (void)alg;
-    (void)number;
-    return COSE_ERR_NOTIMPLEMENTED;
-#endif
 }
 
 OSCORE_NONNULL
@@ -225,11 +219,5 @@ oscore_cryptoerr_t oscore_crypto_hkdf_derive(
         size_t out_len
         )
 {
-#ifdef LIBCOSE_HAS_HKDF
     return cose_crypto_hkdf_derive(salt, salt_len, ikm, ikm_len, info, info_len, out, out_len, alg);
-#else
-    (void)salt, (void)salt_len, (void)ikm, (void)ikm_len, (void)info, (void)info_len, (void)out, (void)out_len, (void)alg;
-    // No hkdfalg_t could have been valid
-    abort();
-#endif
 }
