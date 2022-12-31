@@ -3,7 +3,8 @@
 //! stack usage.
 
 use core::mem::MaybeUninit;
-use liboscore_cryptobackend_aead::*;
+use liboscore_cryptobackend::*;
+use liboscore_cryptobackend::aead::*;
 
 fn main() -> Result<(), ()> {
     let key = b"0123456789----------0123456789--";
