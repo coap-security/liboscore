@@ -4,7 +4,6 @@
 //! referenced there, a staggered setup is needed to ensure the immutables are not moved once used
 //! by the mutables.
 
-use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 
 use crate::raw;
@@ -82,7 +81,7 @@ impl core::fmt::Debug for PrimitiveImmutables {
         write!(f, "{{ sender_id: '")?;
         simple_hex_write(f, &self.sender_id())?;
         write!(f, "', recipient_id: '")?;
-        simple_hex_write(f, &self.recipient_id());
+        simple_hex_write(f, &self.recipient_id())?;
         write!(f, "' }}")?;
         Ok(())
     }

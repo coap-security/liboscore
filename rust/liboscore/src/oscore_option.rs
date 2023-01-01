@@ -67,9 +67,9 @@ impl<'a> core::fmt::Debug for OscoreOption<'a> {
     // generally inaccessible.
     fn fmt(&self, w: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(w, "OscoreOption {{ ")?;
-        write!(w, "partial_iv: {:?}, ", self.partial_iv());
-        write!(w, "kid: {:?}, ", self.kid());
-        write!(w, "kid_context: {:?}, ", self.kid_context());
+        write!(w, "partial_iv: {:?}, ", self.partial_iv())?;
+        write!(w, "kid: {:?}, ", self.kid())?;
+        write!(w, "kid_context: {:?}, ", self.kid_context())?;
         write!(w, "}}")
     }
 }

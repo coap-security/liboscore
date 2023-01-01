@@ -3,10 +3,10 @@
 #![allow(non_upper_case_globals)]
 
 // Types we block in the bindgen, but we have to make them available
-use liboscore_cryptobackend::aead::{
-    DecryptState as oscore_crypto_aead_decryptstate_t,
-    EncryptState as oscore_crypto_aead_encryptstate_t,
-};
+// use liboscore_cryptobackend::aead::{
+//     DecryptState as oscore_crypto_aead_decryptstate_t,
+//     EncryptState as oscore_crypto_aead_encryptstate_t,
+// };
 use liboscore_msgbackend::{oscore_msg_native_t, oscore_msgerr_native_t};
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));

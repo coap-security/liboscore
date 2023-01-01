@@ -22,11 +22,11 @@ pub use primitive::{DeriveError, PrimitiveContext, PrimitiveImmutables};
 
 // FIXME we should carry the context around, but that'd require it to have a shared portion that we
 // can then clone and combine with the oscore_requestid_t.
-pub fn protect_request<'a, 'b, USER_CARRY>(
+pub fn protect_request<'a, 'b, R>(
     request: &'a mut coap_message_utils::inmemory_write::Message<'b>,
     ctx: &mut PrimitiveContext,
-    writer: impl FnOnce(&mut ProtectedMessage) -> USER_CARRY,
-) -> (raw::oscore_requestid_t, USER_CARRY) {
+    writer: impl FnOnce(&mut ProtectedMessage) -> R,
+) -> (raw::oscore_requestid_t, R) {
     liboscore_msgbackend::with_inmemory_as_msg_native(request, |msg| {
         let mut plaintext = MaybeUninit::uninit();
         let mut request_data = MaybeUninit::uninit();
@@ -57,8 +57,9 @@ pub fn protect_request<'a, 'b, USER_CARRY>(
         if finish_ok != raw::oscore_finish_result_OSCORE_FINISH_OK {
             todo!("Error handling")
         }
-        // Safety: Initialized after successful return (but we don't really need it)
-        let msg = unsafe { returned_msg.assume_init() };
+        // We're discarding the native message that's in returned_msg. If it were owned (which
+        // would be a valid choice for with_inmemory_write), the closure might be required to
+        // return it, but it currently isn't.
 
         (request_data, user_carry)
     })
@@ -148,8 +149,9 @@ pub fn protect_response<'a, 'b, R>(
         if finish_ok != raw::oscore_finish_result_OSCORE_FINISH_OK {
             todo!("Error handling")
         }
-        // Safety: Initialized after successful return (but we don't really need it)
-        let msg = unsafe { returned_msg.assume_init() };
+        // We're discarding the native message that's in returned_msg. If it were owned (which
+        // would be a valid choice for with_inmemory_write), the closure might be required to
+        // return it, but it currently isn't.
 
         user_data
     })

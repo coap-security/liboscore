@@ -1,6 +1,6 @@
 use std::env;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 fn main() {
     // Copied from ../cases/Makefile.include, and limited one by one as we start supporting them
