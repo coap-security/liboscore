@@ -91,8 +91,8 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         .expect("writing bindings.rs failed");
 }
 
-fn run_cbindgen(rustbuilthdr_base: &PathBuf) {
-    let rustbuilthdr_dir = (&rustbuilthdr_base).join("oscore_native");
+fn run_cbindgen(rustbuilthdr_base: &Path) {
+    let rustbuilthdr_dir = rustbuilthdr_base.join("oscore_native");
     std::fs::create_dir_all(&rustbuilthdr_dir).unwrap();
 
     cbindgen::Builder::new()

@@ -8,15 +8,15 @@ fn run_c_test(
 ) -> Result<(), &'static str> {
     let mut first_error = Ok(());
 
-    println!("Running test case {} without introducing errors...", name);
+    println!("Running test case {name} without introducing errors...");
     let result = unsafe { tmf(0) };
-    println!("Test ran, result was {}", result);
+    println!("Test ran, result was {result}");
     if result != 0 && first_error.is_ok() {
         first_error = Err(name);
     }
-    println!("Running test case {} and introducing errors...", name);
+    println!("Running test case {name} and introducing errors...");
     let result = unsafe { tmf(1) };
-    println!("Test ran, result was {}", result);
+    println!("Test ran, result was {result}");
     if result == 0 && first_error.is_ok() {
         first_error = Err(name);
     }

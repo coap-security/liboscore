@@ -113,7 +113,7 @@ impl PrimitiveContext {
     /// contributed entropy.
     pub fn new_from_fresh_material(immutables: PrimitiveImmutables) -> Self {
         Self {
-            immutables: immutables,
+            immutables,
             primitive: raw::oscore_context_primitive {
                 immutables: core::ptr::null(),
                 replay_window: 0,

@@ -28,11 +28,11 @@ fn main() {
 
     for case in cases {
         // Not that we'd particularly care -- they just need to be distinct.
-        let output_name = format!("case_{}", case);
+        let output_name = format!("case_{case}");
 
         // Renaming testmain to testmain_something so we can have them all in a single binary
-        let testmain_newname = format!("testmain_{}", case.replace("-", "_"));
-        let testmain_redefined = format!("-Dtestmain={}", testmain_newname);
+        let testmain_newname = format!("testmain_{}", case.replace('-', "_"));
+        let testmain_redefined = format!("-Dtestmain={testmain_newname}");
         testmain_functions.push(testmain_newname);
 
         basebuilder
@@ -41,7 +41,7 @@ fn main() {
             // Test cases use these a lot (for describing their starting conditions) and just rely
             // on the rest being zero as required by the standard
             .flag("-Wno-missing-field-initializers")
-            .file(format!("../cases/{}.c", case))
+            .file(format!("../cases/{case}.c"))
             .compile(&output_name);
     }
 
@@ -52,18 +52,18 @@ fn main() {
 
     writeln!(outfile, "extern \"C\" {{").unwrap();
     for tmf in &testmain_functions {
-        writeln!(outfile, "fn {}(introduce_error: i32) -> i32;", tmf).unwrap();
+        writeln!(outfile, "fn {tmf}(introduce_error: i32) -> i32;").unwrap();
     }
     writeln!(outfile, "}}").unwrap();
 
     writeln!(
         outfile,
-        "static TESTMAINS: [(&'static str, unsafe extern \"C\" fn(i32) -> i32); {}] = [",
+        "static TESTMAINS: [(&str, unsafe extern \"C\" fn(i32) -> i32); {}] = [",
         testmain_functions.len()
     )
     .unwrap();
     for tmf in &testmain_functions {
-        writeln!(outfile, "(\"{}\", {}),", tmf, tmf).unwrap();
+        writeln!(outfile, "(\"{tmf}\", {tmf}),").unwrap();
     }
     writeln!(outfile, "];").unwrap();
     outfile.sync_all().unwrap();
