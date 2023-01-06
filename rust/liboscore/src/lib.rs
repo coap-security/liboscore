@@ -20,13 +20,120 @@ pub use algorithms::{AeadAlg, AlgorithmNotSupported, HkdfAlg};
 mod primitive;
 pub use primitive::{DeriveError, PrimitiveContext, PrimitiveImmutables};
 
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
+pub enum PrepareError {
+    /// The security context can not provide protection for this message
+    SecurityContextUnavailable,
+}
+
+impl PrepareError {
+    /// Construct a Rust error type out of the C type
+    ///
+    /// This returns a result to be easily usable with the `?` operator.
+    fn new(input: raw::oscore_prepare_result) -> Result<(), Self> {
+        match input {
+            raw::oscore_prepare_result_OSCORE_PREPARE_OK => Ok(()),
+            raw::oscore_prepare_result_OSCORE_PREPARE_SECCTX_UNAVAILABLE => {
+                Err(PrepareError::SecurityContextUnavailable)
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
+pub enum FinishError {
+    Size,
+    Crypto,
+}
+
+impl FinishError {
+    /// Construct a Rust error type out of the C type
+    ///
+    /// This returns a result to be easily usable with the `?` operator.
+    fn new(input: raw::oscore_finish_result) -> Result<(), Self> {
+        match input {
+            raw::oscore_finish_result_OSCORE_FINISH_OK => Ok(()),
+            raw::oscore_finish_result_OSCORE_FINISH_ERROR_SIZE => Err(FinishError::Size),
+            raw::oscore_finish_result_OSCORE_FINISH_ERROR_CRYPTO => Err(FinishError::Crypto),
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ProtectError {
+    Prepare(PrepareError),
+    Finish(FinishError),
+}
+
+impl From<PrepareError> for ProtectError {
+    fn from(e: PrepareError) -> Self {
+        ProtectError::Prepare(e)
+    }
+}
+
+impl From<FinishError> for ProtectError {
+    fn from(e: FinishError) -> Self {
+        ProtectError::Finish(e)
+    }
+}
+
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
+pub enum UnprotectRequestError {
+    Duplicate,
+    Invalid,
+}
+
+impl UnprotectRequestError {
+    /// Construct a Rust error type out of the C type
+    ///
+    /// This returns a result to be easily usable with the `?` operator.
+    fn new(input: raw::oscore_unprotect_request_result) -> Result<(), Self> {
+        match input {
+            raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK => Ok(()),
+            raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_DUPLICATE => {
+                Err(UnprotectRequestError::Duplicate)
+            }
+            raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_INVALID => {
+                Err(UnprotectRequestError::Invalid)
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[non_exhaustive]
+#[derive(Debug, Copy, Clone)]
+pub enum UnprotectResponseError {
+    Invalid,
+}
+
+impl UnprotectResponseError {
+    /// Construct a Rust error type out of the C type
+    ///
+    /// This returns a result to be easily usable with the `?` operator.
+    fn new(input: raw::oscore_unprotect_response_result) -> Result<(), Self> {
+        match input {
+            raw::oscore_unprotect_response_result_OSCORE_UNPROTECT_RESPONSE_OK => Ok(()),
+            raw::oscore_unprotect_response_result_OSCORE_UNPROTECT_RESPONSE_INVALID => {
+                Err(UnprotectResponseError::Invalid)
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
 // FIXME we should carry the context around, but that'd require it to have a shared portion that we
 // can then clone and combine with the oscore_requestid_t.
 pub fn protect_request<'a, 'b, R>(
     request: &'a mut coap_message_utils::inmemory_write::Message<'b>,
     ctx: &mut PrimitiveContext,
     writer: impl FnOnce(&mut ProtectedMessage) -> R,
-) -> (raw::oscore_requestid_t, R) {
+) -> Result<(raw::oscore_requestid_t, R), ProtectError> {
     liboscore_msgbackend::with_inmemory_as_msg_native(request, |msg| {
         let mut plaintext = MaybeUninit::uninit();
         let mut request_data = MaybeUninit::uninit();
@@ -39,9 +146,7 @@ pub fn protect_request<'a, 'b, R>(
                 request_data.as_mut_ptr(),
             )
         };
-        if prepare_ok != raw::oscore_prepare_result_OSCORE_PREPARE_OK {
-            todo!("Error handling")
-        }
+        PrepareError::new(prepare_ok)?;
         // Safety: Initialized after successful return
         let plaintext = unsafe { plaintext.assume_init() };
         let request_data = unsafe { request_data.assume_init() };
@@ -54,14 +159,12 @@ pub fn protect_request<'a, 'b, R>(
         // Safety: Everything that needs to be initialized is
         let finish_ok =
             unsafe { raw::oscore_encrypt_message(&mut plaintext, returned_msg.as_mut_ptr()) };
-        if finish_ok != raw::oscore_finish_result_OSCORE_FINISH_OK {
-            todo!("Error handling")
-        }
+        FinishError::new(finish_ok)?;
         // We're discarding the native message that's in returned_msg. If it were owned (which
         // would be a valid choice for with_inmemory_write), the closure might be required to
         // return it, but it currently isn't.
 
-        (request_data, user_carry)
+        Ok((request_data, user_carry))
     })
 }
 
@@ -76,7 +179,7 @@ pub fn unprotect_request<R>(
     // users may need to resort to unsafe to call this).
     ctx: &mut PrimitiveContext,
     reader: impl FnOnce(&ProtectedMessage) -> R,
-) -> (raw::oscore_requestid_t, R) {
+) -> Result<(raw::oscore_requestid_t, R), UnprotectRequestError> {
     liboscore_msgbackend::with_inmemory_as_msg_native(request, |nativemsg| {
         let mut plaintext = MaybeUninit::uninit();
         let mut request_data = MaybeUninit::uninit();
@@ -89,24 +192,20 @@ pub fn unprotect_request<R>(
                 request_data.as_mut_ptr(),
             )
         };
-        // Here is where we could the mutable part of the ctx, if that were a thing
-        match decrypt_ok {
-            raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK => {
-                let plaintext = unsafe { plaintext.assume_init() };
-                let request_data = unsafe { request_data.assume_init() };
+        // We could introduce extra handling of Invalid if our handlers had a notion of being (even
+        // security-wise) idempotent, or if we supported B.1 recovery here.
+        UnprotectRequestError::new(decrypt_ok)?;
 
-                let plaintext = ProtectedMessage::new(plaintext);
+        let plaintext = unsafe { plaintext.assume_init() };
+        let request_data = unsafe { request_data.assume_init() };
 
-                let user_data = reader(&plaintext);
+        let plaintext = ProtectedMessage::new(plaintext);
 
-                unsafe { raw::oscore_release_unprotected(&mut plaintext.into_inner()) };
+        let user_data = reader(&plaintext);
 
-                (request_data, user_data)
-            }
-            _ => {
-                todo!("Request is not OK or not fresh (and currently we don't have a way to downgrade the app credentials to not-fresh, and we don't do B.1 recovery either)")
-            }
-        }
+        unsafe { raw::oscore_release_unprotected(&mut plaintext.into_inner()) };
+
+        Ok((request_data, user_data))
     })
 }
 
@@ -120,7 +219,7 @@ pub fn protect_response<'a, 'b, R>(
     ctx: &mut PrimitiveContext,
     correlation: &mut raw::oscore_requestid_t,
     writer: impl FnOnce(&mut ProtectedMessage) -> R,
-) -> R {
+) -> Result<R, ProtectError> {
     liboscore_msgbackend::with_inmemory_as_msg_native(response, |nativemsg| {
         let mut plaintext = MaybeUninit::uninit();
         // Safety: Everything that needs to be initialized is
@@ -132,9 +231,7 @@ pub fn protect_response<'a, 'b, R>(
                 correlation,
             )
         };
-        if prepare_ok != raw::oscore_prepare_result_OSCORE_PREPARE_OK {
-            todo!("Error handling")
-        }
+        PrepareError::new(prepare_ok)?;
         // Safety: Initialized after successful return
         let plaintext = unsafe { plaintext.assume_init() };
 
@@ -146,14 +243,12 @@ pub fn protect_response<'a, 'b, R>(
         // Safety: Everything that needs to be initialized is
         let finish_ok =
             unsafe { raw::oscore_encrypt_message(&mut plaintext, returned_msg.as_mut_ptr()) };
-        if finish_ok != raw::oscore_finish_result_OSCORE_FINISH_OK {
-            todo!("Error handling")
-        }
+        FinishError::new(finish_ok)?;
         // We're discarding the native message that's in returned_msg. If it were owned (which
         // would be a valid choice for with_inmemory_write), the closure might be required to
         // return it, but it currently isn't.
 
-        user_data
+        Ok(user_data)
     })
 }
 
@@ -168,7 +263,7 @@ pub fn unprotect_response<R>(
     oscoreoption: OscoreOption<'_>,
     correlation: &mut raw::oscore_requestid_t,
     reader: impl FnOnce(&ProtectedMessage) -> R,
-) -> R {
+) -> Result<R, UnprotectResponseError> {
     liboscore_msgbackend::with_inmemory_as_msg_native(response, |nativemsg| {
         let mut plaintext = MaybeUninit::uninit();
         let decrypt_ok = unsafe {
@@ -180,21 +275,16 @@ pub fn unprotect_response<R>(
                 correlation,
             )
         };
-        match decrypt_ok {
-            raw::oscore_unprotect_request_result_OSCORE_UNPROTECT_REQUEST_OK => {
-                let plaintext = unsafe { plaintext.assume_init() };
+        UnprotectResponseError::new(decrypt_ok)?;
 
-                let plaintext = ProtectedMessage::new(plaintext);
+        let plaintext = unsafe { plaintext.assume_init() };
 
-                let user_data = reader(&plaintext);
+        let plaintext = ProtectedMessage::new(plaintext);
 
-                unsafe { raw::oscore_release_unprotected(&mut plaintext.into_inner()) };
+        let user_data = reader(&plaintext);
 
-                user_data
-            }
-            e => {
-                todo!("Unprotecting response failed: {e:?}")
-            }
-        }
+        unsafe { raw::oscore_release_unprotected(&mut plaintext.into_inner()) };
+
+        Ok(user_data)
     })
 }
