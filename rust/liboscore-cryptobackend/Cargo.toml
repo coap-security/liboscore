@@ -3,6 +3,7 @@ name = "liboscore-cryptobackend"
 version = "0.1.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2018"
+license = "BSD-3-Clause"
 
 [dependencies]
 aead = { version = "0.5", default-features = false }

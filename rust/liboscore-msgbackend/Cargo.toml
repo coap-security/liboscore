@@ -1,7 +1,9 @@
 [package]
 name = "liboscore-msgbackend"
 version = "0.1.0"
+authors = [ "EDF, developed in collaboration with Christian Amsüss" ]
 edition = "2021"
+license = "BSD-3-Clause"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

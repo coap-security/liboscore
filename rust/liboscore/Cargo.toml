@@ -1,7 +1,9 @@
 [package]
 name = "liboscore"
 version = "0.1.0"
+authors = [ "EDF, developed in collaboration with Christian Amsüss" ]
 edition = "2021"
+license = "BSD-3-Clause"
 
 # More like "builds and includes"; this matters so that we can pass on
 # PLATFORMHEADERS as DEP_LIBOSCORE_PLATFORMHEADERS
