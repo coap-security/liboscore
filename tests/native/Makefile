@@ -45,7 +45,8 @@ test-all-versions:
 	${MAKE} clean
 	${MAKE} CC=gcc OPTFLAGS=-O0 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
-	${MAKE} CC=gcc OPTFLAGS=-O3 TESTS_USE_TINYDTLS=no test
+	# -O3 hits https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104789 -- going down to -O2
+	${MAKE} CC=gcc OPTFLAGS=-O2 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
 	${MAKE} CC=clang TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
