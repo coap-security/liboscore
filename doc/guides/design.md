@@ -71,7 +71,7 @@ can rely on it to be true. With unreachability indication, the condition is not
 checked and the trailing code can still rely. With assertions just elided, the
 compiler might create suboptimal code, but probably still better than with
 assertions enabled; see [Assertions are Pessimistic, Assumptions are
-Optimistic](]https://blog.regehr.org/archives/1096) for a few numbers on how
+Optimistic](https://blog.regehr.org/archives/1096) for a few numbers on how
 that may turn out).
 
 An assertion triggering in released code is considered a severe bug (either in
