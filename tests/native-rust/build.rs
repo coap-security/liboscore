@@ -24,6 +24,7 @@ fn main() {
     let mut basebuilder = cc::Build::new();
     let basebuilder = basebuilder
         .include("../../src/include/")
+        .include("../../backends/libc/inc/")
         .include(platform_headers);
 
     for case in cases {

@@ -119,6 +119,7 @@ fn run_cbindgen(rustbuilthdr_base: &Path) {
 fn bundle_staticlib(rustbuilthdr_base: &Path) {
     cc::Build::new()
         .include("../../src/include/")
+        .include(".")
         .include(rustbuilthdr_base.to_str().unwrap())
         .file("../../src/contextpair.c")
         .file("../../src/oscore_message.c")

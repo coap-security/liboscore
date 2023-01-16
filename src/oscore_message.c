@@ -1,5 +1,4 @@
-#include <assert.h>
-#include <string.h>
+#include <oscore_native/platform.h>
 #include <oscore/message.h>
 #include <oscore_native/message.h>
 

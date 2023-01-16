@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <assert.h>
+#include <oscore_native/platform.h>
 
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/primitive.h>

@@ -1,7 +1,5 @@
 #include <stdint.h>
-#include <string.h>
-#include <assert.h>
-
+#include <oscore_native/platform.h>
 #include <oscore_native/crypto.h>
 
 // keys happen to be derived as in RFC8613 C.1.1, but with ChaCha20/Poly1305

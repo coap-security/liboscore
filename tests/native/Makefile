@@ -4,6 +4,8 @@ OPTFLAGS ?= -O0
 
 CPPFLAGS += -I../../src/include/
 CPPFLAGS += -Ilibconfigs/
+# native tests always use the platform's libc
+CPPFLAGS += -I../../backends/libc/inc/
 CFLAGS += -Werror -std=c11
 BE_PEDANTIC ?= yes
 ifeq (yes,${BE_PEDANTIC})

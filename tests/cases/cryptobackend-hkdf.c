@@ -1,7 +1,5 @@
 #include <stdint.h>
-#include <string.h>
-#include <assert.h>
-
+#include <oscore_native/platform.h>
 #include <oscore_native/crypto.h>
 
 const size_t max_output_length = 128;

@@ -1,6 +1,6 @@
-#include <string.h>
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/b1.h>
+#include <oscore_native/platform.h>
 
 #define K 100
 

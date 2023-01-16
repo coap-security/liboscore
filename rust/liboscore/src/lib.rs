@@ -5,6 +5,8 @@ extern crate liboscore_msgbackend;
 
 use core::mem::MaybeUninit;
 
+mod platform;
+
 // FIXME: pub only for tests?
 pub mod raw;
 

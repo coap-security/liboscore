@@ -1,8 +1,6 @@
 #include <oscore/protection.h>
 
-#include <assert.h>
-#include <string.h>
-
+#include <oscore_native/platform.h>
 #include <oscore_native/crypto.h>
 
 /** Take the Partial IV from the OSCORE option and populate @ref

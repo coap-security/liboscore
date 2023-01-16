@@ -2,7 +2,7 @@ libOSCORE: An OSCORE implementation (not only) for embedded systems
 ===================================================================
 
 The libOSCORE library is
-a portable implementation of [OSCORE (RFC8613)]
+a portable (and freestanding) implementation of [OSCORE (RFC8613)]
 usable for embedded devices.
 
 OSCORE is a method of protecting (ie. encrypting and verifying)
