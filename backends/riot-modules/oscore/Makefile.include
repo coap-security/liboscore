@@ -9,6 +9,9 @@ INCLUDES += -I${OSCOREBASE}/src/include
 # Backends we choose for RIOT
 INCLUDES += -I${OSCOREBASE}/backends/nanocoap/inc
 
+# We have a libc, let's use it
+INCLUDES += -I${OSCOREBASE}/backends/libc/inc
+
 ifeq (libcose,${OSCORE_CRYPTO_BACKEND})
 INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
 endif
