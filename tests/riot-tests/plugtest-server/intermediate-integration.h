@@ -84,6 +84,6 @@ void dispatcher_build(oscore_msg_protected_t *out, const void *vstate, const str
  *  mutable user context.
  *
  * */
-ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
+ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, coap_request_ctx_t *ctx);
 
 #endif

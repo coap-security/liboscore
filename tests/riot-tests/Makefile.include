@@ -69,12 +69,12 @@ export OSCORE_CRYPTO_BACKEND ?= libcose
 
 ifeq (libcose,${OSCORE_CRYPTO_BACKEND})
 # Pick a backend; without, no algorithms are available
-USEMODULE += libcose_crypt_monocypher
+#USEMODULE += libcose_crypt_monocypher
 # That would offer AES-CCM algorithms, but using it requires changing the RIOT
 # package to point to the branch at https://github.com/bergzand/libcose/pull/91
 # until that is completed and a version including it has been mada available in
 # RIOT.
-USEMODULE += libcose_crypt_tinydtls
+#USEMODULE += libcose_crypt_tinydtls
 endif
 
 EXTERNAL_MODULE_DIRS += $(abspath ..)/testwrapper

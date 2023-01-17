@@ -2,7 +2,7 @@
 #include "intermediate-integration.h"
 #include <oscore/protection.h>
 
-ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, coap_request_ctx_t *ctx)
 {
     (void)ctx;
 

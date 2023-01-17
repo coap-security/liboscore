@@ -108,7 +108,7 @@ static struct dispatcher_config  plugtest_config = {
 };
 
 
-ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, coap_request_ctx_t *ctx)
 {
     (void)ctx;
 
