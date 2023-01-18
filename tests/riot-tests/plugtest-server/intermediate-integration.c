@@ -234,6 +234,7 @@ ssize_t oscore_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, coap_request_c
     oscore_msg_native_t pdu_read_out = oscore_release_unprotected(&incoming_decrypted);
 
     assert(pdu_read_out.pkt == pdu);
+    (void) pdu_read_out;
 
     gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
 
