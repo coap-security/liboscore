@@ -17,25 +17,7 @@ INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
 endif
 ifeq (rust,${OSCORE_CRYPTO_BACKEND})
 
-ifeq (native,${BOARD})
-RUST_ARCH = i686-unknown-linux-gnu
-endif
-
-ifeq (cortex-m4f,${CPU_ARCH})
-RUST_ARCH = thumbv7em-none-eabihf
-endif
-ifeq (cortex-m3,${CPU_ARCH})
-RUST_ARCH = thumb7m-none-eabi
-endif
-
-ifeq (riscv-none-embed,${TARGET_ARCH})
-RUST_ARCH = riscv32imac-unknown-none-elf
-endif
-
-BASELIBS += ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a
-
-${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a:
-	cd ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/ && cargo +nightly build --target=${RUST_ARCH} --release
+$(error "Rust libOSCORE building on RIOT is not supported since RIOT grew its own Rust support")
 
 .PHONY: ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a
 endif
