@@ -1,9 +1,13 @@
 [package]
 name = "liboscore-cryptobackend"
+description = "An implementation of libOSCORE's cryptographic primitives backend based on Rust implementations"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
 
 [dependencies]
 aead = { version = "0.5", default-features = false }

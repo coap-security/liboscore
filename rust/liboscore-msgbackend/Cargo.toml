@@ -1,11 +1,13 @@
 [package]
 name = "liboscore-msgbackend"
+description = "An implementation of libOSCORE's CoAP messages based on the coap-message crate"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
 
 [dependencies]
 coap-message = "0.2.3"

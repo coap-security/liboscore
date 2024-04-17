@@ -1,9 +1,13 @@
 [package]
 name = "liboscore"
+description = "Rust wrapper around the libOSCORE implementation of OSCORE (RFC8613), a security layer for CoAP"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
 
 # More like "builds and includes"; this matters so that we can pass on
 # PLATFORMHEADERS as DEP_LIBOSCORE_PLATFORMHEADERS
