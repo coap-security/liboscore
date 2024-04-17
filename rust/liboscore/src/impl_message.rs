@@ -10,7 +10,15 @@ impl ProtectedMessage {
         ProtectedMessage(core::cell::UnsafeCell::new(msg))
     }
 
-    pub fn into_inner(self) -> raw::oscore_msg_protected_t {
+    pub fn into_inner(mut self) -> raw::oscore_msg_protected_t {
+        // Once we convert it out, all write operations are done, but libOSCORE expects an empty
+        // payload to be set, which coap-message 0.3 does not always provide.
+        if unsafe { (*self.0.get()).payload_offset } == 0 {
+            use coap_message::MutableWritableMessage;
+            self.truncate(0)
+                .expect("Truncation to zero is always successful");
+        }
+
         self.0.into_inner()
     }
 }
@@ -126,47 +134,87 @@ impl<'a> Drop for OptionsIter<'a> {
     }
 }
 
+/// The error libOSCORE operations on messages produce
+///
+/// This currently carries an internal C error with the invariant that it is not OK (but without
+/// the optimization that'd make its Option equally sized, for the OK representation is not
+/// guaranteed).
+#[derive(Debug)]
+#[allow(dead_code)] // Yes we carry it *only* for the Debug derive
+pub struct OscoreError(raw::oscore_msgerr_protected_t);
+
+impl coap_message::error::RenderableOnMinimal for OscoreError {
+    type Error<IE: coap_message::error::RenderableOnMinimal + core::fmt::Debug> = IE;
+    fn render<M: coap_message::MinimalWritableMessage>(
+        self,
+        msg: &mut M,
+    ) -> Result<(), Self::Error<M::UnionError>> {
+        use coap_message::Code;
+        msg.set_code(Code::new(coap_numbers::code::INTERNAL_SERVER_ERROR)?);
+        Ok(())
+    }
+}
+
+fn convert_error(original: raw::oscore_msgerr_protected_t) -> Result<(), OscoreError> {
+    if unsafe { raw::oscore_msgerr_protected_is_error(original) } {
+        Err(OscoreError(original))
+    } else {
+        Ok(())
+    }
+}
+
+impl From<core::convert::Infallible> for OscoreError {
+    fn from(other: core::convert::Infallible) -> Self {
+        match other {}
+    }
+}
+
 impl coap_message::MinimalWritableMessage for ProtectedMessage {
+    type AddOptionError = OscoreError;
+    type SetPayloadError = OscoreError;
+    type UnionError = OscoreError;
+
     type Code = u8;
     type OptionNumber = u16;
+
     fn set_code(&mut self, code: u8) {
         unsafe { raw::oscore_msg_protected_set_code(self.0.get(), code) }
     }
-    fn add_option(&mut self, number: u16, value: &[u8]) {
-        let err = unsafe {
+
+    fn add_option(&mut self, number: u16, value: &[u8]) -> Result<(), OscoreError> {
+        convert_error(unsafe {
             raw::oscore_msg_protected_append_option(
                 self.0.get(),
                 number,
                 value.as_ptr(),
                 value.len(),
             )
-        };
-        if unsafe { raw::oscore_msgerr_protected_is_error(err) } {
-            panic!("coap-message can not express fallibly setting options, but adding option {} caused error {}", number, err);
-        }
+        })
     }
-    fn set_payload(&mut self, payload: &[u8]) {
+
+    fn set_payload(&mut self, payload: &[u8]) -> Result<(), OscoreError> {
         let mut buffer_start = MaybeUninit::uninit();
         let mut buffer_len = MaybeUninit::uninit();
-        let err = unsafe {
+
+        convert_error(unsafe {
             raw::oscore_msg_protected_map_payload(
                 self.0.get(),
                 buffer_start.as_mut_ptr(),
                 buffer_len.as_mut_ptr(),
             )
-        };
-        let err = unsafe { raw::oscore_msgerr_protected_is_error(err) };
-        // coap-message API is infallible
-        assert!(!err);
+        })?;
 
         let buffer = unsafe {
             core::slice::from_raw_parts_mut(buffer_start.assume_init(), buffer_len.assume_init())
         };
-        buffer[..payload.len()].copy_from_slice(payload);
+        buffer
+            .get_mut(..payload.len())
+            .ok_or(OscoreError(raw::oscore_msgerr_protected_t_MESSAGESIZE))?
+            .copy_from_slice(payload);
 
-        let err = unsafe { raw::oscore_msg_protected_trim_payload(self.0.get(), payload.len()) };
-        let err = unsafe { raw::oscore_msgerr_protected_is_error(err) };
-        assert!(!err);
+        convert_error(unsafe {
+            raw::oscore_msg_protected_trim_payload(self.0.get(), payload.len())
+        })
     }
 }
 
@@ -223,23 +271,24 @@ impl coap_message::MutableWritableMessage for ProtectedMessage {
         outer_payload_len - autooptions_len - 2 - msg.class_e.cursor - msg.tag_length
     }
 
-    fn payload_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            let mut payload = MaybeUninit::uninit();
-            let mut payload_len = MaybeUninit::uninit();
-            let err = raw::oscore_msg_protected_map_payload(
+    fn payload_mut_with_len(&mut self, length: usize) -> Result<&mut [u8], OscoreError> {
+        self.truncate(length)?;
+        let mut payload = MaybeUninit::uninit();
+        let mut payload_len = MaybeUninit::uninit();
+        convert_error(unsafe {
+            raw::oscore_msg_protected_map_payload(
                 self.0.get(),
                 payload.as_mut_ptr(),
                 payload_len.as_mut_ptr(),
-            );
-            assert!(!raw::oscore_msgerr_protected_is_error(err));
+            )
+        })?;
+        Ok(unsafe {
             core::slice::from_raw_parts_mut(payload.assume_init(), payload_len.assume_init())
-        }
+        })
     }
 
-    fn truncate(&mut self, len: usize) {
-        let err = unsafe { raw::oscore_msg_protected_trim_payload(self.0.get(), len) };
-        assert!(!unsafe { raw::oscore_msgerr_protected_is_error(err) });
+    fn truncate(&mut self, len: usize) -> Result<(), OscoreError> {
+        convert_error(unsafe { raw::oscore_msg_protected_trim_payload(self.0.get(), len) })
     }
 
     fn mutate_options<F: FnMut(u16, &mut [u8])>(&mut self, mut f: F) {

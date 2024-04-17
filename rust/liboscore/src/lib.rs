@@ -132,7 +132,7 @@ impl UnprotectResponseError {
 // FIXME we should carry the context around, but that'd require it to have a shared portion that we
 // can then clone and combine with the oscore_requestid_t.
 pub fn protect_request<'a, 'b, R>(
-    request: &'a mut coap_message_utils::inmemory_write::Message<'b>,
+    request: &'a mut coap_message_implementations::inmemory_write::Message<'b>,
     ctx: &mut PrimitiveContext,
     writer: impl FnOnce(&mut ProtectedMessage) -> R,
 ) -> Result<(raw::oscore_requestid_t, R), ProtectError> {
@@ -172,7 +172,7 @@ pub fn protect_request<'a, 'b, R>(
 
 // request being MutableWritableMessage: See unprotect_response
 pub fn unprotect_request<R>(
-    request: &mut coap_message_utils::inmemory_write::Message<'_>,
+    request: &mut coap_message_implementations::inmemory_write::Message<'_>,
     oscoreoption: OscoreOption<'_>, // Here's where we need to cheat a bit: We both take the message
     // writably, *and* we take data out of that message through
     // another pointer. This is legal because we don't alter any
@@ -217,7 +217,7 @@ pub fn unprotect_request<R>(
 /// multiple responses, which are handled correctly (in that the later context takes a new sequence
 /// number) by libOSCORE.
 pub fn protect_response<'a, 'b, R>(
-    response: &'a mut coap_message_utils::inmemory_write::Message<'b>,
+    response: &'a mut coap_message_implementations::inmemory_write::Message<'b>,
     ctx: &mut PrimitiveContext,
     correlation: &mut raw::oscore_requestid_t,
     writer: impl FnOnce(&mut ProtectedMessage) -> R,
@@ -260,7 +260,7 @@ pub fn protect_response<'a, 'b, R>(
 // here ... though, for CBOR decoding, maybe, where we memmove around indefinite length strings
 // into place?).
 pub fn unprotect_response<R>(
-    response: &mut coap_message_utils::inmemory_write::Message<'_>,
+    response: &mut coap_message_implementations::inmemory_write::Message<'_>,
     ctx: &mut PrimitiveContext,
     oscoreoption: OscoreOption<'_>,
     correlation: &mut raw::oscore_requestid_t,

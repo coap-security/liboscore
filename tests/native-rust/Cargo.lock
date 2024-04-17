@@ -257,19 +257,44 @@ dependencies = [
 
 [[package]]
 name = "coap-message"
-version = "0.2.3"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cc888e15f6be910b58fda4f056f673f58fb9348ea45da014283a14e6d2b58ec"
+checksum = "ae18782d02e6afdfcfaf48eb7ec591b0cae57b67b637441a490752d4a57db02f"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "coap-message-implementations"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65b11a790471777e78eb68d908d300034b07a98bc43378a6b81159948c1361cd"
+dependencies = [
+ "coap-message",
+ "coap-message-utils",
+ "coap-numbers",
+ "document-features",
+ "heapless 0.5.6",
+]
 
 [[package]]
 name = "coap-message-utils"
-version = "0.2.2"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af83241a72558f8b529ed7f29693a1621f66d9feced1a040af9db68f374e1981"
+checksum = "d57c1e386dfabcc211aefd8d0cc64e8fa6ebc799736ee639a888e0e2af2734ea"
 dependencies = [
  "coap-message",
+ "coap-numbers",
+ "document-features",
  "heapless 0.5.6",
+ "minicbor",
 ]
+
+[[package]]
+name = "coap-numbers"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e766be4563107bc11c281c017ab922c3f3079345c9aa0fe747b4f9abc13411ac"
 
 [[package]]
 name = "cpufeatures"
@@ -314,6 +339,15 @@ dependencies = [
  "block-buffer",
  "crypto-common",
  "subtle",
+]
+
+[[package]]
+name = "document-features"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef5282ad69563b5fc40319526ba27e0e7363d552a896f0297d54f767717f9b95"
+dependencies = [
+ "litrs",
 ]
 
 [[package]]
@@ -534,7 +568,8 @@ dependencies = [
  "cbindgen",
  "cc",
  "coap-message",
- "coap-message-utils",
+ "coap-message-implementations",
+ "coap-numbers",
  "liboscore-cryptobackend",
  "liboscore-msgbackend",
  "pretty-hex",
@@ -562,7 +597,8 @@ name = "liboscore-msgbackend"
 version = "0.1.0"
 dependencies = [
  "coap-message",
- "coap-message-utils",
+ "coap-message-implementations",
+ "coap-numbers",
 ]
 
 [[package]]
@@ -571,6 +607,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "coap-message",
+ "coap-message-implementations",
  "liboscore",
  "liboscore-msgbackend",
 ]
@@ -580,6 +617,12 @@ name = "linux-raw-sys"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
+
+[[package]]
+name = "litrs"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4ce301924b7887e9d637144fdade93f9dfff9b60981d4ac161db09720d39aa5"
 
 [[package]]
 name = "lock_api"
@@ -604,6 +647,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
 
 [[package]]
+name = "minicbor"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7005aaf257a59ff4de471a9d5538ec868a21586534fff7f85dd97d4043a6139"
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -617,6 +666,15 @@ checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
+]
+
+[[package]]
+name = "num-traits"
+version = "0.2.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da0df0e5185db44f69b44f26786fe401b6c293d1907744beaa7fa62b2e5a517a"
+dependencies = [
+ "autocfg",
 ]
 
 [[package]]

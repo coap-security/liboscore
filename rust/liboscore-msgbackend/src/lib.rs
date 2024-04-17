@@ -13,7 +13,8 @@ extern crate alloc;
 use core::mem::MaybeUninit;
 
 use coap_message::{
-    MessageOption as _, MinimalWritableMessage, MutableWritableMessage, ReadableMessage,
+    error::RenderableOnMinimal, MessageOption as _, MinimalWritableMessage, MutableWritableMessage,
+    ReadableMessage,
 };
 
 /// Void stand-in recognized by the cbindgen library by its name
@@ -37,8 +38,8 @@ struct Message<'a> {
 
 enum MessageVariant<'a> {
     #[cfg(feature = "alloc")]
-    CmHmHm(coap_message::heapmessage::HeapMessage),
-    CmuImwM(&'a mut coap_message_utils::inmemory_write::Message<'a>),
+    Heap(coap_message_implementations::heap::HeapMessage),
+    InMemory(&'a mut coap_message_implementations::inmemory_write::Message<'a>),
     // Note that there's little point in wrapping anything that's Readable but not MutableWritable:
     // All our decryption happens in-place.
 }
@@ -56,8 +57,8 @@ impl<'a> ReadableMessage for Message<'a> {
     fn code(&self) -> u8 {
         match &self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.code(),
-            MessageVariant::CmuImwM(m) => m.code(),
+            MessageVariant::Heap(m) => m.code(),
+            MessageVariant::InMemory(m) => m.code(),
         }
     }
     fn payload(&self) -> &[u8] {
@@ -67,31 +68,37 @@ impl<'a> ReadableMessage for Message<'a> {
     fn options(&self) -> Self::OptionsIter<'_> {
         match &self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => OptionsIter::CmHmHm(m.options()),
-            MessageVariant::CmuImwM(m) => OptionsIter::CmuImwM(m.options()),
+            MessageVariant::Heap(m) => OptionsIter::Heap(m.options()),
+            MessageVariant::InMemory(m) => OptionsIter::InMemory(m.options()),
         }
     }
 }
 
 impl<'a> MinimalWritableMessage for Message<'a> {
+    // Actually it's always the InternalMessageError variant and in particular never successful,
+    // but having the right type here makes later conversion easier.
+    type AddOptionError = oscore_msgerr_native_t;
+    type SetPayloadError = oscore_msgerr_native_t;
+    type UnionError = oscore_msgerr_native_t;
+
     type Code = u8;
     type OptionNumber = u16;
 
     fn set_code(&mut self, code: u8) {
         match &mut self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.set_code(code),
-            MessageVariant::CmuImwM(m) => m.set_code(code),
+            MessageVariant::Heap(m) => m.set_code(code),
+            MessageVariant::InMemory(m) => m.set_code(code),
         }
     }
-    fn add_option(&mut self, option: u16, data: &[u8]) {
+    fn add_option(&mut self, option: u16, data: &[u8]) -> Result<(), oscore_msgerr_native_t> {
         match &mut self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.add_option(option, data),
-            MessageVariant::CmuImwM(m) => m.add_option(option, data),
+            MessageVariant::Heap(m) => map_internal_error(m.add_option(option, data)),
+            MessageVariant::InMemory(m) => map_internal_error(m.add_option(option, data)),
         }
     }
-    fn set_payload(&mut self, _: &[u8]) {
+    fn set_payload(&mut self, _: &[u8]) -> Result<(), oscore_msgerr_native_t> {
         // Panic rather than having a trivial yet still untested implementation
         panic!("This function is not used by the oscore_msg_native implementation");
     }
@@ -101,43 +108,39 @@ impl<'a> MutableWritableMessage for Message<'a> {
     fn available_space(&self) -> usize {
         match &self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.available_space(),
-            MessageVariant::CmuImwM(m) => m.available_space(),
+            MessageVariant::Heap(m) => m.available_space(),
+            MessageVariant::InMemory(m) => m.available_space(),
         }
     }
-    fn payload_mut(&mut self) -> &mut [u8] {
-        // Panic rather than having a trivial yet still untested implementation
-        panic!("This function is not used by the oscore_msg_native implementation");
-    }
-    fn payload_mut_with_len(&mut self, len: usize) -> &mut [u8] {
+    fn payload_mut_with_len(&mut self, len: usize) -> Result<&mut [u8], oscore_msgerr_native_t> {
         match &mut self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.payload_mut_with_len(len),
-            MessageVariant::CmuImwM(m) => m.payload_mut_with_len(len),
+            MessageVariant::Heap(m) => map_internal_error(m.payload_mut_with_len(len)),
+            MessageVariant::InMemory(m) => map_internal_error(m.payload_mut_with_len(len)),
         }
     }
-    fn truncate(&mut self, len: usize) {
+    fn truncate(&mut self, len: usize) -> Result<(), oscore_msgerr_native_t> {
         self.payload_length = Some(len);
 
         match &mut self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.truncate(len),
-            MessageVariant::CmuImwM(m) => m.truncate(len),
+            MessageVariant::Heap(m) => map_internal_error(m.truncate(len)),
+            MessageVariant::InMemory(m) => map_internal_error(m.truncate(len)),
         }
     }
     fn mutate_options<F: FnMut(u16, &mut [u8])>(&mut self, f: F) {
         match &mut self.data {
             #[cfg(feature = "alloc")]
-            MessageVariant::CmHmHm(m) => m.mutate_options(f),
-            MessageVariant::CmuImwM(m) => m.mutate_options(f),
+            MessageVariant::Heap(m) => m.mutate_options(f),
+            MessageVariant::InMemory(m) => m.mutate_options(f),
         }
     }
 }
 
 enum OptionsIter<'a> {
     #[cfg(feature = "alloc")]
-    CmHmHm(<coap_message::heapmessage::HeapMessage as ReadableMessage>::OptionsIter<'a>),
-    CmuImwM(<coap_message_utils::inmemory_write::Message<'a> as ReadableMessage>::OptionsIter<'a>),
+    Heap(<coap_message_implementations::heap::HeapMessage as ReadableMessage>::OptionsIter<'a>),
+    InMemory(<coap_message_implementations::inmemory_write::Message<'a> as ReadableMessage>::OptionsIter<'a>),
 }
 
 impl<'a> core::iter::Iterator for OptionsIter<'a> {
@@ -146,17 +149,17 @@ impl<'a> core::iter::Iterator for OptionsIter<'a> {
     fn next(&mut self) -> Option<MessageOption<'a>> {
         match self {
             #[cfg(feature = "alloc")]
-            OptionsIter::CmHmHm(i) => i.next().map(MessageOption::CmHmHm),
-            OptionsIter::CmuImwM(i) => i.next().map(MessageOption::CmuImwM),
+            OptionsIter::Heap(i) => i.next().map(MessageOption::Heap),
+            OptionsIter::InMemory(i) => i.next().map(MessageOption::InMemory),
         }
     }
 }
 
 enum MessageOption<'a> {
     #[cfg(feature = "alloc")]
-    CmHmHm(<coap_message::heapmessage::HeapMessage as ReadableMessage>::MessageOption<'a>),
-    CmuImwM(
-        <coap_message_utils::inmemory_write::Message<'a> as ReadableMessage>::MessageOption<'a>,
+    Heap(<coap_message_implementations::heap::HeapMessage as ReadableMessage>::MessageOption<'a>),
+    InMemory(
+        <coap_message_implementations::inmemory_write::Message<'a> as ReadableMessage>::MessageOption<'a>,
     ),
 }
 
@@ -164,16 +167,16 @@ impl<'a> coap_message::MessageOption for MessageOption<'a> {
     fn number(&self) -> u16 {
         match self {
             #[cfg(feature = "alloc")]
-            MessageOption::CmHmHm(m) => m.number(),
-            MessageOption::CmuImwM(m) => m.number(),
+            MessageOption::Heap(m) => m.number(),
+            MessageOption::InMemory(m) => m.number(),
         }
     }
 
     fn value(&self) -> &[u8] {
         match self {
             #[cfg(feature = "alloc")]
-            MessageOption::CmHmHm(m) => m.value(),
-            MessageOption::CmuImwM(m) => m.value(),
+            MessageOption::Heap(m) => m.value(),
+            MessageOption::InMemory(m) => m.value(),
         }
     }
 }
@@ -201,10 +204,9 @@ pub struct oscore_msg_native_optiter_t([u64; 12]);
 
 /// Errors out of message operations
 ///
-/// Note that due to coap-message's general infallible nature (it expect messages to be allocated
-/// sufficiently large, and panics if that is not upheld), this only contains error values for
-/// things where coap-message is markedly distinct from msg_native, and thus this crate actually
-/// implements anything (that can fail) rather than passing on.
+/// As errors for the underlying message may be diverse, this only contains detials for error
+/// values of things where coap-message is markedly distinct from msg_native, and thus this crate
+/// actually implements anything (that can fail) rather than passing on.
 // All need unique names as they do get mapped out to the C side as well
 #[derive(Debug, PartialEq)]
 #[repr(u8)]
@@ -212,6 +214,33 @@ pub enum oscore_msgerr_native_t {
     ResultOk,
     UpdateOptionWrongLength,
     UpdateOptionNotFound,
+    /// Some operation on the underlying MinimalWritableMessage went wrong.
+    ///
+    /// As we do not know the size of the error, and multiple backends could have different errors,
+    /// all errors returned from methods of the message traits are converted into this value.
+    InternalMessageError,
+}
+
+fn map_internal_error<T, E>(r: Result<T, E>) -> Result<T, oscore_msgerr_native_t> {
+    r.map_err(|_| oscore_msgerr_native_t::InternalMessageError)
+}
+
+impl RenderableOnMinimal for oscore_msgerr_native_t {
+    type Error<IE: RenderableOnMinimal + core::fmt::Debug> = IE;
+    fn render<M: MinimalWritableMessage>(
+        self,
+        msg: &mut M,
+    ) -> Result<(), Self::Error<M::UnionError>> {
+        use coap_message::Code;
+        msg.set_code(Code::new(coap_numbers::code::INTERNAL_SERVER_ERROR)?);
+        Ok(())
+    }
+}
+
+impl From<core::convert::Infallible> for oscore_msgerr_native_t {
+    fn from(other: core::convert::Infallible) -> Self {
+        match other {}
+    }
 }
 
 #[no_mangle]
@@ -232,8 +261,10 @@ pub extern "C" fn oscore_msg_native_append_option(
     value_len: usize,
 ) -> oscore_msgerr_native_t {
     let value = unsafe { core::slice::from_raw_parts(value, value_len) };
-    unsafe { Message::from_ptr(msg) }.add_option(option_number, value);
-    oscore_msgerr_native_t::ResultOk
+    match unsafe { Message::from_ptr(msg) }.add_option(option_number, value) {
+        Ok(()) => oscore_msgerr_native_t::ResultOk,
+        Err(e) => e,
+    }
 }
 
 #[no_mangle]
@@ -307,8 +338,13 @@ pub extern "C" fn oscore_msg_native_map_payload(
         let available_space = original_space.clamp(0, 4097);
         *payload_len = available_space.saturating_sub(1);
     }
-    *payload = msg.payload_mut_with_len(*payload_len).as_mut_ptr();
-    oscore_msgerr_native_t::ResultOk
+    match msg.payload_mut_with_len(*payload_len) {
+        Ok(result) => {
+            *payload = result.as_mut_ptr();
+            oscore_msgerr_native_t::ResultOk
+        }
+        Err(e) => e,
+    }
 }
 
 #[no_mangle]
@@ -321,8 +357,10 @@ pub extern "C" fn oscore_msg_native_trim_payload(
     msg: oscore_msg_native_t,
     payload_len: usize,
 ) -> oscore_msgerr_native_t {
-    unsafe { Message::from_ptr(msg) }.truncate(payload_len);
-    oscore_msgerr_native_t::ResultOk
+    match unsafe { Message::from_ptr(msg) }.truncate(payload_len) {
+        Ok(()) => oscore_msgerr_native_t::ResultOk,
+        Err(e) => e,
+    }
 }
 
 #[no_mangle]
@@ -362,7 +400,7 @@ pub extern "C" fn oscore_msg_native_optiter_finish(
 #[no_mangle]
 pub extern "C" fn oscore_test_msg_create() -> oscore_msg_native_t {
     let msg = alloc::boxed::Box::new(Message {
-        data: MessageVariant::CmHmHm(coap_message::heapmessage::HeapMessage::new()),
+        data: MessageVariant::Heap(coap_message_implementations::heap::HeapMessage::new()),
         payload_length: None,
     });
 
@@ -378,20 +416,23 @@ pub extern "C" fn oscore_test_msg_destroy(msg: oscore_msg_native_t) {
 
 // Functions for interacting with messages from the Rust side
 
-/// Make a [coap_message::heapmessage::HeapMessage] usable as a [raw::oscore_msg_native_t]
+/// Make a [coap_message_implementations::heap::HeapMessage] usable as a [raw::oscore_msg_native_t]
 ///
 /// This is a low-level function mainly used by tests.
 #[cfg(feature = "alloc")]
 // FIXME: This drops the heapmessage afterwards; that's OK for decoding (and for encoding we'll
 // probably want to create it freshly anyway)
-pub fn with_heapmessage_as_msg_native<F, R>(msg: coap_message::heapmessage::HeapMessage, f: F) -> R
+pub fn with_heapmessage_as_msg_native<F, R>(
+    msg: coap_message_implementations::heap::HeapMessage,
+    f: F,
+) -> R
 where
     F: FnOnce(oscore_msg_native_t) -> R,
 {
     // This is just the kind of message that does need its payload length known and set
     let payload_len = msg.payload().len();
     let mut wrapped_message = Message {
-        data: MessageVariant::CmHmHm(msg),
+        data: MessageVariant::Heap(msg),
         payload_length: Some(payload_len),
     };
     f(oscore_msg_native_t(
@@ -399,11 +440,11 @@ where
     ))
 }
 
-/// Make a [coap_message_utils::inmemory_write::Message] usable as a [raw::oscore_msg_native_t]
+/// Make a [coap_message_implementations::inmemory_write::Message] usable as a [raw::oscore_msg_native_t]
 ///
 /// This is a low-level function used by the high-level wrappers in the liboscore crate.
 pub fn with_inmemory_as_msg_native<'a, 'b: 'a, F, R>(
-    msg: &'a mut coap_message_utils::inmemory_write::Message<'b>,
+    msg: &'a mut coap_message_implementations::inmemory_write::Message<'b>,
     f: F,
 ) -> R
 where
@@ -412,12 +453,12 @@ where
     // FIXME: find a safe way to do this
     // Safety: Message is for some reason considered invariant over its lifetime argument, when
     // from how it's working it should be coercible into a shorter lifetime argument.
-    let msg: &'a mut coap_message_utils::inmemory_write::Message<'a> =
+    let msg: &'a mut coap_message_implementations::inmemory_write::Message<'a> =
         unsafe { core::mem::transmute(msg) };
 
     // We don't reliably know a payload length ... this is bound to get confusing
     let mut wrapped_message = Message {
-        data: MessageVariant::CmuImwM(msg),
+        data: MessageVariant::InMemory(msg),
         payload_length: None,
     };
     f(oscore_msg_native_t(

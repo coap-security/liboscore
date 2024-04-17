@@ -24,10 +24,10 @@ pub fn run() -> Result<(), &'static str> {
 
     let mut primitive = liboscore::PrimitiveContext::new_from_fresh_material(immutables);
 
-    let mut msg = coap_message::heapmessage::HeapMessage::new();
+    let mut msg = coap_message_implementations::heap::HeapMessage::new();
     let oscopt = b"\x09\x00";
-    msg.add_option(9, oscopt);
-    msg.set_payload(b"\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb");
+    msg.add_option(9, oscopt).unwrap();
+    msg.set_payload(b"\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb").unwrap();
 
     liboscore_msgbackend::with_heapmessage_as_msg_native(msg, |msg| {
         unsafe {

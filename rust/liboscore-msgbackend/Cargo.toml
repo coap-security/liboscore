@@ -1,6 +1,6 @@
 [package]
 name = "liboscore-msgbackend"
-description = "An implementation of libOSCORE's CoAP messages based on the coap-message crate"
+description = "An implementation of libOSCORE's CoAP messages based on the cjGoap-message crate"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -10,12 +10,13 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-coap-message = "0.2.3"
-coap-message-utils = "0.2.2"
+coap-message = "0.3.1"
+coap-message-implementations = "0.1.1"
+coap-numbers = "0.2.3"
 
 [features]
 # Wrap the coap_message::heapmessage, and provide the oscore_test_msg functions
 # for allocating and freeing one
 #
 # When running tests, this is generally required.
-alloc = [ "coap-message/alloc" ]
+alloc = [ "coap-message-implementations/alloc" ]

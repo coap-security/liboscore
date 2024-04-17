@@ -21,11 +21,12 @@ exclude = [ "*~" ]
 liboscore-cryptobackend = { workspace = true, features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
 liboscore-msgbackend = { workspace = true }
 
-coap-message = "0.2"
-coap-message-utils = "0.2.2"
+coap-message = "0.3"
+coap-message-implementations = "0.1.1"
 
 # Only for Debug implementations
 pretty-hex = { version = "0.3", default-features = false }
+coap-numbers = "0.2.3"
 
 [build-dependencies]
 cc = "1"
