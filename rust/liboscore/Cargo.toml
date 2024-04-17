@@ -1,17 +1,17 @@
 [package]
 name = "liboscore"
-version = "0.1.0"
-authors = [ "EDF, developed in collaboration with Christian Amsüss" ]
-edition = "2021"
-license = "BSD-3-Clause"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 # More like "builds and includes"; this matters so that we can pass on
 # PLATFORMHEADERS as DEP_LIBOSCORE_PLATFORMHEADERS
 links = "liboscore"
 
 [dependencies]
-liboscore-cryptobackend = { path = "../liboscore-cryptobackend", features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
-liboscore-msgbackend = { path = "../liboscore-msgbackend" }
+liboscore-cryptobackend = { workspace = true, features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
+liboscore-msgbackend = { workspace = true }
 
 coap-message = "0.2"
 coap-message-utils = "0.2.2"

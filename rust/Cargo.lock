@@ -541,6 +541,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "liboscore-backends-standalone"
+version = "0.1.0"
+dependencies = [
+ "liboscore-cryptobackend",
+]
+
+[[package]]
 name = "liboscore-cryptobackend"
 version = "0.1.0"
 dependencies = [
@@ -553,6 +560,7 @@ dependencies = [
  "heapless 0.7.17",
  "hkdf",
  "hmac",
+ "log",
  "sha2",
  "typenum",
 ]
@@ -563,16 +571,6 @@ version = "0.1.0"
 dependencies = [
  "coap-message",
  "coap-message-utils",
-]
-
-[[package]]
-name = "liboscore-tests-native-rust"
-version = "0.1.0"
-dependencies = [
- "cc",
- "coap-message",
- "liboscore",
- "liboscore-msgbackend",
 ]
 
 [[package]]

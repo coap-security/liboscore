@@ -1,17 +1,12 @@
 [package]
 name = "liboscore-backends-standalone"
-version = "0.1.0"
-authors = ["chrysn <chrysn@fsfe.org>"]
-edition = "2018"
-license = "BSD-3-Clause"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [lib]
 crate-type = ["staticlib"]
 
 [dependencies]
-liboscore-cryptobackend = { path = "../liboscore-cryptobackend", features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
-
-[profile.release]
-opt-level = "s"
-lto = true
-debug = 1
+liboscore-cryptobackend = { workspace = true, features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
