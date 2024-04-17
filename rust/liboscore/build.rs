@@ -11,7 +11,7 @@ fn main() {
             .expect("Please use paths tha are also strings")
     );
 
-    let liboscore_includes = Path::new("../../src/include/");
+    let liboscore_includes = Path::new("c-src/include/");
     // Err out early to get a clearer error message
     assert!(
         liboscore_includes.join("oscore/message.h").exists(),
@@ -118,12 +118,12 @@ fn run_cbindgen(rustbuilthdr_base: &Path) {
 
 fn bundle_staticlib(rustbuilthdr_base: &Path) {
     cc::Build::new()
-        .include("../../src/include/")
+        .include("c-src/include/")
         .include(".")
         .include(rustbuilthdr_base.to_str().unwrap())
-        .file("../../src/contextpair.c")
-        .file("../../src/oscore_message.c")
-        .file("../../src/protection.c")
-        .file("../../src/context_primitive.c")
+        .file("c-src/contextpair.c")
+        .file("c-src/oscore_message.c")
+        .file("c-src/protection.c")
+        .file("c-src/context_primitive.c")
         .compile("liboscore_static_objects");
 }
