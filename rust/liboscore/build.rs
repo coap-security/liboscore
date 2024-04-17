@@ -95,20 +95,32 @@ fn run_cbindgen(rustbuilthdr_base: &Path) {
     let rustbuilthdr_dir = rustbuilthdr_base.join("oscore_native");
     std::fs::create_dir_all(&rustbuilthdr_dir).unwrap();
 
+    let cratedir_cryptobackend;
+    let cratedir_msgbackend;
+    if std::env::current_dir().unwrap().file_name() == Some(std::ffi::OsStr::new("liboscore")) {
+        cratedir_cryptobackend = "../../rust/liboscore-cryptobackend";
+        cratedir_msgbackend = "../../rust/liboscore-msgbackend";
+    } else {
+        // FIXME: Reaching over to those places is brittle at best. Keeping it in for the 0.1.0 to
+        // stay compatible in the over-all crate layout with the version used in coap-ace-poc for
+        // some time.
+        cratedir_cryptobackend = "../liboscore-cryptobackend-0.1.0";
+        cratedir_msgbackend = "../liboscore-msgbackend-0.1.0";
+    }
+
     cbindgen::Builder::new()
-        .with_crate("../../rust/liboscore-cryptobackend")
+        .with_crate(cratedir_cryptobackend)
         .with_config(
-            cbindgen::Config::from_file("../../rust/liboscore-cryptobackend/cbindgen.toml")
-                .unwrap(),
+            cbindgen::Config::from_file(format!("{cratedir_cryptobackend}/cbindgen.toml")).unwrap(),
         )
         .generate()
         .expect("Failure generating cbindgen headers for the cryptobackend")
         .write_to_file(rustbuilthdr_dir.join("crypto_type.h"));
 
     cbindgen::Builder::new()
-        .with_crate("../../rust/liboscore-msgbackend")
+        .with_crate(cratedir_msgbackend)
         .with_config(
-            cbindgen::Config::from_file("../../rust/liboscore-msgbackend/cbindgen.toml").unwrap(),
+            cbindgen::Config::from_file(format!("{cratedir_msgbackend}/cbindgen.toml")).unwrap(),
         )
         .with_language(cbindgen::Language::C)
         .generate()
