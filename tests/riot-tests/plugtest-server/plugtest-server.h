@@ -24,7 +24,7 @@ static const uint8_t ab_master_salt[] = {158, 124, 169, 34, 35, 120, 99, 64};
 #define D_RECIPIENT_KEY {175, 42, 19, 0, 165, 233, 87, 136, 179, 86, 51, 110, 238, 205, 43, 146}
 #define D_COMMON_IV {44, 165, 143, 184, 95, 241, 184, 28, 11, 113, 129, 184, 94}
 
-ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
+ssize_t plugtest_nonoscore_hello(coap_pkt_t *pdu, uint8_t *buf, size_t len, coap_request_ctx_t *ctx);
 
 struct hello_state {
     bool code_ok;

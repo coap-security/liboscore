@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* Needed for OSCORE_KEYID_MAXLEN */
+#include <oscore_native/crypto_type.h>
+
 /** @file */
 
 /** @ingroup oscore_api

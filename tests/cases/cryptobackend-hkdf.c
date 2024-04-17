@@ -1,8 +1,5 @@
-#include <stdio.h>
 #include <stdint.h>
-#include <string.h>
-#include <assert.h>
-
+#include <oscore_native/platform.h>
 #include <oscore_native/crypto.h>
 
 const size_t max_output_length = 128;
@@ -61,7 +58,7 @@ static struct testdata sha256_data_longextracted = {
     .expected_len = 80,
 };
 
-int test_with(struct testdata *data, int introduce_error)
+static int test_with(struct testdata *data, int introduce_error)
 {
     uint8_t out_buf[max_output_length];
 
@@ -98,7 +95,6 @@ int test_with(struct testdata *data, int introduce_error)
 int testmain(int introduce_error)
 {
     int ret = 0;
-#ifdef LIBCOSE_HAS_HKDF
     ret = test_with(&sha256_data, introduce_error == 1);
     if (ret != 0)
         return ret;
@@ -110,10 +106,5 @@ int testmain(int introduce_error)
         return ret;
     */
     ret = test_with(&sha256_data_longextracted, introduce_error > 2);
-#else
-    (void)sha256_data;
-    (void)sha256_data_longsalt;
-    (void)sha256_data_longextracted;
-#endif
     return ret;
 }

@@ -1,0 +1,49 @@
+language = "C"
+
+# The include guard would come after the header, so we have to do it manually there
+# include_guard = "LIBOSCORE_CRYPTOBACKEND_OSCORE_NATIVE_CRYPTO_TYPE_H"
+no_includes = true
+# Same: used already in the header.
+# sys_includes = ["stdint.h", "stddef.h"]
+
+# For the above reasons, and because liboscore-msgbackend also manages, this should go away.
+header = """
+#ifndef LIBOSCORE_CRYPTOBACKEND_OSCORE_NATIVE_CRYPTO_TYPE_H
+#define LIBOSCORE_CRYPTOBACKEND_OSCORE_NATIVE_CRYPTO_TYPE_H
+
+#include <stdint.h>
+#include <stddef.h>
+
+#define OSCORE_CRYPTO_AEAD_IV_MAXLEN ((size_t)13)
+#define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)32)
+
+typedef uint32_t oscore_crypto_hkdfalg_t;
+
+struct oscore_crypto_aead_encryptstate_t {
+    uint64_t padding[64];
+};
+
+struct oscore_crypto_aead_decryptstate_t {
+    uint64_t padding[64];
+};
+"""
+trailer = """
+#endif /* LIBOSCORE_CRYPTOBACKEND_OSCORE_NATIVE_CRYPTO_TYPE_H */
+"""
+
+# If `type oscore_..._foo = Foo` could be made no_mangle, this could do away with the need for below export.rename 
+# [export]
+# prefix = "liboscore_cryptobackend_aead_"
+
+[export]
+item_types = ["structs", "typedefs", "enums", "constants", "opaque"]
+
+[export.rename]
+"Algorithm" = "oscore_crypto_aeadalg_t"
+"CryptoErr" = "oscore_cryptoerr_t"
+"DecryptState" = "oscore_crypto_aead_decryptstate_t"
+"EncryptState" = "oscore_crypto_aead_encryptstate_t"
+
+# Could this allow repr(C) on EncryptState?
+#[parse]
+#parse_deps = true

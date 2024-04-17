@@ -1,13 +1,13 @@
 #include <stdio.h>
-#include <string.h>
-#include <assert.h>
-
+#include <oscore_native/platform.h>
 #include <oscore_native/message.h>
 #include <oscore_native/test.h>
 #include <oscore/protection.h>
 #include <oscore/contextpair.h>
 #include <oscore/context_impl/primitive.h>
 #include <oscore/message.h>
+
+#define returning_assert(cond) if(!(cond)) { return 1; }
 
 int testmain(int introduce_error)
 {
@@ -20,7 +20,7 @@ int testmain(int introduce_error)
         .recipient_key = "\xd5" "0\x1e\xb1\x8d\x06xI\x95\x08\x93\xba*\xc8\x91" "A|\x89\xae\t\xdfJ8U\xaa\x00\n\xc9\xff\xf3\x87Q",
     };
     bool ok = !oscore_cryptoerr_is_error(oscore_crypto_aead_from_number(&key.aeadalg, 24));
-    assert(ok);
+    returning_assert(ok);
     struct oscore_context_primitive primitive = {
         .immutables = &key
     };
@@ -36,16 +36,16 @@ int testmain(int introduce_error)
             9,
             (uint8_t*)"\x09\x00",
             2);
-    assert(!oscore_msgerr_native_is_error(msgerr));
+    returning_assert(!oscore_msgerr_native_is_error(msgerr));
 
     uint8_t *payload;
     size_t payload_len;
     oscore_msg_native_map_payload(msg, &payload, &payload_len);
-    assert(payload_len >= 32);
+    returning_assert(payload_len >= 32);
     memcpy(payload, "\x5c\x94\xc1\x29\x80\xfd\x93\x68\x4f\x37\x1e\xb2\xf5\x25\xa2\x69\x3b\x47\x4d\x5e\x37\x16\x45\x67\x63\x74\xe6\x8d\x4c\x20\x4a\xdb", 32);
     payload[0] ^= (introduce_error == 1);
     msgerr = oscore_msg_native_trim_payload(msg, 32);
-    assert(!oscore_msgerr_native_is_error(msgerr));
+    returning_assert(!oscore_msgerr_native_is_error(msgerr));
 
     enum oscore_unprotect_request_result oscerr;
     oscore_msgerr_protected_t oscmsgerr;
@@ -69,16 +69,16 @@ int testmain(int introduce_error)
         if (number == 9) {
             found_oscoreoption = true;
             bool parsed = oscore_oscoreoption_parse(&header, value, value_length);
-            assert(parsed);
+            returning_assert(parsed);
         }
     }
-    assert(found_oscoreoption);
+    returning_assert(found_oscoreoption);
 
     oscerr = oscore_unprotect_request(msg, &unprotected, &header, &secctx, &request_id);
 
-    assert(oscerr == OSCORE_UNPROTECT_REQUEST_OK);
+    returning_assert(oscerr == OSCORE_UNPROTECT_REQUEST_OK);
 
-    assert(oscore_msg_protected_get_code(&unprotected) == 1);
+    returning_assert(oscore_msg_protected_get_code(&unprotected) == 1);
 
     oscore_msg_protected_optiter_t i_iter;
     oscore_msg_protected_optiter_init(&unprotected, &i_iter);
@@ -90,24 +90,24 @@ int testmain(int introduce_error)
 
     bool next_ok;
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(next_ok && opt_num == 11 && opt_len == 6 && memcmp(opt_val, "oscore", 6) == 0);
+    returning_assert(next_ok && opt_num == 11 && opt_len == 6 && memcmp(opt_val, "oscore", 6) == 0);
     // FIXME: Introduce variant where this iteration is not completed, and
     // map_payload needs to do it on its own
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(next_ok && opt_num == 11 && opt_len == 5 && memcmp(opt_val, "hello", 5) == 0);
+    returning_assert(next_ok && opt_num == 11 && opt_len == 5 && memcmp(opt_val, "hello", 5) == 0);
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(next_ok && opt_num == 11 && opt_len == 1 && *opt_val == '1');
+    returning_assert(next_ok && opt_num == 11 && opt_len == 1 && *opt_val == '1');
     next_ok = oscore_msg_protected_optiter_next(&unprotected, &i_iter, &opt_num, &opt_val, &opt_len);
-    assert(!next_ok);
+    returning_assert(!next_ok);
 
     oscmsgerr = oscore_msg_protected_optiter_finish(&unprotected, &i_iter);
-    assert(!oscore_msgerr_protected_is_error(oscmsgerr));
+    returning_assert(!oscore_msgerr_protected_is_error(oscmsgerr));
 
     uint8_t *p_payload;
     size_t p_payload_len;
     oscmsgerr = oscore_msg_protected_map_payload(&unprotected, &p_payload, &p_payload_len);
-    assert(!oscore_msgerr_protected_is_error(oscmsgerr));
-    assert(p_payload_len == 0);
+    returning_assert(!oscore_msgerr_protected_is_error(oscmsgerr));
+    returning_assert(p_payload_len == 0);
     
     oscore_test_msg_destroy(msg);
     return 0;

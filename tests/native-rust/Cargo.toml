@@ -1,0 +1,15 @@
+[package]
+name = "liboscore-tests-native-rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+liboscore = { path = "../../rust/liboscore" }
+# temporarily
+liboscore-msgbackend = { path = "../../rust/liboscore-msgbackend", features = [ "alloc" ] }
+
+coap-message = { version = "0.2", features = [ "alloc" ] }
+
+[build-dependencies]
+cc = "1"

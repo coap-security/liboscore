@@ -4,6 +4,8 @@ OPTFLAGS ?= -O0
 
 CPPFLAGS += -I../../src/include/
 CPPFLAGS += -Ilibconfigs/
+# native tests always use the platform's libc
+CPPFLAGS += -I../../backends/libc/inc/
 CFLAGS += -Werror -std=c11
 BE_PEDANTIC ?= yes
 ifeq (yes,${BE_PEDANTIC})
@@ -21,9 +23,12 @@ all: test
 vpath %.c ../../src/
 vpath %.c ../cases/
 
+# either libcose or rustcrypto
+CRYPTOLIB ?= libcose
+
 ifeq (libs,$(wildcard libs))
 include Makefile.mockoap
-include Makefile.libcose
+include Makefile.$(CRYPTOLIB)
 else
 # We might pull in libs through a dependency of the to-be-included
 # Makefile.libcose, but even some expansions run into errors
@@ -36,13 +41,17 @@ test: ${CASES}
 	set -ex; for x in $^; do ./$$x; done
 
 test-all-versions:
+	${MAKE} CRYPTOLIB=rustcrypto clean
 	${MAKE} clean
 	${MAKE} CC=gcc OPTFLAGS=-O0 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
-	${MAKE} CC=gcc OPTFLAGS=-O3 TESTS_USE_TINYDTLS=no test
+	# -O3 hits https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104789 -- going down to -O2
+	${MAKE} CC=gcc OPTFLAGS=-O2 TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
 	${MAKE} CC=clang TESTS_USE_TINYDTLS=no test
 	${MAKE} clean
+	${MAKE} CRYPTOLIB=rustcrypto test
+	${MAKE} CRYPTOLIB=rustcrypto clean
 	# only relevant with TINYDTLS
 # 	${MAKE} CC=clang BE_PEDANTIC=no test
 # 	${MAKE} clean
@@ -74,7 +83,7 @@ libs/tinycrypt/lib/libtinycrypt.a:
 	$(MAKE) -C libs/tinycrypt/lib
 
 clean:
-	rm -f ${CASES}
+	rm -rf ${CASES} ${LIB_CLEAN}
 	rm -f *.o
 	rm -f *.d
 

@@ -1,0 +1,8 @@
+language = "C"
+
+include_guard = "LIBOSCORE_MSGBACKEND_OSCORE_NATIVE_MSG_TYPE_H"
+no_includes = true
+sys_includes = ["stdint.h", "stddef.h"]
+
+[export]
+item_types = ["structs", "typedefs", "enums"]

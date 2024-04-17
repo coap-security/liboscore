@@ -1,0 +1,33 @@
+[package]
+name = "liboscore"
+description = "Rust wrapper around the libOSCORE implementation of OSCORE (RFC8613), a security layer for CoAP"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+# More like "builds and includes"; this matters so that we can pass on
+# PLATFORMHEADERS as DEP_LIBOSCORE_PLATFORMHEADERS
+links = "liboscore"
+
+# .gitignore appear not to apply though symlinks; these would otherwise be
+# included as shown by cargo package --list -p liboscore
+exclude = [ "*~" ]
+
+[dependencies]
+liboscore-cryptobackend = { workspace = true, features = ["chacha20poly1305", "aes-gcm", "aes-ccm" ] }
+liboscore-msgbackend = { workspace = true }
+
+coap-message = "0.2"
+coap-message-utils = "0.2.2"
+
+# Only for Debug implementations
+pretty-hex = { version = "0.3", default-features = false }
+
+[build-dependencies]
+cc = "1"
+bindgen = "0.63"
+cbindgen = "0.24"

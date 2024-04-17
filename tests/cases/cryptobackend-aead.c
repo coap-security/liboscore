@@ -1,8 +1,5 @@
-#include <stdio.h>
 #include <stdint.h>
-#include <string.h>
-#include <assert.h>
-
+#include <oscore_native/platform.h>
 #include <oscore_native/crypto.h>
 
 // keys happen to be derived as in RFC8613 C.1.1, but with ChaCha20/Poly1305
@@ -61,7 +58,7 @@ static struct testdata aesccm_data = {
 
 const char message[] = "The quick brown fox jumps over the lazy dog.";
 
-int test_with(struct testdata *data, int introduce_error)
+static int test_with(struct testdata *data, int introduce_error)
 {
     oscore_cryptoerr_t err;
 
@@ -132,7 +129,9 @@ int testmain(int introduce_error)
     int ret;
     ret = test_with(&chacha_data, introduce_error == 1);
     if (ret != 0)
-        return ret;
+        return 100 + ret;
     ret = test_with(&aesccm_data, introduce_error > 1);
-    return ret;
+    if (ret != 0)
+        return 200 + ret;
+    return 0;
 }

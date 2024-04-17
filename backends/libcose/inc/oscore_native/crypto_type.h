@@ -1,3 +1,6 @@
+#ifndef LIBCOSE_OSCORE_NATIVE_CRYPTO_TYPE_H
+#define LIBCOSE_OSCORE_NATIVE_CRYPTO_TYPE_H
+
 #include <cose.h>
 
 typedef cose_algo_t oscore_crypto_aeadalg_t;
@@ -20,3 +23,5 @@ typedef oscore_crypto_aead_encryptstate_t oscore_crypto_aead_decryptstate_t;
 #define OSCORE_CRYPTO_AEAD_KEY_MAXLEN ((size_t)32)
 
 typedef int oscore_cryptoerr_t;
+
+#endif /* LIBCOSE_OSCORE_NATIVE_CRYPTO_TYPE_H */

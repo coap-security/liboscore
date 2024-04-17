@@ -305,7 +305,7 @@ void sensordata_build(oscore_msg_protected_t *out, const void *vstate, const str
 
 /** End of demo application */
 
-static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, coap_request_ctx_t *ctx)
 {
     (void)ctx;
     gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
@@ -334,6 +334,7 @@ static const coap_resource_t _resources[] = {
 static gcoap_listener_t _listener = {
     &_resources[0],
     ARRAY_SIZE(_resources),
+    GCOAP_SOCKET_TYPE_UNDEF,
     NULL,
     NULL,
     NULL

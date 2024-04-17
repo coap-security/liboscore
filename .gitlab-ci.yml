@@ -3,7 +3,10 @@ image: debian
 test:
   script:
     - apt-get update
-    - apt-get -y install git build-essential pkg-config libsodium-dev clang
+    - apt-get -y install git build-essential pkg-config libsodium-dev clang curl cbindgen
+    - "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain nightly"
+    - source $HOME/.cargo/env
+
     - cd tests/native
     # The current Makefile setup fails to consider the vpaths intgroduced in
     # Makefile.libcose made available at lib build time; calling make in
@@ -11,12 +14,22 @@ test:
     - make libs
     - make test-all-versions
 
+    # The most comprehensive of tests in that it also tests for failure when
+    # errors are introduced (but then again it doesn't run with the
+    # sanitization options the C versions run with)
+    - cd ../../tests/native-rust
+    - cargo run
+
+    # Not much of a test, but let's make sure that stays usable
+    - cd ../../rust/liboscore-cryptobackend/
+    - cargo run --example=single-encrypt --all-features
+
     # Build test using RIOT
     # Run the build process for the IoT-LAB demo
     # wget, unzip not really expected to be used -- but RIOT's build system just expects them to be there.
     - apt-get -y install gcc-arm-none-eabi binutils-multiarch python3 wget unzip
     - git submodule init && git submodule update
-    - cd ../riot-tests/plugtest-server
+    - cd ../../tests/riot-tests/plugtest-server
     - make BOARD=iotlab-m3 all
 
 pages:

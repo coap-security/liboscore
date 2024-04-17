@@ -8,4 +8,16 @@ INCLUDES += -I${OSCOREBASE}/src/include
 
 # Backends we choose for RIOT
 INCLUDES += -I${OSCOREBASE}/backends/nanocoap/inc
+
+# We have a libc, let's use it
+INCLUDES += -I${OSCOREBASE}/backends/libc/inc
+
+ifeq (libcose,${OSCORE_CRYPTO_BACKEND})
 INCLUDES += -I${OSCOREBASE}/backends/libcose/inc
+endif
+ifeq (rust,${OSCORE_CRYPTO_BACKEND})
+
+$(error "Rust libOSCORE building on RIOT is not supported since RIOT grew its own Rust support")
+
+.PHONY: ${OSCOREBASE}/rust/liboscore-cryptobackend-aead-standalone/target/${RUST_ARCH}/release/libliboscore_cryptobackend_aead_standalone.a
+endif

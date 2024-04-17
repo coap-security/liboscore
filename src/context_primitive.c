@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <oscore_native/platform.h>
 #include <oscore/context_impl/primitive.h>
 
 const size_t info_maxlen = 1 + \

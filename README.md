@@ -2,7 +2,7 @@ libOSCORE: An OSCORE implementation (not only) for embedded systems
 ===================================================================
 
 The libOSCORE library is
-a portable implementation of [OSCORE (RFC8613)]
+a portable (and freestanding) implementation of [OSCORE (RFC8613)]
 usable for embedded devices.
 
 OSCORE is a method of protecting (ie. encrypting and verifying)
@@ -30,7 +30,7 @@ and of performing cryptographic operations at all.
 State of the project
 --------------------
 
-The library is nearing completion of the basic features,
+The library is feature complete
 and an implemenation of the OSCORE [plug test] server
 is usable on RIOT-OS,
 even though it does not pass all the tests yet.
@@ -68,6 +68,11 @@ Libraries with planned integration:
 * [RIOT-OS] - light integration available; full integration tracked at [11761]
 * MoCkoAP – an internal minimal CoAP library used as a mock-up in tests
 * [libcose] – providing the required crypto primitives
+* [Rust] integration
+  * liboscore-cryptobackend – providing a (configurable) variety of crypto primitives
+  * liboscore-msgbackend – implementing libOSCORE's message accessors on the [coap-message] traits
+  * liboscore-backends-standalone – build infrastructure for using the Rust cryptobackend from a C application
+  * liboscore – high level Rust abstractions
 
 Potential future candidates:
 (No implementation is being planned right now,
@@ -76,7 +81,6 @@ but they are being looked into for portability)
 * [libcoap]
 * [wakaama]
 * [OpenSSL]
-* bindings into the [Rust] programming language
 
 [RIOT-OS]: http://riot-os.org/
 [libcose]: https://github.com/bergzand/libcose
