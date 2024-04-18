@@ -50,10 +50,10 @@ impl PrimitiveImmutables {
             raw::oscore_context_primitive_derive(
                 _0.as_mut_ptr(),
                 hkdf_alg.into_inner(),
-                ikm.as_ptr(),
-                ikm.len(),
                 salt.as_ptr(),
                 salt.len(),
+                ikm.as_ptr(),
+                ikm.len(),
                 context
                     .map(|c| c.as_ptr())
                     .unwrap_or_else(|| core::ptr::null()),

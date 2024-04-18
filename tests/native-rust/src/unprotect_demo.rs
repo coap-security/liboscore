@@ -13,8 +13,8 @@ pub fn run() -> Result<(), &'static str> {
     // From OSCORE plug test, security context A
     let immutables = liboscore::PrimitiveImmutables::derive(
         liboscore::HkdfAlg::from_number(5).unwrap(),
-        b"\x9e\x7c\xa9\x22\x23\x78\x63\x40",
         b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10",
+        b"\x9e\x7c\xa9\x22\x23\x78\x63\x40",
         None,
         liboscore::AeadAlg::from_number(24).unwrap(),
         b"\x01",
