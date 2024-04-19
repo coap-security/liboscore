@@ -132,11 +132,11 @@ impl UnprotectResponseError {
 // FIXME we should carry the context around, but that'd require it to have a shared portion that we
 // can then clone and combine with the oscore_requestid_t.
 pub fn protect_request<'a, 'b, R>(
-    request: &'a mut coap_message_implementations::inmemory_write::Message<'b>,
+    request: impl liboscore_msgbackend::WithMsgNative,
     ctx: &mut PrimitiveContext,
     writer: impl FnOnce(&mut ProtectedMessage) -> R,
 ) -> Result<(raw::oscore_requestid_t, R), ProtectError> {
-    liboscore_msgbackend::with_inmemory_as_msg_native(request, |msg| {
+    request.with_msg_native(|msg| {
         let mut plaintext = MaybeUninit::uninit();
         let mut request_data = MaybeUninit::uninit();
         // Safety: Everything that needs to be initialized is
@@ -172,7 +172,7 @@ pub fn protect_request<'a, 'b, R>(
 
 // request being MutableWritableMessage: See unprotect_response
 pub fn unprotect_request<R>(
-    request: &mut coap_message_implementations::inmemory_write::Message<'_>,
+    request: impl liboscore_msgbackend::WithMsgNative,
     oscoreoption: OscoreOption<'_>, // Here's where we need to cheat a bit: We both take the message
     // writably, *and* we take data out of that message through
     // another pointer. This is legal because we don't alter any
@@ -182,7 +182,7 @@ pub fn unprotect_request<R>(
     ctx: &mut PrimitiveContext,
     reader: impl FnOnce(&ProtectedMessage) -> R,
 ) -> Result<(raw::oscore_requestid_t, R), UnprotectRequestError> {
-    liboscore_msgbackend::with_inmemory_as_msg_native(request, |nativemsg| {
+    request.with_msg_native(|nativemsg| {
         let mut plaintext = MaybeUninit::uninit();
         let mut request_data = MaybeUninit::uninit();
         let decrypt_ok = unsafe {
@@ -217,12 +217,12 @@ pub fn unprotect_request<R>(
 /// multiple responses, which are handled correctly (in that the later context takes a new sequence
 /// number) by libOSCORE.
 pub fn protect_response<'a, 'b, R>(
-    response: &'a mut coap_message_implementations::inmemory_write::Message<'b>,
+    response: impl liboscore_msgbackend::WithMsgNative,
     ctx: &mut PrimitiveContext,
     correlation: &mut raw::oscore_requestid_t,
     writer: impl FnOnce(&mut ProtectedMessage) -> R,
 ) -> Result<R, ProtectError> {
-    liboscore_msgbackend::with_inmemory_as_msg_native(response, |nativemsg| {
+    response.with_msg_native(|nativemsg| {
         let mut plaintext = MaybeUninit::uninit();
         // Safety: Everything that needs to be initialized is
         let prepare_ok = unsafe {
@@ -260,13 +260,13 @@ pub fn protect_response<'a, 'b, R>(
 // here ... though, for CBOR decoding, maybe, where we memmove around indefinite length strings
 // into place?).
 pub fn unprotect_response<R>(
-    response: &mut coap_message_implementations::inmemory_write::Message<'_>,
+    response: impl liboscore_msgbackend::WithMsgNative,
     ctx: &mut PrimitiveContext,
     oscoreoption: OscoreOption<'_>,
     correlation: &mut raw::oscore_requestid_t,
     reader: impl FnOnce(&ProtectedMessage) -> R,
 ) -> Result<R, UnprotectResponseError> {
-    liboscore_msgbackend::with_inmemory_as_msg_native(response, |nativemsg| {
+    response.with_msg_native(|nativemsg| {
         let mut plaintext = MaybeUninit::uninit();
         let decrypt_ok = unsafe {
             raw::oscore_unprotect_response(

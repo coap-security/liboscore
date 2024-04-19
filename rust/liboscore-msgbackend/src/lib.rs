@@ -465,3 +465,28 @@ where
         &mut wrapped_message as *mut _ as *mut _,
     ))
 }
+
+/// Sealed helper trait to implement with_msg_native
+pub trait WithMsgNative: sealed::Sealed {
+    fn with_msg_native<F: FnOnce(oscore_msg_native_t) -> R, R>(self, f: F) -> R;
+}
+
+impl<'a, 'b> WithMsgNative for &'a mut coap_message_implementations::inmemory_write::Message<'b> {
+    fn with_msg_native<F: FnOnce(oscore_msg_native_t) -> R, R>(self, f: F) -> R {
+        with_inmemory_as_msg_native(self, f)
+    }
+}
+#[cfg(feature = "alloc")]
+impl WithMsgNative for coap_message_implementations::heap::HeapMessage {
+    fn with_msg_native<F: FnOnce(oscore_msg_native_t) -> R, R>(self, f: F) -> R {
+        with_heapmessage_as_msg_native(self, f)
+    }
+}
+
+mod sealed {
+    pub trait Sealed {}
+
+    impl<'a, 'b> Sealed for &'a mut coap_message_implementations::inmemory_write::Message<'b> {}
+    #[cfg(feature = "alloc")]
+    impl Sealed for coap_message_implementations::heap::HeapMessage {}
+}
