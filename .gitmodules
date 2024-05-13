@@ -1,3 +1,5 @@
 [submodule "tests/riot-tests/RIOT"]
 	path = tests/riot-tests/RIOT
 	url = https://github.com/RIOT-OS/RIOT
+	# Taken for the side effect of resolving https://github.com/rust-lang/cargo/issues/4247
+	update = none

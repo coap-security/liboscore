@@ -28,7 +28,7 @@ test:
     # Run the build process for the IoT-LAB demo
     # wget, unzip not really expected to be used -- but RIOT's build system just expects them to be there.
     - apt-get -y install gcc-arm-none-eabi binutils-multiarch python3 wget unzip
-    - git submodule init && git submodule update
+    - git submodule init && git submodule update --checkout
     - cd ../../tests/riot-tests/plugtest-server
     - make BOARD=iotlab-m3 all
 
