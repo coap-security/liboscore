@@ -942,7 +942,7 @@ void userctx_maybe_persist(void) {
     persist->stored_sequence_number = wanted;
     persistence_commit();
 
-    printf("\nThe user context was persisted to flash memory, and will resume at sender sequence number %" PRIu64 ":\n", wanted);
+    printf("\nThe user context was persisted to flash memory, and will resume at sender sequence number %llu:\n", (long long int)wanted);
 
     oscore_context_b1_allow_high(&context_u, wanted);
     userctx_last_persisted = wanted;
