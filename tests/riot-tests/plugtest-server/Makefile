@@ -1,11 +1,11 @@
-USEMODULE += gnrc_netdev_default
+USEMODULE += netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gcoap
 
 USEMODULE += shell
-USEMODULE += shell_commands
+USEMODULE += shell_cmds_default
 USEMODULE += ps
 
 CFLAGS += -DOSCORE_NANOCOAP_MEMMOVE_MODE
@@ -41,7 +41,6 @@ USEMODULE += ethos
 #CFLAGS += -DETHOS_BAUDRATE=$(ETHOS_BAUDRATE)
 
 USEMODULE += stdio_ethos
-USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_sixlowpan_border_router_default
 USEMODULE += gnrc_icmpv6_echo

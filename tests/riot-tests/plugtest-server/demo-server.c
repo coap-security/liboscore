@@ -530,7 +530,15 @@ static void send_static_request(char value) {
 
     // PDU is usable now again and can be sent
 
-    int bytes_sent = gcoap_req_send(buf, pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len, &persist->target, handle_static_response, &request_data);
+    int bytes_sent = gcoap_req_send(
+        buf,
+        pdu.payload - (uint8_t*)pdu.hdr + pdu.payload_len,
+        &persist->target,
+        NULL,
+        handle_static_response,
+        &request_data,
+        GCOAP_SOCKET_TYPE_UNDEF
+        );
     if (bytes_sent <= 0) {
         printf("Error sending\n");
     }
