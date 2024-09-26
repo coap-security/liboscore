@@ -84,7 +84,7 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         .allowlist_var("PIV_BYTES")
         .allowlist_var("OSCORE_CRYPTO_AEAD_IV_MAXLEN")
         .header("oscore_all_headers.h")
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("bindgen failed")
         .write_to_file(PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs"))
