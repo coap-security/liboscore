@@ -55,10 +55,10 @@ Please note that the examples currently use what is described as "intermediate i
 For high-level applications, it is recommended to use full integration,
 but that level is not even provided for the RIOT platform yet.
 
-[Running the plug test server on RIOT on Linux]: https://oscore.gitlab.io/liboscore/demo_plugtest_linux.html
-[Exchanging data between Particle Xenon boards over 6LoWPAN]: https://oscore.gitlab.io/liboscore/demo_peertopeer.html
-[Pulling data from devices in the field (by example of the FIT/IoT-Lab testbed) into an application]: https://oscore.gitlab.io/liboscore/demo_iotlab.html
-[integration levels]: https://oscore.gitlab.io/liboscore/integration_levels.html
+[Running the plug test server on RIOT on Linux]: https://oscore.gitlab.io/liboscore/md_doc_guides_demo_plugtest_linux.html
+[Exchanging data between Particle Xenon boards over 6LoWPAN]: https://oscore.gitlab.io/liboscore/md_doc_guides_demo_peertopeer.html
+[Pulling data from devices in the field (by example of the FIT/IoT-Lab testbed) into an application]: https://oscore.gitlab.io/liboscore/md_doc_guides_demo_iotlab.html
+[integration levels]: https://oscore.gitlab.io/liboscore/md_doc_guides_integration_levels.html
 
 Library integrations
 --------------------
