@@ -34,7 +34,7 @@ fn run_bindgen(liboscore_include: &Path, platform_include: &Path) {
         // unless a proper C standard is defined. Weird, but no harm in declaring it, and works
         // around <https://github.com/rust-lang/rust-bindgen/issues/1229> /
         // <https://gitlab.com/oscore/liboscore/-/issues/61>
-        .clang_arg("-std=c23")
+        .clang_arg("-std=c99")
         .clang_arg(format!("-I{}", liboscore_include.to_str().unwrap()))
         .clang_arg(format!("-I{}", platform_include.to_str().unwrap()))
         // FIXME: This is practically required for bindgen output to contain any functions when
