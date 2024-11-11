@@ -8,7 +8,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 authors = [ "EDF, developed in collaboration with Christian Amsüss", "Christian Amsüss <chrysn@fsfe.org>" ]
 repository = "https://gitlab.com/oscore/liboscore"
 keywords = [ "coap", "oscore" ]
@@ -17,9 +17,9 @@ license = "BSD-3-Clause"
 edition = "2021"
 
 [workspace.dependencies]
-liboscore-backends-standalone = { path = "liboscore-backends-standalone/", version = "0.1.0" }
-liboscore-cryptobackend = { path = "liboscore-cryptobackend/", version = "0.1.0" }
-liboscore-msgbackend = { path = "liboscore-msgbackend/", version = "0.1.0" }
+liboscore-backends-standalone = { path = "liboscore-backends-standalone/", version = "0.2.0" }
+liboscore-cryptobackend = { path = "liboscore-cryptobackend/", version = "0.2.0" }
+liboscore-msgbackend = { path = "liboscore-msgbackend/", version = "0.2.0" }
 
 [profile.release]
 opt-level = "s"
