@@ -497,7 +497,7 @@ dependencies = [
 
 [[package]]
 name = "liboscore"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bindgen",
  "cbindgen",
@@ -512,14 +512,14 @@ dependencies = [
 
 [[package]]
 name = "liboscore-backends-standalone"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "liboscore-cryptobackend",
 ]
 
 [[package]]
 name = "liboscore-cryptobackend"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aead",
  "aes",
@@ -537,7 +537,7 @@ dependencies = [
 
 [[package]]
 name = "liboscore-msgbackend"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "coap-message",
  "coap-message-implementations",
